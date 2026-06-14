@@ -19,7 +19,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
       {:ok, _goal} ->
         {:noreply,
          socket
-         |> put_flash(:info, "短期目標を追加しました")
+         |> put_flash(:info, gettext("短期目標を追加しました"))
          |> load(plan.id)}
 
       {:error, changeset} ->
@@ -31,7 +31,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
     support_plan = Plans.get_support_plan!(id)
 
     socket
-    |> assign(:page_title, "支援計画")
+    |> assign(:page_title, gettext("支援計画"))
     |> assign(:support_plan, support_plan)
     |> assign(:goals, Plans.list_goals(support_plan))
     |> assign(:goal_form, to_form(Plans.change_goal(%Goal{})))
@@ -42,24 +42,29 @@ defmodule AyumiWeb.SupportPlanLive.Show do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <.header>
-        支援計画
+        {gettext("支援計画")}
         <:subtitle>
-          {@support_plan.service_user.name} ／ 担当 {User.display_name(@support_plan.staff)}
+          {gettext("%{user} ／ 担当 %{staff}",
+            user: @support_plan.service_user.name,
+            staff: User.display_name(@support_plan.staff)
+          )}
         </:subtitle>
       </.header>
 
       <.list>
-        <:item title="計画期間">{@support_plan.period_start} 〜 {@support_plan.period_end}</:item>
-        <:item title="長期目標">{@support_plan.long_term_goal}</:item>
-        <:item title="次回モニタリング予定日">{@support_plan.next_monitoring_date}</:item>
+        <:item title={gettext("計画期間")}>
+          {@support_plan.period_start} 〜 {@support_plan.period_end}
+        </:item>
+        <:item title={gettext("長期目標")}>{@support_plan.long_term_goal}</:item>
+        <:item title={gettext("次回モニタリング予定日")}>{@support_plan.next_monitoring_date}</:item>
       </.list>
 
       <div class="mt-8">
-        <.header>短期目標</.header>
+        <.header>{gettext("短期目標")}</.header>
       </div>
 
       <.table id="goals" rows={@goals}>
-        <:col :let={goal} label="内容">{goal.description}</:col>
+        <:col :let={goal} label={gettext("内容")}>{goal.description}</:col>
       </.table>
 
       <.form
@@ -68,8 +73,8 @@ defmodule AyumiWeb.SupportPlanLive.Show do
         phx-submit="add_goal"
         class="mt-4 flex gap-2 items-end"
       >
-        <.input field={@goal_form[:description]} type="text" label="短期目標を追加" />
-        <.button>追加</.button>
+        <.input field={@goal_form[:description]} type="text" label={gettext("短期目標を追加")} />
+        <.button>{gettext("追加")}</.button>
       </.form>
     </Layouts.app>
     """
