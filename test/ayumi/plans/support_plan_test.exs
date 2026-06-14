@@ -26,7 +26,14 @@ defmodule Ayumi.Plans.SupportPlanTest do
     refute changeset.valid?
     errors = errors_on(changeset)
 
-    for field <- [:service_user_id, :staff_id, :period_start, :period_end, :long_term_goal, :next_monitoring_date] do
+    for field <- [
+          :service_user_id,
+          :staff_id,
+          :period_start,
+          :period_end,
+          :long_term_goal,
+          :next_monitoring_date
+        ] do
       assert errors[field]
     end
   end

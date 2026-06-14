@@ -3,8 +3,14 @@ defmodule Ayumi.Plans.SupportPlan do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @required [:service_user_id, :staff_id, :period_start, :period_end,
-             :long_term_goal, :next_monitoring_date]
+  @required [
+    :service_user_id,
+    :staff_id,
+    :period_start,
+    :period_end,
+    :long_term_goal,
+    :next_monitoring_date
+  ]
 
   schema "support_plans" do
     field :period_start, :date
