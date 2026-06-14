@@ -62,6 +62,11 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
+    # The app is reached over the LAN by the host's IP (which may change), so we
+    # cannot pin WebSocket origins to a fixed host. AyumiWeb.LanOnly already
+    # restricts connections to LAN/local source IPs, which is the access control
+    # here; origin checking is therefore disabled.
+    check_origin: false,
     secret_key_base: secret_key_base
 
   # ## SSL Support

@@ -25,6 +25,13 @@
   ルート／LiveView）。アカウント作成はオフライン専用（`mix ayumi.create_user` / シード）、Web から
   のログインはメールアドレス＋パスワードのみになりました。
 
+### セキュリティ
+
+- LAN／ローカル限定アクセスの強制（`AyumiWeb.LanOnly`）。ループバックとプライベート／LAN レンジ
+  以外の送信元 IP からの HTTP 接続を 403 で拒否し、LiveView の WebSocket 接続も同じ基準で遮断。
+  本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
+  インターフェースにバインド。
+
 ### 今後の予定（未実装）
 
 - `goal_progress` — 短期目標の進捗更新ログ。

@@ -17,9 +17,11 @@ config :ayumi, Ayumi.Repo,
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
 config :ayumi, AyumiWeb.Endpoint,
-  # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
+  # Bind on all interfaces so other machines on the facility LAN can connect.
+  # AyumiWeb.LanOnly (an endpoint plug + LiveView on_mount) rejects any client
+  # that is not on loopback or a private/LAN address, so this is not exposed to
+  # the internet.
+  http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,

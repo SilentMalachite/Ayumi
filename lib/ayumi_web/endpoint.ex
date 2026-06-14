@@ -12,8 +12,13 @@ defmodule AyumiWeb.Endpoint do
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:peer_data, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, session: @session_options]]
+
+  # Restrict access to the local machine and the facility LAN, rejecting the
+  # internet. Runs first so it also gates static assets. The LiveView WebSocket
+  # bypasses this pipeline and is gated separately via AyumiWeb.LanOnly.on_mount.
+  plug AyumiWeb.LanOnly
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -51,7 +51,7 @@ defmodule AyumiWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{AyumiWeb.UserAuth, :require_authenticated}] do
+      on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
 
@@ -70,7 +70,7 @@ defmodule AyumiWeb.Router do
     pipe_through [:browser]
 
     live_session :current_user,
-      on_mount: [{AyumiWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :mount_current_scope}] do
       # Account creation is offline-only (mix ayumi.create_user / seeds), and
       # magic-link login needs an email provider this app does not have, so only
       # password login is exposed on the web.
