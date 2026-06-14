@@ -44,4 +44,9 @@ defmodule Ayumi.Plans.SupportPlanTest do
     refute changeset.valid?
     assert errors_on(changeset)[:period_end]
   end
+
+  test "period_end equal to period_start is valid" do
+    attrs = %{valid_attrs() | period_start: ~D[2026-04-01], period_end: ~D[2026-04-01]}
+    assert SupportPlan.changeset(%SupportPlan{}, attrs).valid?
+  end
 end
