@@ -8,6 +8,11 @@ defmodule Ayumi.Accounts do
 
   alias Ayumi.Accounts.{User, UserToken, UserNotifier}
 
+  @doc "Lists all staff users, ordered by name then email."
+  def list_users do
+    Repo.all(from u in User, order_by: [asc: u.name, asc: u.email])
+  end
+
   ## Database getters
 
   @doc """

@@ -394,4 +394,24 @@ defmodule Ayumi.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "staff name" do
+    test "display_name/1 falls back to email when name is nil" do
+      user = user_fixture()
+      assert Ayumi.Accounts.User.display_name(user) == user.email
+    end
+
+    test "display_name/1 returns name when present" do
+      user = %{user_fixture() | name: "山田 太郎"}
+      assert Ayumi.Accounts.User.display_name(user) == "山田 太郎"
+    end
+
+    test "list_users/0 returns all users" do
+      a = user_fixture()
+      b = user_fixture()
+      ids = Ayumi.Accounts.list_users() |> Enum.map(& &1.id) |> MapSet.new()
+      assert MapSet.member?(ids, a.id)
+      assert MapSet.member?(ids, b.id)
+    end
+  end
 end

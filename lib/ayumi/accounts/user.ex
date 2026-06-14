@@ -4,6 +4,7 @@ defmodule Ayumi.Accounts.User do
 
   schema "users" do
     field :email, :string
+    field :name, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
@@ -11,6 +12,10 @@ defmodule Ayumi.Accounts.User do
 
     timestamps(type: :utc_datetime)
   end
+
+  @doc "Human label for a staff user; falls back to email when name is blank."
+  def display_name(%__MODULE__{name: name}) when is_binary(name) and name != "", do: name
+  def display_name(%__MODULE__{email: email}), do: email
 
   @doc """
   A user changeset for registering or changing the email.
