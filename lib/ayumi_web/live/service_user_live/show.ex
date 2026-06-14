@@ -25,96 +25,98 @@ defmodule AyumiWeb.ServiceUserLive.Show do
         {@service_user.name}
         <:subtitle>{@service_user.name_kana}</:subtitle>
         <:actions>
-          <.button navigate={~p"/service_users/#{@service_user.id}/edit"}>編集</.button>
+          <.button navigate={~p"/service_users/#{@service_user.id}/edit"}>{gettext("編集")}</.button>
           <.button navigate={~p"/service_users/#{@service_user.id}/support_plans/new"}>
-            支援計画を作成
+            {gettext("支援計画を作成")}
           </.button>
         </:actions>
       </.header>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">基本</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("基本")}</h2>
         <dl>
-          <.field_row label="生年月日">{format_birthdate(@service_user, @today)}</.field_row>
-          <.field_row label="性別">{Gender.label(@service_user.gender)}</.field_row>
+          <.field_row label={gettext("生年月日")}>{format_birthdate(@service_user, @today)}</.field_row>
+          <.field_row label={gettext("性別")}>{Gender.label(@service_user.gender)}</.field_row>
         </dl>
       </section>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">連絡先</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("連絡先")}</h2>
         <dl>
-          <.field_row label="郵便番号">{@service_user.postal_code}</.field_row>
-          <.field_row label="住所">{@service_user.address}</.field_row>
-          <.field_row label="電話番号">{@service_user.phone}</.field_row>
-          <.field_row label="緊急連絡先 氏名">
+          <.field_row label={gettext("郵便番号")}>{@service_user.postal_code}</.field_row>
+          <.field_row label={gettext("住所")}>{@service_user.address}</.field_row>
+          <.field_row label={gettext("電話番号")}>{@service_user.phone}</.field_row>
+          <.field_row label={gettext("緊急連絡先 氏名")}>
             {@service_user.emergency_contact_name}
           </.field_row>
-          <.field_row label="続柄">{@service_user.emergency_contact_relation}</.field_row>
-          <.field_row label="緊急連絡先 電話">
+          <.field_row label={gettext("続柄")}>{@service_user.emergency_contact_relation}</.field_row>
+          <.field_row label={gettext("緊急連絡先 電話")}>
             {@service_user.emergency_contact_phone}
           </.field_row>
         </dl>
       </section>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">受給者証</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("受給者証")}</h2>
         <dl>
-          <.field_row label="受給者証番号">{@service_user.recipient_cert_number}</.field_row>
-          <.field_row label="支給市町村">{@service_user.recipient_cert_municipality}</.field_row>
-          <.field_row label="障害支援区分">
+          <.field_row label={gettext("受給者証番号")}>{@service_user.recipient_cert_number}</.field_row>
+          <.field_row label={gettext("支給市町村")}>
+            {@service_user.recipient_cert_municipality}
+          </.field_row>
+          <.field_row label={gettext("障害支援区分")}>
             {SupportCategory.label(@service_user.disability_support_category)}
           </.field_row>
-          <.field_row label="支給量">{@service_user.benefit_amount}</.field_row>
-          <.field_row label="有効期限">{@service_user.recipient_cert_expiry}</.field_row>
+          <.field_row label={gettext("支給量")}>{@service_user.benefit_amount}</.field_row>
+          <.field_row label={gettext("有効期限")}>{@service_user.recipient_cert_expiry}</.field_row>
         </dl>
       </section>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">障害者手帳</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("障害者手帳")}</h2>
         <.table
           :if={@service_user.disability_certificates != []}
           id="disability-certificates"
           rows={@service_user.disability_certificates}
         >
-          <:col :let={cert} label="種類">{CertificateKind.label(cert.kind)}</:col>
-          <:col :let={cert} label="手帳番号">{cert.number}</:col>
-          <:col :let={cert} label="障害名">{cert.disability_name}</:col>
-          <:col :let={cert} label="等級">{cert.grade}</:col>
+          <:col :let={cert} label={gettext("種類")}>{CertificateKind.label(cert.kind)}</:col>
+          <:col :let={cert} label={gettext("手帳番号")}>{cert.number}</:col>
+          <:col :let={cert} label={gettext("障害名")}>{cert.disability_name}</:col>
+          <:col :let={cert} label={gettext("等級")}>{cert.grade}</:col>
         </.table>
         <p :if={@service_user.disability_certificates == []} class="text-base-content/60">
-          登録なし
+          {gettext("登録なし")}
         </p>
       </section>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">医療</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("医療")}</h2>
         <dl>
-          <.field_row label="通院先">{@service_user.clinic_name}</.field_row>
-          <.field_row label="主治医">{@service_user.attending_physician}</.field_row>
-          <.field_row label="服薬・特記">{@service_user.medication_notes}</.field_row>
+          <.field_row label={gettext("通院先")}>{@service_user.clinic_name}</.field_row>
+          <.field_row label={gettext("主治医")}>{@service_user.attending_physician}</.field_row>
+          <.field_row label={gettext("服薬・特記")}>{@service_user.medication_notes}</.field_row>
         </dl>
       </section>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">その他</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("その他")}</h2>
         <dl>
-          <.field_row label="相談支援事業所">{@service_user.consultation_office}</.field_row>
-          <.field_row label="担当相談員">{@service_user.consultation_staff}</.field_row>
-          <.field_row label="備考">{@service_user.notes}</.field_row>
+          <.field_row label={gettext("相談支援事業所")}>{@service_user.consultation_office}</.field_row>
+          <.field_row label={gettext("担当相談員")}>{@service_user.consultation_staff}</.field_row>
+          <.field_row label={gettext("備考")}>{@service_user.notes}</.field_row>
         </dl>
       </section>
 
       <section class="my-6">
-        <h2 class="text-lg font-semibold mb-2">支援計画</h2>
+        <h2 class="text-lg font-semibold mb-2">{gettext("支援計画")}</h2>
         <.table id="support-plans" rows={@support_plans}>
-          <:col :let={plan} label="計画期間">
+          <:col :let={plan} label={gettext("計画期間")}>
             {plan.period_start} 〜 {plan.period_end}
           </:col>
-          <:col :let={plan} label="担当者">{User.display_name(plan.staff)}</:col>
-          <:col :let={plan} label="長期目標">{plan.long_term_goal}</:col>
-          <:col :let={plan} label="次回モニタリング">{plan.next_monitoring_date}</:col>
+          <:col :let={plan} label={gettext("担当者")}>{User.display_name(plan.staff)}</:col>
+          <:col :let={plan} label={gettext("長期目標")}>{plan.long_term_goal}</:col>
+          <:col :let={plan} label={gettext("次回モニタリング")}>{plan.next_monitoring_date}</:col>
           <:col :let={plan} label="">
-            <.link navigate={~p"/support_plans/#{plan.id}"}>詳細</.link>
+            <.link navigate={~p"/support_plans/#{plan.id}"}>{gettext("詳細")}</.link>
           </:col>
         </.table>
       </section>
@@ -137,5 +139,9 @@ defmodule AyumiWeb.ServiceUserLive.Show do
   defp format_birthdate(%ServiceUser{birthdate: nil}, _today), do: nil
 
   defp format_birthdate(%ServiceUser{birthdate: birthdate} = service_user, today),
-    do: "#{birthdate}（#{ServiceUser.age(service_user, today)}歳）"
+    do:
+      gettext("%{birthdate}（%{age}歳）",
+        birthdate: birthdate,
+        age: ServiceUser.age(service_user, today)
+      )
 end
