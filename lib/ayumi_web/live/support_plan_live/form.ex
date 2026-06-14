@@ -12,7 +12,7 @@ defmodule AyumiWeb.SupportPlanLive.Form do
 
     {:ok,
      socket
-     |> assign(:page_title, "支援計画の作成")
+     |> assign(:page_title, gettext("支援計画の作成"))
      |> assign(:service_user, service_user)
      |> assign(:staff_options, staff_options())
      |> assign_form(Plans.change_support_plan(%SupportPlan{}))}
@@ -34,7 +34,7 @@ defmodule AyumiWeb.SupportPlanLive.Form do
       {:ok, _plan} ->
         {:noreply,
          socket
-         |> put_flash(:info, "支援計画を作成しました")
+         |> put_flash(:info, gettext("支援計画を作成しました"))
          |> push_navigate(to: ~p"/service_users/#{socket.assigns.service_user.id}")}
 
       {:error, changeset} ->
@@ -56,7 +56,7 @@ defmodule AyumiWeb.SupportPlanLive.Form do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <.header>
-        支援計画の作成
+        {gettext("支援計画の作成")}
         <:subtitle>{@service_user.name}</:subtitle>
       </.header>
 
@@ -64,19 +64,19 @@ defmodule AyumiWeb.SupportPlanLive.Form do
         <.input
           field={@form[:staff_id]}
           type="select"
-          label="担当者"
+          label={gettext("担当者")}
           options={@staff_options}
-          prompt="選択してください"
+          prompt={gettext("選択してください")}
         />
-        <.input field={@form[:period_start]} type="date" label="計画開始日" />
-        <.input field={@form[:period_end]} type="date" label="計画終了日" />
-        <.input field={@form[:long_term_goal]} type="textarea" label="長期目標" />
+        <.input field={@form[:period_start]} type="date" label={gettext("計画開始日")} />
+        <.input field={@form[:period_end]} type="date" label={gettext("計画終了日")} />
+        <.input field={@form[:long_term_goal]} type="textarea" label={gettext("長期目標")} />
         <.input
           field={@form[:next_monitoring_date]}
           type="date"
-          label="次回モニタリング予定日"
+          label={gettext("次回モニタリング予定日")}
         />
-        <.button phx-disable-with="保存中...">保存</.button>
+        <.button phx-disable-with={gettext("保存中...")}>{gettext("保存")}</.button>
       </.form>
     </Layouts.app>
     """
