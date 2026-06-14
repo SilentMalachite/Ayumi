@@ -19,6 +19,12 @@
 - プロジェクトドキュメント: README、LICENSE（Apache-2.0）、NOTICE、CONTRIBUTING、SECURITY、
   CODE_OF_CONDUCT、Issue／PR テンプレート、本 CHANGELOG。
 
+### 削除
+
+- Web のセルフ登録ページ（`/users/register`）と、メールのマジックリンク認証（ログイン・確認の
+  ルート／LiveView）。アカウント作成はオフライン専用（`mix ayumi.create_user` / シード）、Web から
+  のログインはメールアドレス＋パスワードのみになりました。
+
 ### 今後の予定（未実装）
 
 - `goal_progress` — 短期目標の進捗更新ログ。
