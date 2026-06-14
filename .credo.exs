@@ -99,7 +99,17 @@
           {Credo.Check.Readability.LargeNumbers, []},
           {Credo.Check.Readability.MaxLineLength, [priority: :low, max_length: 120]},
           {Credo.Check.Readability.ModuleAttributeNames, []},
-          {Credo.Check.Readability.ModuleDoc, []},
+          # phx.gen.auth generates UserAuth and UserNotifier without @moduledoc;
+          # don't edit generated files for this style nit.
+          {Credo.Check.Readability.ModuleDoc,
+           [
+             files: %{
+               excluded: [
+                 "lib/ayumi_web/user_auth.ex",
+                 "lib/ayumi/accounts/user_notifier.ex"
+               ]
+             }
+           ]},
           {Credo.Check.Readability.ModuleNames, []},
           {Credo.Check.Readability.ParenthesesInCondition, []},
           {Credo.Check.Readability.ParenthesesOnZeroArityDefs, []},
