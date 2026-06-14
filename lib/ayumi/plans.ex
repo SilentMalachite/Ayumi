@@ -41,7 +41,10 @@ defmodule Ayumi.Plans do
   def update_service_user(%ServiceUser{} = service_user, attrs) do
     service_user
     |> ServiceUser.changeset(drop_blank_certificates(attrs))
+    |> Ecto.Changeset.optimistic_lock(:lock_version)
     |> Repo.update()
+  rescue
+    Ecto.StaleEntryError -> {:error, :stale}
   end
 
   @doc "Returns a changeset for tracking service user changes (forms)."
