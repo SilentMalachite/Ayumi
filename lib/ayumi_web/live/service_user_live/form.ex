@@ -19,7 +19,7 @@ defmodule AyumiWeb.ServiceUserLive.Form do
       |> Ecto.Changeset.put_assoc(:disability_certificates, [%DisabilityCertificate{}])
 
     socket
-    |> assign(:page_title, "利用者の新規登録")
+    |> assign(:page_title, gettext("利用者の新規登録"))
     |> assign(:service_user, service_user)
     |> assign(:other_editors, [])
     |> assign_form(changeset)
@@ -29,7 +29,7 @@ defmodule AyumiWeb.ServiceUserLive.Form do
     service_user = Plans.get_service_user!(id)
 
     socket
-    |> assign(:page_title, "利用者の編集")
+    |> assign(:page_title, gettext("利用者の編集"))
     |> assign(:service_user, service_user)
     |> track_editing(service_user.id)
     |> assign_form(edit_changeset(service_user))
@@ -55,7 +55,7 @@ defmodule AyumiWeb.ServiceUserLive.Form do
       {:ok, service_user} ->
         {:noreply,
          socket
-         |> put_flash(:info, "利用者を登録しました")
+         |> put_flash(:info, gettext("利用者を登録しました"))
          |> push_navigate(to: ~p"/service_users/#{service_user.id}")}
 
       {:error, changeset} ->
@@ -68,7 +68,7 @@ defmodule AyumiWeb.ServiceUserLive.Form do
       {:ok, service_user} ->
         {:noreply,
          socket
-         |> put_flash(:info, "利用者情報を更新しました")
+         |> put_flash(:info, gettext("利用者情報を更新しました"))
          |> push_navigate(to: ~p"/service_users/#{service_user.id}")}
 
       {:error, :stale} ->
@@ -76,7 +76,7 @@ defmodule AyumiWeb.ServiceUserLive.Form do
          socket
          |> put_flash(
            :error,
-           "他のスタッフが先にこの利用者を更新しました。最新を読み込みました。内容を確認して保存し直してください。"
+           gettext("他のスタッフが先にこの利用者を更新しました。最新を読み込みました。内容を確認して保存し直してください。")
          )
          |> reload_edit_form()}
 
@@ -150,80 +150,82 @@ defmodule AyumiWeb.ServiceUserLive.Form do
         class="rounded border border-yellow-400 bg-yellow-100 px-4 py-2 my-4 text-yellow-800"
         role="alert"
       >
-        ⚠ {Enum.join(@other_editors, "、")} さんが現在この利用者を編集中です。同時に保存すると、一方の変更が反映されない場合があります。
+        {gettext("⚠ %{names} さんが現在この利用者を編集中です。同時に保存すると、一方の変更が反映されない場合があります。",
+          names: Enum.join(@other_editors, "、")
+        )}
       </div>
 
       <.form for={@form} id="service-user-form" phx-change="validate" phx-submit="save">
         <section class="my-6">
-          <h2 class="text-lg font-semibold mb-2">基本</h2>
-          <.input field={@form[:name]} type="text" label="氏名" />
-          <.input field={@form[:name_kana]} type="text" label="ふりがな" />
-          <.input field={@form[:birthdate]} type="date" label="生年月日" />
+          <h2 class="text-lg font-semibold mb-2">{gettext("基本")}</h2>
+          <.input field={@form[:name]} type="text" label={gettext("氏名")} />
+          <.input field={@form[:name_kana]} type="text" label={gettext("ふりがな")} />
+          <.input field={@form[:birthdate]} type="date" label={gettext("生年月日")} />
           <.input
             field={@form[:gender]}
             type="select"
-            label="性別"
+            label={gettext("性別")}
             options={Gender.options()}
-            prompt="選択してください"
+            prompt={gettext("選択してください")}
           />
         </section>
 
         <section class="my-6">
-          <h2 class="text-lg font-semibold mb-2">連絡先</h2>
-          <.input field={@form[:postal_code]} type="text" label="郵便番号" />
-          <.input field={@form[:address]} type="text" label="住所" />
-          <.input field={@form[:phone]} type="text" label="電話番号" />
-          <.input field={@form[:emergency_contact_name]} type="text" label="緊急連絡先 氏名" />
-          <.input field={@form[:emergency_contact_relation]} type="text" label="続柄" />
-          <.input field={@form[:emergency_contact_phone]} type="text" label="緊急連絡先 電話" />
+          <h2 class="text-lg font-semibold mb-2">{gettext("連絡先")}</h2>
+          <.input field={@form[:postal_code]} type="text" label={gettext("郵便番号")} />
+          <.input field={@form[:address]} type="text" label={gettext("住所")} />
+          <.input field={@form[:phone]} type="text" label={gettext("電話番号")} />
+          <.input field={@form[:emergency_contact_name]} type="text" label={gettext("緊急連絡先 氏名")} />
+          <.input field={@form[:emergency_contact_relation]} type="text" label={gettext("続柄")} />
+          <.input field={@form[:emergency_contact_phone]} type="text" label={gettext("緊急連絡先 電話")} />
         </section>
 
         <section class="my-6">
-          <h2 class="text-lg font-semibold mb-2">受給者証</h2>
-          <.input field={@form[:recipient_cert_number]} type="text" label="受給者証番号" />
-          <.input field={@form[:recipient_cert_municipality]} type="text" label="支給市町村" />
+          <h2 class="text-lg font-semibold mb-2">{gettext("受給者証")}</h2>
+          <.input field={@form[:recipient_cert_number]} type="text" label={gettext("受給者証番号")} />
+          <.input field={@form[:recipient_cert_municipality]} type="text" label={gettext("支給市町村")} />
           <.input
             field={@form[:disability_support_category]}
             type="select"
-            label="障害支援区分"
+            label={gettext("障害支援区分")}
             options={SupportCategory.options()}
-            prompt="選択してください"
+            prompt={gettext("選択してください")}
           />
-          <.input field={@form[:benefit_amount]} type="text" label="支給量" />
-          <.input field={@form[:recipient_cert_expiry]} type="date" label="受給者証 有効期限" />
+          <.input field={@form[:benefit_amount]} type="text" label={gettext("支給量")} />
+          <.input field={@form[:recipient_cert_expiry]} type="date" label={gettext("受給者証 有効期限")} />
         </section>
 
         <section class="my-6">
-          <h2 class="text-lg font-semibold mb-2">障害者手帳</h2>
+          <h2 class="text-lg font-semibold mb-2">{gettext("障害者手帳")}</h2>
           <.inputs_for :let={cert} field={@form[:disability_certificates]}>
             <.input
               field={cert[:kind]}
               type="select"
-              label="手帳の種類"
+              label={gettext("手帳の種類")}
               options={CertificateKind.options()}
-              prompt="選択してください"
+              prompt={gettext("選択してください")}
             />
-            <.input field={cert[:number]} type="text" label="手帳番号" />
-            <.input field={cert[:disability_name]} type="text" label="障害種類・障害名" />
-            <.input field={cert[:grade]} type="text" label="等級" />
+            <.input field={cert[:number]} type="text" label={gettext("手帳番号")} />
+            <.input field={cert[:disability_name]} type="text" label={gettext("障害種類・障害名")} />
+            <.input field={cert[:grade]} type="text" label={gettext("等級")} />
           </.inputs_for>
         </section>
 
         <section class="my-6">
-          <h2 class="text-lg font-semibold mb-2">医療</h2>
-          <.input field={@form[:clinic_name]} type="text" label="通院先" />
-          <.input field={@form[:attending_physician]} type="text" label="主治医" />
-          <.input field={@form[:medication_notes]} type="textarea" label="服薬・特記" />
+          <h2 class="text-lg font-semibold mb-2">{gettext("医療")}</h2>
+          <.input field={@form[:clinic_name]} type="text" label={gettext("通院先")} />
+          <.input field={@form[:attending_physician]} type="text" label={gettext("主治医")} />
+          <.input field={@form[:medication_notes]} type="textarea" label={gettext("服薬・特記")} />
         </section>
 
         <section class="my-6">
-          <h2 class="text-lg font-semibold mb-2">その他</h2>
-          <.input field={@form[:consultation_office]} type="text" label="相談支援事業所" />
-          <.input field={@form[:consultation_staff]} type="text" label="担当相談員" />
-          <.input field={@form[:notes]} type="textarea" label="備考" />
+          <h2 class="text-lg font-semibold mb-2">{gettext("その他")}</h2>
+          <.input field={@form[:consultation_office]} type="text" label={gettext("相談支援事業所")} />
+          <.input field={@form[:consultation_staff]} type="text" label={gettext("担当相談員")} />
+          <.input field={@form[:notes]} type="textarea" label={gettext("備考")} />
         </section>
 
-        <.button phx-disable-with="保存中...">保存</.button>
+        <.button phx-disable-with={gettext("保存中...")}>{gettext("保存")}</.button>
       </.form>
     </Layouts.app>
     """
