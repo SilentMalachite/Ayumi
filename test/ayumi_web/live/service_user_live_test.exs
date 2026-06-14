@@ -37,6 +37,37 @@ defmodule AyumiWeb.ServiceUserLiveTest do
     assert html =~ "長期目標テキスト"
   end
 
+  test "shows basic info and certificates on the detail page", %{conn: conn} do
+    {:ok, su} =
+      Ayumi.Plans.create_service_user(%{
+        name: "詳細 太郎",
+        name_kana: "しょうさい たろう",
+        gender: :male,
+        phone: "03-1234-5678",
+        recipient_cert_number: "R-777",
+        disability_certificates: [%{kind: :physical, number: "B-55", grade: "2級"}]
+      })
+
+    {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+
+    assert html =~ "詳細 太郎"
+    assert html =~ "男性"
+    assert html =~ "03-1234-5678"
+    assert html =~ "R-777"
+    assert html =~ "身体障害者手帳"
+    assert html =~ "B-55"
+    assert html =~ "編集"
+  end
+
+  test "detail page shows a fallback when the user has no certificates", %{conn: conn} do
+    su = service_user_fixture(%{name: "手帳なし"})
+    {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+
+    assert html =~ "手帳なし"
+    assert html =~ "登録なし"
+    refute html =~ ~s(id="disability-certificates")
+  end
+
   test "navigates to the new support plan form", %{conn: conn} do
     su = service_user_fixture()
     {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}")
@@ -65,6 +96,7 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       |> follow_redirect(conn)
 
     assert html =~ "新規 太郎"
+    assert html =~ "B-9"
   end
 
   test "edits a service user via the edit form", %{conn: conn} do
@@ -78,5 +110,6 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       |> follow_redirect(conn)
 
     assert html =~ "編集後"
+    assert html =~ "03-9999-0000"
   end
 end
