@@ -413,5 +413,22 @@ defmodule Ayumi.AccountsTest do
       assert MapSet.member?(ids, a.id)
       assert MapSet.member?(ids, b.id)
     end
+
+    test "list_users/0 orders by name then email" do
+      a = user_fixture()
+      b = user_fixture()
+      {:ok, _} = a |> Ecto.Changeset.change(name: "あ") |> Ayumi.Repo.update()
+      {:ok, _} = b |> Ecto.Changeset.change(name: "い") |> Ayumi.Repo.update()
+
+      names =
+        Ayumi.Accounts.list_users() |> Enum.map(& &1.name) |> Enum.filter(&(&1 in ["あ", "い"]))
+
+      assert names == ["あ", "い"]
+    end
+
+    test "display_name/1 falls back to email when name is empty" do
+      user = %{user_fixture() | name: ""}
+      assert Ayumi.Accounts.User.display_name(user) == user.email
+    end
   end
 end

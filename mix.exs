@@ -90,7 +90,7 @@ defmodule Ayumi.MixProject do
         "esbuild ayumi --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"],
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"],
       review: [
         "format --check-formatted",
         "compile --warnings-as-errors --force",
