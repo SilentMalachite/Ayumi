@@ -27,7 +27,7 @@ defmodule Ayumi.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [precommit: :test, review: :test]
     ]
   end
 
@@ -65,7 +65,8 @@ defmodule Ayumi.MixProject do
       {:gettext, "~> 0.26"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -88,7 +89,13 @@ defmodule Ayumi.MixProject do
         "esbuild ayumi --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"],
+      review: [
+        "format --check-formatted",
+        "compile --warnings-as-errors --force",
+        "credo",
+        "test"
+      ]
     ]
   end
 end
