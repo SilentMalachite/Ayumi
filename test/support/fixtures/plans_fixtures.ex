@@ -13,4 +13,23 @@ defmodule Ayumi.PlansFixtures do
 
     service_user
   end
+
+  def support_plan_fixture(attrs \\ %{}) do
+    service_user_id = attrs[:service_user_id] || service_user_fixture().id
+    staff_id = attrs[:staff_id] || user_fixture().id
+
+    {:ok, support_plan} =
+      attrs
+      |> Enum.into(%{
+        service_user_id: service_user_id,
+        staff_id: staff_id,
+        period_start: ~D[2026-04-01],
+        period_end: ~D[2026-09-30],
+        long_term_goal: "安定した通所リズムを確立する",
+        next_monitoring_date: ~D[2026-07-01]
+      })
+      |> Plans.create_support_plan()
+
+    support_plan
+  end
 end
