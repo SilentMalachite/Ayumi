@@ -6,9 +6,9 @@ defmodule Ayumi.Plans do
   import Ecto.Query, warn: false
   alias Ayumi.Repo
 
+  alias Ayumi.Plans.Goal
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
-  alias Ayumi.Plans.Goal
 
   ## Service users
 
@@ -44,6 +44,8 @@ defmodule Ayumi.Plans do
     |> Ecto.Changeset.optimistic_lock(:lock_version)
     |> Repo.update()
   rescue
+    # Raised when the UPDATE's WHERE (id + lock_version) matches no row: another
+    # staff member updated this record first, or it was deleted in the meantime.
     Ecto.StaleEntryError -> {:error, :stale}
   end
 

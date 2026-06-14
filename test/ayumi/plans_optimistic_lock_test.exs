@@ -2,9 +2,9 @@ defmodule Ayumi.PlansOptimisticLockTest do
   use Ayumi.DataCase, async: false
 
   alias Ayumi.Plans
+  alias Ayumi.Plans.Goal
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
-  alias Ayumi.Plans.Goal
 
   import Ayumi.PlansFixtures
 
