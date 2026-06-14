@@ -32,4 +32,15 @@ defmodule Ayumi.PlansFixtures do
 
     support_plan
   end
+
+  def goal_fixture(attrs \\ %{}) do
+    support_plan_id = attrs[:support_plan_id] || support_plan_fixture().id
+
+    {:ok, goal} =
+      attrs
+      |> Enum.into(%{support_plan_id: support_plan_id, description: "毎日昼食を完食する"})
+      |> Plans.create_goal()
+
+    goal
+  end
 end

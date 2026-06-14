@@ -7,7 +7,8 @@ config :ayumi, Ayumi.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   journal_mode: :wal,
-  busy_timeout: 5_000
+  busy_timeout: 5_000,
+  foreign_keys: :on
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
