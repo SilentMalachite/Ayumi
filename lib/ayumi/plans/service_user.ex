@@ -52,6 +52,8 @@ defmodule Ayumi.Plans.ServiceUser do
     field :consultation_staff, :string
     field :notes, :string
 
+    field :lock_version, :integer, default: 0
+
     has_many :support_plans, Ayumi.Plans.SupportPlan
 
     has_many :disability_certificates, Ayumi.Plans.DisabilityCertificate, on_replace: :delete

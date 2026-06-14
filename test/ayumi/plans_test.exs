@@ -197,6 +197,31 @@ defmodule Ayumi.PlansTest do
     end
   end
 
+  describe "optimistic locking" do
+    test "new body records start at lock_version 0" do
+      assert service_user_fixture().lock_version == 0
+      assert support_plan_fixture().lock_version == 0
+      assert goal_fixture().lock_version == 0
+    end
+
+    test "changeset/2 ignores a lock_version supplied via params (no form tampering)" do
+      cs = ServiceUser.changeset(%ServiceUser{}, %{"name" => "X", "lock_version" => "999"})
+      refute Map.has_key?(cs.changes, :lock_version)
+    end
+
+    test "SupportPlan.changeset/2 ignores a lock_version supplied via params" do
+      cs =
+        SupportPlan.changeset(%SupportPlan{}, %{"long_term_goal" => "目標", "lock_version" => "999"})
+
+      refute Map.has_key?(cs.changes, :lock_version)
+    end
+
+    test "Goal.changeset/2 ignores a lock_version supplied via params" do
+      cs = Goal.changeset(%Goal{}, %{"description" => "目標", "lock_version" => "999"})
+      refute Map.has_key?(cs.changes, :lock_version)
+    end
+  end
+
   describe "referential integrity" do
     test "creating a goal for a non-existent plan is rejected by the database" do
       assert_raise Ecto.ConstraintError, fn ->

@@ -18,6 +18,8 @@ defmodule Ayumi.Plans.SupportPlan do
     field :long_term_goal, :string
     field :next_monitoring_date, :date
 
+    field :lock_version, :integer, default: 0
+
     belongs_to :service_user, Ayumi.Plans.ServiceUser
     belongs_to :staff, Ayumi.Accounts.User
     has_many :goals, Ayumi.Plans.Goal

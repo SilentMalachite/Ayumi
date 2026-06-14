@@ -6,6 +6,8 @@ defmodule Ayumi.Plans.Goal do
   schema "goals" do
     field :description, :string
 
+    field :lock_version, :integer, default: 0
+
     belongs_to :support_plan, Ayumi.Plans.SupportPlan
 
     timestamps(type: :utc_datetime)
