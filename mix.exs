@@ -6,12 +6,25 @@ defmodule Ayumi.MixProject do
       app: :ayumi,
       version: "0.1.0",
       elixir: "~> 1.15",
+      name: "Ayumi",
+      description: "就労継続支援B型事業所向けの個別支援計画 進捗トラッカー",
+      source_url: "https://github.com/SilentMalachite/Ayumi",
+      package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
+    ]
+  end
+
+  # Package metadata (licenses, repo links). The app is not published to Hex;
+  # this documents the project and powers `mix docs`.
+  defp package do
+    [
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/SilentMalachite/Ayumi"}
     ]
   end
 
