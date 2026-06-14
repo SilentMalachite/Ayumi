@@ -14,6 +14,19 @@ defmodule Ayumi.PlansFixtures do
     service_user
   end
 
+  def service_user_with_certificate_fixture(attrs \\ %{}) do
+    {:ok, service_user} =
+      %{
+        name: "手帳 太郎",
+        name_kana: "てちょう たろう",
+        disability_certificates: [%{kind: :physical, number: "B-123", grade: "2級"}]
+      }
+      |> Map.merge(Map.new(attrs))
+      |> Plans.create_service_user()
+
+    service_user
+  end
+
   def support_plan_fixture(attrs \\ %{}) do
     service_user_id = attrs[:service_user_id] || service_user_fixture().id
     staff_id = attrs[:staff_id] || user_fixture().id

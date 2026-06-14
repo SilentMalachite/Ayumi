@@ -68,6 +68,79 @@ defmodule Ayumi.PlansTest do
       attrs = %{"name" => "山田"}
       assert Plans.drop_blank_certificates(attrs) == attrs
     end
+
+    test "create_service_user/1 persists a nested certificate" do
+      assert {:ok, su} =
+               Plans.create_service_user(%{
+                 name: "手帳 太郎",
+                 disability_certificates: [%{kind: :physical, number: "B-1", grade: "2級"}]
+               })
+
+      su = Plans.get_service_user!(su.id)
+
+      assert [%Ayumi.Plans.DisabilityCertificate{kind: :physical, number: "B-1"}] =
+               su.disability_certificates
+    end
+
+    test "create_service_user/1 drops an all-blank certificate row" do
+      attrs = %{
+        "name" => "空手帳 太郎",
+        "disability_certificates" => %{
+          "0" => %{"kind" => "", "number" => "", "disability_name" => "", "grade" => ""}
+        }
+      }
+
+      assert {:ok, su} = Plans.create_service_user(attrs)
+      assert Plans.get_service_user!(su.id).disability_certificates == []
+    end
+
+    test "get_service_user!/1 preloads disability_certificates" do
+      su = service_user_with_certificate_fixture()
+      loaded = Plans.get_service_user!(su.id)
+      assert [%Ayumi.Plans.DisabilityCertificate{}] = loaded.disability_certificates
+    end
+
+    test "update_service_user/2 changes flat fields" do
+      su = service_user_fixture()
+      assert {:ok, updated} = Plans.update_service_user(su, %{phone: "03-1111-2222"})
+      assert updated.phone == "03-1111-2222"
+    end
+
+    test "update_service_user/2 updates an existing certificate" do
+      su = service_user_with_certificate_fixture()
+      su = Plans.get_service_user!(su.id)
+      [cert] = su.disability_certificates
+
+      params = %{
+        "disability_certificates" => %{
+          "0" => %{"id" => to_string(cert.id), "kind" => "physical", "grade" => "1級"}
+        }
+      }
+
+      assert {:ok, _} = Plans.update_service_user(su, params)
+      assert [%{grade: "1級"}] = Plans.get_service_user!(su.id).disability_certificates
+    end
+
+    test "update_service_user/2 deletes a certificate when its row is blanked" do
+      su = service_user_with_certificate_fixture()
+      su = Plans.get_service_user!(su.id)
+      [cert] = su.disability_certificates
+
+      params = %{
+        "disability_certificates" => %{
+          "0" => %{
+            "id" => to_string(cert.id),
+            "kind" => "",
+            "number" => "",
+            "disability_name" => "",
+            "grade" => ""
+          }
+        }
+      }
+
+      assert {:ok, _} = Plans.update_service_user(su, params)
+      assert Plans.get_service_user!(su.id).disability_certificates == []
+    end
   end
 
   describe "support plans" do

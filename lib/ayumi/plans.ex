@@ -19,14 +19,29 @@ defmodule Ayumi.Plans do
     |> Repo.all()
   end
 
-  @doc "Gets a single service user. Raises if not found."
-  def get_service_user!(id), do: Repo.get!(ServiceUser, id)
+  @doc "Gets a single service user with certificates preloaded. Raises if not found."
+  def get_service_user!(id) do
+    ServiceUser
+    |> preload(:disability_certificates)
+    |> Repo.get!(id)
+  end
 
-  @doc "Creates a service user."
+  @doc "Creates a service user. Blank certificate rows are dropped before insert."
   def create_service_user(attrs) do
     %ServiceUser{}
-    |> ServiceUser.changeset(attrs)
+    |> ServiceUser.changeset(drop_blank_certificates(attrs))
     |> Repo.insert()
+  end
+
+  @doc """
+  Updates a service user's basic info and certificates. The struct must have
+  `:disability_certificates` preloaded so `on_replace: :delete` can delete rows
+  that were blanked out. Blank certificate rows are dropped before update.
+  """
+  def update_service_user(%ServiceUser{} = service_user, attrs) do
+    service_user
+    |> ServiceUser.changeset(drop_blank_certificates(attrs))
+    |> Repo.update()
   end
 
   @doc "Returns a changeset for tracking service user changes (forms)."
