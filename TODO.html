@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>歩み — Ayumi 実装ロードマップ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ─────────────────────────────────────────────
+     歩み / Ayumi — TODO 図解
+     和紙(washi) × 墨(sumi) × 朱(shu / vermilion)
+     ──────────────────────────────────────────── */
+  :root{
+    --washi:       #efe7d6;   /* paper ground   */
+    --washi-deep:  #e6dcc6;
+    --paper:       #fbf7ee;   /* card surface   */
+    --paper-2:     #f6f0e3;
+    --sumi:        #211f1b;   /* ink (text)     */
+    --sumi-soft:   #4a463d;
+    --nibi:        #837b6c;   /* muted text     */
+    --line:        #ddd2bb;   /* hairline       */
+
+    --shu:         #c0432b;   /* vermilion 朱 (current / accent) */
+    --shu-deep:    #9c3320;
+    --ai:          #2b5e7e;   /* indigo 藍 (next / todo)         */
+    --matsuba:     #5f7445;   /* pine green 松葉 (done)          */
+    --kogane:      #b8862e;   /* gold 黄金 (open question)       */
+
+    --shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 14px 30px -18px rgba(60,45,25,.45), 0 2px 6px -3px rgba(60,45,25,.25);
+    --radius: 14px;
+
+    --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif;
+    --sans:  "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --mono:  "IBM Plex Mono", "SFMono-Regular", "Menlo", monospace;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:var(--sans);
+    color:var(--sumi);
+    line-height:1.75;
+    background-color:var(--washi);
+    background-image:
+      radial-gradient(120% 80% at 100% 0%, rgba(192,67,43,.06), transparent 45%),
+      radial-gradient(100% 70% at 0% 100%, rgba(43,94,126,.06), transparent 45%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 clamp(18px,4vw,48px); }
+
+  /* code tokens */
+  code, .mono{ font-family:var(--mono); font-size:.86em; }
+  .tok{
+    font-family:var(--mono); font-size:.84em;
+    background:var(--paper-2); border:1px solid var(--line);
+    padding:.06em .42em; border-radius:6px; color:var(--shu-deep);
+    white-space:nowrap;
+  }
+  .tok.ai{ color:var(--ai); }
+  .tok.green{ color:var(--matsuba); }
+
+  /* ── reveal on load ─────────────────────────── */
+  .reveal{ opacity:0; transform:translateY(14px); animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .reveal{ animation:none; opacity:1; transform:none; } }
+
+  /* ════════════════════  HERO  ════════════════════ */
+  header.hero{
+    position:relative; overflow:hidden;
+    padding:clamp(44px,7vw,84px) 0 clamp(30px,4vw,46px);
+    border-bottom:1px solid var(--line);
+  }
+  .hero-grid{ display:grid; grid-template-columns:auto 1fr; gap:clamp(20px,4vw,42px); align-items:center; }
+
+  .seal{
+    width:clamp(86px,12vw,118px); aspect-ratio:1;
+    display:grid; place-items:center;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 3px, transparent 3px 6px),
+      linear-gradient(160deg, var(--shu) 0%, var(--shu-deep) 100%);
+    color:#fdeee9; border-radius:18px;
+    font-family:var(--serif); font-weight:800; font-size:clamp(46px,7vw,64px);
+    line-height:1; box-shadow:0 18px 34px -16px rgba(156,51,32,.85), 0 0 0 1px rgba(156,51,32,.5);
+    transform:rotate(-3deg);
+  }
+  .seal::after{ content:"進"; position:absolute; opacity:0; } /* preload glyph */
+
+  h1.title{ font-family:var(--serif); font-weight:800; line-height:1.04;
+    font-size:clamp(40px,8vw,76px); letter-spacing:.03em; }
+  h1.title small{ display:block; font-family:var(--mono); font-weight:500;
+    letter-spacing:.42em; font-size:clamp(12px,1.6vw,15px); color:var(--shu-deep);
+    text-transform:uppercase; margin-bottom:.5em; opacity:.9; }
+  .lede{ margin-top:.7em; max-width:60ch; color:var(--sumi-soft); font-size:clamp(15px,1.7vw,17px); }
+
+  .meta-row{ display:flex; flex-wrap:wrap; gap:10px 14px; margin-top:1.4em; align-items:center; }
+  .chip{
+    display:inline-flex; align-items:center; gap:.5em;
+    font-family:var(--mono); font-size:12.5px; letter-spacing:.04em;
+    background:var(--paper); border:1px solid var(--line); color:var(--sumi-soft);
+    padding:.42em .8em; border-radius:999px;
+  }
+  .chip b{ color:var(--sumi); font-weight:600; }
+  .dot{ width:8px; height:8px; border-radius:50%; box-shadow:0 0 0 3px rgba(0,0,0,.04); }
+
+  /* overall progress bar */
+  .progress-wrap{ margin-top:1.6em; }
+  .progress-head{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:.5em; }
+  .progress-head .lab{ font-family:var(--mono); font-size:12px; letter-spacing:.1em; color:var(--nibi); text-transform:uppercase; }
+  .progress-head .num{ font-family:var(--serif); font-weight:700; font-size:clamp(20px,3vw,28px); }
+  .progress-head .num span{ color:var(--shu); }
+  .track{ height:12px; border-radius:999px; background:var(--washi-deep);
+    box-shadow:inset 0 1px 3px rgba(60,45,25,.25); overflow:hidden; border:1px solid var(--line); }
+  .track .fill{ height:100%; width:0;
+    background:linear-gradient(90deg, var(--matsuba), #7c9357);
+    border-radius:999px; transition:width .9s cubic-bezier(.2,.7,.2,1); }
+
+  /* ════════════════════  SECTION shell  ════════════════════ */
+  section{ padding:clamp(40px,6vw,72px) 0; border-bottom:1px solid var(--line); }
+  .sec-head{ display:flex; align-items:baseline; gap:.7em; flex-wrap:wrap; margin-bottom:.4em; }
+  .sec-kicker{ font-family:var(--mono); font-size:12px; letter-spacing:.28em; text-transform:uppercase; color:var(--shu-deep); }
+  h2{ font-family:var(--serif); font-weight:700; font-size:clamp(26px,4.4vw,40px); line-height:1.1; letter-spacing:.02em; }
+  .sec-sub{ color:var(--sumi-soft); max-width:64ch; margin-top:.5em; }
+
+  /* ── principles band ──────────────────────────── */
+  .principles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:1.8em; }
+  .principle{ background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 18px 16px; box-shadow:var(--shadow); position:relative; }
+  .principle .pn{ font-family:var(--serif); font-weight:800; font-size:13px; color:var(--shu);
+    border:1.5px solid var(--shu); width:30px; height:30px; border-radius:8px; display:grid; place-items:center; margin-bottom:.7em; }
+  .principle h4{ font-size:15px; font-weight:700; margin-bottom:.25em; }
+  .principle p{ font-size:13.5px; color:var(--sumi-soft); line-height:1.7; }
+
+  /* ════════════════════  CONCEPT diagram  ════════════════════ */
+  .concept{ background:linear-gradient(180deg, var(--paper), var(--paper-2));
+    border:1px solid var(--line); border-radius:20px; padding:clamp(22px,4vw,38px);
+    box-shadow:var(--shadow); margin-top:1.8em; }
+  .flow{ display:flex; align-items:stretch; gap:14px; flex-wrap:wrap; }
+  .flow .col{ flex:1 1 200px; min-width:0; }
+  .flow .col-title{ font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--nibi); margin-bottom:.7em; }
+
+  .logstack{ display:flex; flex-direction:column; gap:8px; }
+  .logrow{ display:flex; align-items:center; gap:10px;
+    background:var(--paper); border:1px dashed var(--ai); border-radius:10px; padding:9px 12px;
+    font-family:var(--mono); font-size:12px; color:var(--sumi-soft); }
+  .logrow .t{ font-size:10.5px; color:var(--nibi); }
+  .logrow .s{ margin-left:auto; font-weight:600; color:var(--ai); }
+  .logrow.newest{ border-style:solid; border-width:2px; box-shadow:0 0 0 4px rgba(43,94,126,.08); }
+
+  .foldbox{ display:grid; place-content:center; text-align:center; gap:.3em;
+    background:var(--sumi); color:var(--paper); border-radius:14px; padding:20px 16px; height:100%; }
+  .foldbox .fn{ font-family:var(--mono); font-size:13.5px; color:#f6d9cf; }
+  .foldbox .cap{ font-size:11.5px; color:#bcb3a3; }
+
+  .statechip{ display:grid; place-content:center; text-align:center; gap:.4em; height:100%;
+    background:linear-gradient(160deg,#fff,#f3ead9); border:2px solid var(--matsuba); border-radius:14px; padding:20px 16px; }
+  .statechip .now{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--matsuba); }
+  .statechip .val{ font-family:var(--serif); font-weight:800; font-size:clamp(18px,2.6vw,23px); color:var(--sumi); }
+
+  .arrow{ align-self:center; color:var(--shu); font-size:26px; line-height:1; flex:0 0 auto; }
+  @media (max-width:720px){ .arrow{ transform:rotate(90deg); align-self:center; margin:2px auto; } .flow{ flex-direction:column; } }
+
+  /* ════════════════════  ROADMAP spine  ════════════════════ */
+  .road{ position:relative; margin-top:1.6em; }
+  .road::before{ content:""; position:absolute; left:21px; top:8px; bottom:8px; width:2px;
+    background:linear-gradient(180deg,var(--matsuba),var(--shu) 18%,var(--shu) 62%,var(--ai)); border-radius:2px; }
+  @media (max-width:640px){ .road::before{ left:15px; } }
+
+  .stage{ position:relative; padding-left:62px; margin-bottom:34px; }
+  @media (max-width:640px){ .stage{ padding-left:46px; } }
+  .node{ position:absolute; left:0; top:2px; width:44px; height:44px; border-radius:50%;
+    display:grid; place-items:center; font-family:var(--serif); font-weight:800; font-size:18px;
+    color:#fff; box-shadow:0 8px 18px -8px rgba(0,0,0,.4); z-index:1; }
+  @media (max-width:640px){ .node{ width:32px; height:32px; font-size:14px; } }
+  .node.done{ background:linear-gradient(160deg,#74894f,var(--matsuba)); }
+  .node.cur{  background:linear-gradient(160deg,var(--shu),var(--shu-deep)); }
+  .node.next{ background:linear-gradient(160deg,#3a6f90,var(--ai)); }
+  .node.opt{  background:linear-gradient(160deg,#9a9182,#7a7264); }
+
+  .card{ background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden; }
+  .card-top{ display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:16px 20px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,var(--paper),var(--paper-2)); }
+  .card-top h3{ font-family:var(--serif); font-weight:700; font-size:clamp(18px,2.6vw,23px); letter-spacing:.02em; }
+  .card-top .obj{ flex-basis:100%; font-size:13.5px; color:var(--sumi-soft); margin-top:.1em; }
+  .card-body{ padding:8px 20px 18px; }
+
+  .badge{ font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    padding:.32em .7em; border-radius:999px; font-weight:600; white-space:nowrap; }
+  .b-done{ color:var(--matsuba); background:rgba(95,116,69,.12); border:1px solid rgba(95,116,69,.4); }
+  .b-cur{  color:var(--shu-deep); background:rgba(192,67,43,.1); border:1px solid rgba(192,67,43,.4); }
+  .b-next{ color:var(--ai); background:rgba(43,94,126,.1); border:1px solid rgba(43,94,126,.4); }
+  .b-opt{  color:#6f6757; background:rgba(131,123,108,.13); border:1px solid rgba(131,123,108,.4); }
+  .b-q{    color:var(--kogane); background:rgba(184,134,46,.13); border:1px solid rgba(184,134,46,.45); }
+
+  .mini{ margin-left:auto; display:flex; align-items:center; gap:9px; }
+  .mini .mtrack{ width:74px; height:7px; border-radius:999px; background:var(--washi-deep); overflow:hidden; border:1px solid var(--line); }
+  .mini .mfill{ height:100%; width:0; background:var(--shu); transition:width .8s cubic-bezier(.2,.7,.2,1); }
+  .mini .mnum{ font-family:var(--mono); font-size:12px; color:var(--nibi); }
+
+  /* group heading inside card */
+  .group{ margin-top:14px; }
+  .group:first-child{ margin-top:6px; }
+  .group-label{ display:flex; align-items:center; gap:.6em; font-family:var(--mono); font-size:11px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--nibi); margin:.2em 0 .6em; }
+  .group-label::before{ content:""; width:14px; height:2px; background:var(--shu); border-radius:2px; }
+
+  /* checklist */
+  ul.checklist{ list-style:none; display:flex; flex-direction:column; gap:3px; }
+  .task{ display:flex; gap:11px; align-items:flex-start; padding:7px 8px; border-radius:9px; transition:background .15s; }
+  .task:hover{ background:var(--paper-2); }
+  .task input[type=checkbox]{ appearance:none; -webkit-appearance:none; flex:0 0 auto;
+    width:19px; height:19px; margin-top:3px; border:1.8px solid var(--nibi); border-radius:6px;
+    background:var(--paper); cursor:pointer; position:relative; transition:all .15s; }
+  .task input[type=checkbox]:hover{ border-color:var(--shu); }
+  .task input[type=checkbox]:checked{ background:var(--matsuba); border-color:var(--matsuba); }
+  .task input[type=checkbox]:checked::after{ content:"✓"; position:absolute; inset:0; color:#fff;
+    font-size:13px; display:grid; place-items:center; font-weight:700; }
+  .task label{ cursor:pointer; font-size:14px; line-height:1.6; }
+  .task input:checked + label{ color:var(--nibi); text-decoration:line-through; text-decoration-color:rgba(131,123,108,.6); }
+  .task label .sub{ display:block; font-size:12.5px; color:var(--nibi); }
+  .task.confirm label::before{ content:"要確認 "; font-family:var(--mono); font-size:10px; color:var(--kogane);
+    background:rgba(184,134,46,.13); border:1px solid rgba(184,134,46,.4); padding:.05em .4em; border-radius:5px; margin-right:.5em; vertical-align:.12em; }
+
+  /* ── inline diagrams ──────────────────────────── */
+  .diagram{ background:var(--paper-2); border:1px solid var(--line); border-radius:12px;
+    padding:16px; margin:12px 0 4px; }
+  .diagram .dtitle{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--nibi); margin-bottom:.9em; }
+
+  /* lifecycle flow */
+  .seq{ display:flex; flex-wrap:wrap; gap:8px 4px; align-items:stretch; }
+  .seq .step-pill{ position:relative; display:flex; flex-direction:column; gap:1px;
+    background:var(--paper); border:1px solid var(--line); border-radius:9px; padding:7px 12px; min-width:78px; }
+  .seq .step-pill .en{ font-family:var(--mono); font-size:11px; color:var(--ai); }
+  .seq .step-pill .jp{ font-size:12.5px; font-weight:500; }
+  .seq .sep{ align-self:center; color:var(--shu); font-weight:700; font-size:15px; }
+  .seq .step-pill.loop{ border-style:dashed; opacity:.85; }
+
+  /* progress scale */
+  .scale{ display:flex; gap:4px; }
+  .scale .seg{ flex:1; text-align:center; padding:9px 4px 8px; border-radius:8px;
+    border:1px solid var(--line); position:relative; }
+  .scale .seg .jp{ font-weight:700; font-size:13px; }
+  .scale .seg .en{ font-family:var(--mono); font-size:9.5px; color:var(--nibi); margin-top:1px; }
+  .scale .seg:nth-child(1){ background:rgba(131,123,108,.10); }
+  .scale .seg:nth-child(2){ background:rgba(43,94,126,.10); }
+  .scale .seg:nth-child(3){ background:rgba(43,94,126,.16); }
+  .scale .seg:nth-child(4){ background:rgba(95,116,69,.16); }
+  .scale .seg:nth-child(5){ background:rgba(95,116,69,.26); border-color:var(--matsuba); }
+
+  /* deadline bands */
+  .bands{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .band{ border-radius:10px; padding:12px 14px; border:1px solid var(--line); }
+  .band .bt{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
+  .band .bd{ font-size:13px; color:var(--sumi-soft); margin-top:.2em; }
+  .band.over{ background:rgba(192,67,43,.10); border-color:rgba(192,67,43,.4); }
+  .band.over .bt{ color:var(--shu-deep); }
+  .band.near{ background:rgba(184,134,46,.12); border-color:rgba(184,134,46,.45); }
+  .band.near .bt{ color:var(--kogane); }
+  .band.ok{ background:rgba(95,116,69,.10); border-color:rgba(95,116,69,.4); }
+  .band.ok .bt{ color:var(--matsuba); }
+
+  /* domain model */
+  .dm{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+  .ent{ border-radius:11px; padding:13px 15px; background:var(--paper); }
+  .ent.body{ border:2px solid var(--sumi-soft); }
+  .ent.log{ border:2px dashed var(--ai); }
+  .ent .en-name{ font-family:var(--mono); font-weight:600; font-size:14px; }
+  .ent .en-kind{ font-size:11px; font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; }
+  .ent.body .en-kind{ color:var(--sumi-soft); }
+  .ent.log .en-kind{ color:var(--ai); }
+  .ent .en-jp{ font-size:12.5px; color:var(--sumi-soft); margin-top:.35em; }
+  .ent .rel{ font-family:var(--mono); font-size:11px; color:var(--nibi); margin-top:.5em; }
+
+  /* ── open questions ───────────────────────────── */
+  .q-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-top:1.6em; }
+  .qcard{ background:var(--paper); border:1px solid var(--line); border-left:4px solid var(--kogane);
+    border-radius:12px; padding:18px 20px; box-shadow:var(--shadow); }
+  .qcard .qmark{ font-family:var(--serif); font-weight:800; color:var(--kogane); font-size:22px; line-height:1; }
+  .qcard h4{ font-size:15.5px; font-weight:700; margin:.4em 0 .3em; }
+  .qcard p{ font-size:13.5px; color:var(--sumi-soft); }
+  .qcard .deflt{ margin-top:.7em; font-size:12.5px; color:var(--nibi); }
+  .qcard .deflt b{ color:var(--matsuba); }
+
+  /* ── non goals ────────────────────────────────── */
+  .nogoals{ display:flex; flex-wrap:wrap; gap:10px; margin-top:1.4em; }
+  .nogoal{ font-family:var(--sans); font-size:13.5px; color:var(--nibi);
+    background:var(--paper-2); border:1px solid var(--line); border-radius:999px;
+    padding:.5em 1em; display:inline-flex; align-items:center; gap:.5em; }
+  .nogoal::before{ content:"×"; color:var(--shu); font-weight:700; }
+  .nogoal s{ text-decoration-color:rgba(192,67,43,.5); }
+
+  /* ── done list ────────────────────────────────── */
+  .donegrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(255px,1fr)); gap:10px; margin-top:1.5em; }
+  .doneitem{ display:flex; gap:10px; align-items:flex-start; background:var(--paper);
+    border:1px solid var(--line); border-radius:11px; padding:12px 14px; }
+  .doneitem .stamp{ flex:0 0 auto; width:22px; height:22px; border-radius:50%;
+    background:var(--matsuba); color:#fff; display:grid; place-items:center; font-size:12px; font-weight:700; margin-top:1px; }
+  .doneitem .dt{ font-size:13.5px; line-height:1.55; }
+  .doneitem .dt b{ font-weight:700; }
+
+  /* ── DoD footer ───────────────────────────────── */
+  .dod{ background:var(--sumi); color:var(--paper-2); border-radius:20px;
+    padding:clamp(24px,4vw,40px); margin-top:1.4em; box-shadow:var(--shadow); }
+  .dod h2{ color:var(--paper); }
+  .dod .sec-kicker{ color:#f0c4b8; }
+  .dod-list{ list-style:none; display:grid; gap:12px; margin-top:1.3em; }
+  .dod-list li{ display:flex; gap:13px; align-items:flex-start; font-size:14.5px; line-height:1.65; }
+  .dod-list .k{ flex:0 0 auto; width:26px; height:26px; border-radius:7px; border:1.6px solid #f0c4b8;
+    color:#f0c4b8; display:grid; place-items:center; font-family:var(--serif); font-weight:800; font-size:13px; }
+  .dod-list b{ color:#fff; }
+  .dod code, .dod .tok{ background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); color:#f6d9cf; }
+
+  footer.foot{ text-align:center; padding:34px 0 46px; color:var(--nibi); font-size:12.5px; font-family:var(--mono); }
+  footer.foot .ko{ font-family:var(--serif); font-size:15px; color:var(--sumi-soft); letter-spacing:.3em; }
+
+  a.src{ color:var(--shu-deep); text-decoration:none; border-bottom:1px solid rgba(192,67,43,.35); }
+  a.src:hover{ border-bottom-color:var(--shu); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════  HERO  ═══════════════════ -->
+<header class="hero">
+  <div class="wrap hero-grid reveal">
+    <div class="seal" aria-hidden="true">歩</div>
+    <div>
+      <h1 class="title"><small>Ayumi · Build Roadmap</small>歩み</h1>
+      <p class="lede">就労継続支援B型 施設の個別支援計画トラッカー。
+        各利用者の「歩み」を <strong>追記専用ログ</strong> として記録し、最新行から現在の状態を導出する設計。
+        本書は <a class="src" href="TODO.md">TODO.md</a> を図解した実装ロードマップ。</p>
+
+      <div class="meta-row">
+        <span class="chip"><span class="dot" style="background:var(--matsuba)"></span><b>STEP 1</b> 完了</span>
+        <span class="chip"><span class="dot" style="background:var(--shu)"></span><b>STEP 2</b> 着手予定</span>
+        <span class="chip"><span class="dot" style="background:var(--ai)"></span><b>STEP 3</b> 未着手</span>
+        <span class="chip">📅 2026-06-15 時点</span>
+        <span class="chip">⚙ Elixir · Phoenix LiveView · SQLite(WAL)</span>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-head">
+          <span class="lab">タスク進捗（チェックで更新・保存されます）</span>
+          <span class="num"><span id="pct">0%</span> · <span id="frac">0 / 0</span></span>
+        </div>
+        <div class="track"><div class="fill" id="globalfill"></div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════  PRINCIPLES  ═══════════════════ -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head"><span class="sec-kicker">How we work</span></div>
+    <h2>進め方の原則</h2>
+    <p class="sec-sub">CLAUDE.md より。すべてのタスクはこの原則の上で進める。<strong>1つずつ・TDDで・<span class="tok">mix review</span> がグリーンになってから次へ。</strong></p>
+
+    <div class="principles">
+      <div class="principle"><div class="pn">壱</div><h4>テスト先行（TDD）</h4><p>失敗するテストを先に書く。context と changeset から着手する。</p></div>
+      <div class="principle"><div class="pn">弐</div><h4>追記専用（Append-only）</h4><p>状態変更・訂正は<strong>新しい行</strong>として記録。既存行は上書きしない。履歴を失わない。</p></div>
+      <div class="principle"><div class="pn">参</div><h4>状態は導出する</h4><p>「現在の状態」は保存せず、ログ最新行から<strong>純粋関数で導出</strong>。単体テスト容易に。</p></div>
+      <div class="principle"><div class="pn">肆</div><h4>薄い LiveView</h4><p>ロジックは context へ。LiveView は assigns とイベントのみ。検証は changeset に集約。</p></div>
+      <div class="principle"><div class="pn">伍</div><h4>日本語 UI / 英語コード</h4><p>UI 文言は日本語＋<span class="tok ai">gettext</span>。識別子・コメントは英語。</p></div>
+      <div class="principle"><div class="pn">陸</div><h4>最小差分・スコープ報告</h4><p>差分は最小限。変更したファイル・関数とその理由を必ず報告する。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════  CORE CONCEPT  ═══════════════════ -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head"><span class="sec-kicker">The core idea</span></div>
+    <h2>中核アイデア — ログを畳んで現在状態に</h2>
+    <p class="sec-sub">未実装の <span class="tok">goal_progress</span> と <span class="tok">plan_phase_event</span> は共にこの形。新しい行を積み、純粋関数が最新を返す。</p>
+
+    <div class="concept">
+      <div class="flow">
+        <div class="col">
+          <div class="col-title">① 追記専用ログ（新しい行を積む）</div>
+          <div class="logstack">
+            <div class="logrow"><span class="t">06/01 田中</span><span>未着手</span><span class="s">not_started</span></div>
+            <div class="logrow"><span class="t">06/08 佐藤</span><span>取組中</span><span class="s">working</span></div>
+            <div class="logrow newest"><span class="t">06/14 田中</span><span>一部達成</span><span class="s">partially_met</span></div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true">➜</div>
+        <div class="col">
+          <div class="col-title">② 純粋関数で畳む</div>
+          <div class="foldbox">
+            <div class="fn">current_goal_progress/1</div>
+            <div class="cap">最新行を返す純粋関数<br>（DB非依存・テスト容易）</div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true">➜</div>
+        <div class="col">
+          <div class="col-title">③ 導出された現在状態</div>
+          <div class="statechip">
+            <div class="now">Current</div>
+            <div class="val">一部達成</div>
+            <div class="cap" style="font-size:11.5px;color:var(--nibi)">保存せず・常に導出</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- domain model -->
+    <div class="diagram" style="margin-top:18px">
+      <div class="dtitle">ドメインモデル — 2つの「本体」と2つの「ログ」</div>
+      <div class="dm">
+        <div class="ent body"><div class="en-kind">Body · 本体</div><div class="en-name">support_plan</div><div class="en-jp">個別支援計画（1計画期間）</div><div class="rel">└ has_many ▸</div></div>
+        <div class="ent body"><div class="en-kind">Body · 本体</div><div class="en-name">goal</div><div class="en-jp">短期目標（複数）</div><div class="rel">└ has_many ▸</div></div>
+        <div class="ent log"><div class="en-kind">Log · 追記専用</div><div class="en-name">goal_progress</div><div class="en-jp">進捗更新（未実装 / Step 2）</div><div class="rel">→ belongs_to goal</div></div>
+        <div class="ent log"><div class="en-kind">Log · 追記専用</div><div class="en-name">plan_phase_event</div><div class="en-jp">ライフサイクル遷移（未実装 / Step 3）</div><div class="rel">→ belongs_to support_plan</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════  ROADMAP  ═══════════════════ -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head"><span class="sec-kicker">Build order</span></div>
+    <h2>実装ロードマップ</h2>
+    <p class="sec-sub">CLAUDE.md のビルド順に沿った「歩み」。各ステップはグリーン＆<span class="tok">mix review</span>-clean になってから次へ進む。</p>
+
+    <div class="road">
+
+      <!-- STEP 1 — DONE -->
+      <div class="stage">
+        <div class="node done" aria-hidden="true">壱</div>
+        <div class="card" data-step>
+          <div class="card-top">
+            <span class="badge b-done">完了 · DONE</span>
+            <h3>support_plan + goal + 認証</h3>
+            <div class="mini"><span class="mnum" data-step-count>—</span></div>
+            <p class="obj">計画作成・短期目標の付与・一覧、そして <span class="tok ai">phx.gen.auth</span> 職員ログイン。基盤は構築済み。</p>
+          </div>
+          <div class="card-body">
+            <div class="donegrid">
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>Phoenix + SQLite(WAL)</b> scaffold ＋ 職員ログイン</span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>オフライン職員作成</b> <span class="tok">mix ayumi.create_user</span> / dev seeds</span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>LAN / localhost 限定</b> <span class="tok">AyumiWeb.LanOnly</span></span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>service_user</b> 基本情報・年齢導出・障害者手帳</span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>support_plan / goal</b> スキーマ・フォーム・詳細</span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>同時編集対策</b> 楽観ロック <span class="tok">lock_version</span> + Presence</span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>gettext 化</b> service-user / support-plan / nav</span></div>
+              <div class="doneitem"><span class="stamp">✓</span><span class="dt"><b>列挙体ヘルパ</b> Gender / SupportCategory / CertificateKind</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 — CURRENT -->
+      <div class="stage">
+        <div class="node cur" aria-hidden="true">弐</div>
+        <div class="card" data-step>
+          <div class="card-top">
+            <span class="badge b-cur">着手予定 · NEXT UP</span>
+            <h3><span class="tok">goal_progress</span> — 最頻出画面</h3>
+            <div class="mini"><div class="mtrack"><div class="mfill" data-step-fill></div></div><span class="mnum" data-step-count>0/0</span></div>
+            <p class="obj">各短期目標の進捗更新を<strong>追記専用ログ</strong>として記録し、最新行から現在の進捗を導出する。</p>
+          </div>
+          <div class="card-body">
+
+            <div class="group">
+              <div class="group-label">列挙体</div>
+              <ul class="checklist">
+                <li class="task confirm"><input type="checkbox" id="t2-enum"><label for="t2-enum"><span class="tok green">Ayumi.Plans.GoalProgressStage</span> を既存 enum と同形で追加（<span class="tok">all/0</span> / <span class="tok">label/1</span> / <span class="tok">options/0</span>）。テスト先行。<span class="sub">※ ステージ語彙は施設確認が前提（下記「確認事項」）。</span></label></li>
+              </ul>
+              <div class="diagram">
+                <div class="dtitle">進捗ステージ（案 — 要施設確認）</div>
+                <div class="scale">
+                  <div class="seg"><div class="jp">未着手</div><div class="en">not_started</div></div>
+                  <div class="seg"><div class="jp">取組中</div><div class="en">working</div></div>
+                  <div class="seg"><div class="jp">一部達成</div><div class="en">partially_met</div></div>
+                  <div class="seg"><div class="jp">概ね達成</div><div class="en">mostly_met</div></div>
+                  <div class="seg"><div class="jp">達成</div><div class="en">met</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="group">
+              <div class="group-label">スキーマ + マイグレーション</div>
+              <ul class="checklist">
+                <li class="task"><input type="checkbox" id="t2-mig"><label for="t2-mig">マイグレーション <span class="tok">create_goal_progresses</span>：<span class="tok">goal_id</span>/<span class="tok">stage</span>/<span class="tok">note</span>(所見)/<span class="tok">recorded_by_id</span>/<span class="tok">recorded_at</span>/<span class="tok">inserted_at</span>。<span class="sub">追記専用なので <span class="tok">lock_version</span> は不要。</span></label></li>
+                <li class="task"><input type="checkbox" id="t2-schema"><label for="t2-schema"><span class="tok green">Ayumi.Plans.GoalProgress</span> スキーマ ＋ <span class="tok">belongs_to :goal</span> / <span class="tok">belongs_to :recorded_by</span>。</label></li>
+                <li class="task"><input type="checkbox" id="t2-cs"><label for="t2-cs"><span class="tok">changeset/2</span>：<span class="tok">stage</span> を許可値に inclusion 制約、必須項目を validate。訂正も新規行として扱う。</label></li>
+              </ul>
+            </div>
+
+            <div class="group">
+              <div class="group-label">Context（純粋関数 + 永続化）</div>
+              <ul class="checklist">
+                <li class="task"><input type="checkbox" id="t2-record"><label for="t2-record"><span class="tok">record_goal_progress(attrs)</span> — 進捗行を1件 insert（更新しない）。</label></li>
+                <li class="task"><input type="checkbox" id="t2-list"><label for="t2-list"><span class="tok">list_goal_progress(goal)</span> — 1目標の履歴を時系列で返す。</label></li>
+                <li class="task"><input type="checkbox" id="t2-current"><label for="t2-current"><span class="tok">current_goal_progress(events)</span> — <strong>純粋関数</strong>で最新行を畳み込み現在進捗を返す。</label></li>
+                <li class="task"><input type="checkbox" id="t2-batch"><label for="t2-batch">N+1 を避け、複数 goal の最新進捗をまとめて取得（plan 詳細表示用）。</label></li>
+              </ul>
+            </div>
+
+            <div class="group">
+              <div class="group-label">LiveView（最も使う画面）</div>
+              <ul class="checklist">
+                <li class="task"><input type="checkbox" id="t2-form"><label for="t2-form">進捗記録フォーム（ステージ選択＋所見）。<span class="tok">recorded_by</span>＝ログイン職員、<span class="tok">recorded_at</span>＝サーバ付与。</label></li>
+                <li class="task"><input type="checkbox" id="t2-showcur"><label for="t2-showcur"><span class="tok">SupportPlanLive.Show</span> の goal 一覧に<strong>現在の進捗</strong>を表示。</label></li>
+                <li class="task"><input type="checkbox" id="t2-history"><label for="t2-history">進捗<strong>履歴</strong>（誰が・いつ・どのステージ・所見）を表示。</label></li>
+                <li class="task"><input type="checkbox" id="t2-lvtest"><label for="t2-lvtest">LiveView フローのテスト（記録 → 一覧・最新表示の反映）。</label></li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 — NEXT -->
+      <div class="stage">
+        <div class="node next" aria-hidden="true">参</div>
+        <div class="card" data-step>
+          <div class="card-top">
+            <span class="badge b-next">未着手 · QUEUED</span>
+            <h3><span class="tok">plan_phase_event</span> ＋ モニタリング期限ダッシュボード</h3>
+            <div class="mini"><div class="mtrack"><div class="mfill" data-step-fill style="background:var(--ai)"></div></div><span class="mnum" data-step-count>0/0</span></div>
+            <p class="obj">計画ライフサイクルの追記ログと、期限を見逃さないダッシュボードを構築。</p>
+          </div>
+          <div class="card-body">
+
+            <div class="group">
+              <div class="group-label">3a · plan_phase_event（ライフサイクルの追記ログ）</div>
+              <div class="diagram">
+                <div class="dtitle">計画ライフサイクル（順序付き）</div>
+                <div class="seq">
+                  <div class="step-pill"><span class="en">assessment</span><span class="jp">アセスメント</span></div><span class="sep">›</span>
+                  <div class="step-pill"><span class="en">draft</span><span class="jp">計画原案</span></div><span class="sep">›</span>
+                  <div class="step-pill"><span class="en">support_meeting</span><span class="jp">個別支援会議</span></div><span class="sep">›</span>
+                  <div class="step-pill"><span class="en">consent</span><span class="jp">説明・同意・交付</span></div><span class="sep">›</span>
+                  <div class="step-pill"><span class="en">in_progress</span><span class="jp">支援の実施</span></div><span class="sep">›</span>
+                  <div class="step-pill"><span class="en">monitoring</span><span class="jp">モニタリング</span></div><span class="sep">›</span>
+                  <div class="step-pill loop"><span class="en">review</span><span class="jp">見直し ↻</span></div>
+                </div>
+              </div>
+              <ul class="checklist">
+                <li class="task"><input type="checkbox" id="t3a-enum"><label for="t3a-enum"><span class="tok green">Ayumi.Plans.PlanPhaseStage</span> 列挙体（順序付き <span class="tok">all/0</span> / <span class="tok">label/1</span> / <span class="tok">options/0</span>）。テスト先行。</label></li>
+                <li class="task"><input type="checkbox" id="t3a-mig"><label for="t3a-mig">マイグレーション <span class="tok">create_plan_phase_events</span>：<span class="tok">support_plan_id</span>/<span class="tok">stage</span>/<span class="tok">note</span>/<span class="tok">recorded_by_id</span>/<span class="tok">recorded_at</span>/<span class="tok">inserted_at</span>。<span class="tok">lock_version</span> 不要。</label></li>
+                <li class="task"><input type="checkbox" id="t3a-schema"><label for="t3a-schema"><span class="tok green">Ayumi.Plans.PlanPhaseEvent</span> スキーマ ＋ <span class="tok">changeset/2</span>（stage inclusion・必須）。</label></li>
+                <li class="task"><input type="checkbox" id="t3a-ctx"><label for="t3a-ctx">Context：<span class="tok">record_plan_phase_event/1</span>（追記のみ）・<span class="tok">list_plan_phase_events/1</span>・<span class="tok">current_plan_stage/1</span>（<strong>純粋関数</strong>）。</label></li>
+                <li class="task"><input type="checkbox" id="t3a-lv"><label for="t3a-lv">LiveView：plan 詳細でステージ遷移を記録＋現在ステージ＋履歴表示。</label></li>
+                <li class="task"><input type="checkbox" id="t3a-test"><label for="t3a-test">テスト（context / changeset / LiveView フロー）。</label></li>
+              </ul>
+            </div>
+
+            <div class="group">
+              <div class="group-label">3b · モニタリング期限ダッシュボード（信頼できるベースライン）</div>
+              <div class="diagram">
+                <div class="dtitle">期限の区分 — ページ表示時の Ecto クエリで上部に常時表示（メール・定期ジョブ不使用）</div>
+                <div class="bands">
+                  <div class="band over"><div class="bt">超過 · Overdue</div><div class="bd">期日を過ぎた計画。最優先で最上部。</div></div>
+                  <div class="band near"><div class="bt">近接 · Near</div><div class="bd">しきい値内（例: 14日）。続けて表示。</div></div>
+                  <div class="band ok"><div class="bt">余裕 · OK</div><div class="bd">しきい値外。一覧では強調しない。</div></div>
+                </div>
+              </div>
+              <ul class="checklist">
+                <li class="task confirm"><input type="checkbox" id="t3b-scope"><label for="t3b-scope">表示範囲を確定：全施設 or 担当のみ。<span class="sub">既定 = 全件表示・自分の担当を先頭ソート。</span></label></li>
+                <li class="task"><input type="checkbox" id="t3b-query"><label for="t3b-query">Context クエリ：<span class="tok">next_monitoring_date</span> を基準に near/overdue を抽出。日付→区分の<strong>純粋ヘルパ</strong>を分離して単体テスト。</label></li>
+                <li class="task"><input type="checkbox" id="t3b-home"><label for="t3b-home">ホーム差し替え：現状 <span class="tok">page_html/home.html.heex</span> は Phoenix デフォルト。認証済みダッシュボード LiveView を新設し期限を最上部に。</label></li>
+                <li class="task"><input type="checkbox" id="t3b-sort"><label for="t3b-sort">ソート：超過 → 近接の順、ログイン職員の担当を先頭に。</label></li>
+                <li class="task"><input type="checkbox" id="t3b-link"><label for="t3b-link">各行から該当 support_plan / service_user 詳細へ遷移。</label></li>
+                <li class="task"><input type="checkbox" id="t3b-test"><label for="t3b-test">テスト：クエリ（near/overdue 境界値）・表示・ソート・空状態。</label></li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- OPTIONAL -->
+      <div class="stage">
+        <div class="node opt" aria-hidden="true">後</div>
+        <div class="card" data-step>
+          <div class="card-top">
+            <span class="badge b-opt">任意 · LATER</span>
+            <h3>ボーナス（保証はしない）</h3>
+            <div class="mini"><div class="mtrack"><div class="mfill" data-step-fill style="background:#7a7264"></div></div><span class="mnum" data-step-count>0/0</span></div>
+            <p class="obj">画面内リストが「保証」。これらは上乗せ。</p>
+          </div>
+          <div class="card-body">
+            <ul class="checklist">
+              <li class="task"><input type="checkbox" id="opt-notify"><label for="opt-notify">アプリ起動中のみ、LiveView hook から Web Notifications API で OS 通知を出すナッジ。<span class="sub">ブラウザ許可が前提 → 保証層にはしない。</span></label></li>
+              <li class="task"><input type="checkbox" id="opt-role"><label for="opt-role">ロール分離（サビ管 vs 支援者）。<span class="sub">CLAUDE.md では「後で」。今はやらない。</span></label></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════  OPEN QUESTIONS  ═══════════════════ -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head"><span class="sec-kicker">Decide first</span></div>
+    <h2>確認事項 — 実装前に施設へ / 仕様確定</h2>
+    <p class="sec-sub">CLAUDE.md が「ask before assuming」としている未決定。着手前に潰す。</p>
+    <div class="q-grid">
+      <div class="qcard">
+        <div class="qmark">?</div>
+        <h4>進捗ステージの語彙</h4>
+        <p><span class="tok">not_started / working / partially_met / mostly_met / met</span> で確定してよいか。</p>
+        <div class="deflt">影響：<b>Step 2</b> の列挙体・changeset・UI。</div>
+      </div>
+      <div class="qcard">
+        <div class="qmark">?</div>
+        <h4>ダッシュボードの範囲</h4>
+        <p>全施設の期限を出すか、ログイン職員の担当ユーザのみか。</p>
+        <div class="deflt">既定：<b>全件表示・自分の担当を先頭ソート</b>。</div>
+      </div>
+      <div class="qcard">
+        <div class="qmark">?</div>
+        <h4>「近接」しきい値</h4>
+        <p>何日前から「近接」とみなすか。</p>
+        <div class="deflt">既定の目安：<b>14日</b>（要確認）。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════  NON-GOALS  ═══════════════════ -->
+<section>
+  <div class="wrap reveal">
+    <div class="sec-head"><span class="sec-kicker">Out of scope</span></div>
+    <h2>非対象 — やらないこと</h2>
+    <p class="sec-sub">CLAUDE.md Non-goals。単一ホスト＋LAN・完全オフラインの設計を崩さない。</p>
+    <div class="nogoals">
+      <span class="nogoal"><s>PostgreSQL</s></span>
+      <span class="nogoal"><s>クラウドホスティング</s></span>
+      <span class="nogoal"><s>マルチテナント</s></span>
+      <span class="nogoal"><s>実行時のインターネット依存</s></span>
+      <span class="nogoal"><s>メール / プッシュ配信</s></span>
+      <span class="nogoal"><s>Oban 等のジョブ基盤</s></span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════  DEFINITION OF DONE  ═══════════════════ -->
+<section style="border-bottom:none">
+  <div class="wrap reveal">
+    <div class="dod">
+      <div class="sec-head"><span class="sec-kicker">Definition of Done</span></div>
+      <h2>各タスク共通の「完了」</h2>
+      <ul class="dod-list">
+        <li><span class="k">壱</span><span>失敗テスト先行 → 実装 → リファクタ。<b>context と changeset を直接テスト</b>、主要フローに LiveView テスト。</span></li>
+        <li><span class="k">弐</span><span><b>追記専用・状態導出（純粋関数）</b>の原則を守っている。</span></li>
+        <li><span class="k">参</span><span>UI 文言は<b>日本語＋gettext</b>。識別子・コメントは英語。</span></li>
+        <li><span class="k">肆</span><span><span class="tok">mix review</span> とテストが<b>グリーン</b>。変更したファイル・関数と理由を報告。</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="ko">歩 み</div>
+  Ayumi — 一歩ずつ。1つずつ・TDDで・mix review グリーンで次へ。<br>
+  TODO.md の図解 · 2026-06-15 · オフライン環境ではシステムフォントで表示されます。
+</footer>
+
+<script>
+  // ── progress wiring + localStorage persistence ──────────────
+  (function(){
+    var KEY = "ayumi-todo-state-v1";
+    var boxes = Array.prototype.slice.call(document.querySelectorAll(".task input[type=checkbox]"));
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e){ saved = {}; }
+
+    boxes.forEach(function(b){ if (saved[b.id]) b.checked = true; });
+
+    var globalFill = document.getElementById("globalfill");
+    var pct = document.getElementById("pct");
+    var frac = document.getElementById("frac");
+
+    function refresh(){
+      // global
+      var total = boxes.length, done = boxes.filter(function(b){ return b.checked; }).length;
+      var p = total ? Math.round(done/total*100) : 0;
+      globalFill.style.width = p + "%";
+      pct.textContent = p + "%";
+      frac.textContent = done + " / " + total;
+
+      // per-step (each .card[data-step])
+      document.querySelectorAll(".card[data-step]").forEach(function(card){
+        var local = Array.prototype.slice.call(card.querySelectorAll(".task input[type=checkbox]"));
+        var fill = card.querySelector("[data-step-fill]");
+        var num  = card.querySelector("[data-step-count]");
+        if (local.length === 0){
+          if (num) num.textContent = "完了";
+          return;
+        }
+        var d = local.filter(function(b){ return b.checked; }).length;
+        if (fill) fill.style.width = (Math.round(d/local.length*100)) + "%";
+        if (num) num.textContent = d + "/" + local.length;
+      });
+    }
+
+    function persist(){
+      var state = {};
+      boxes.forEach(function(b){ if (b.checked) state[b.id] = 1; });
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+    }
+
+    boxes.forEach(function(b){
+      b.addEventListener("change", function(){ persist(); refresh(); });
+    });
+
+    refresh();
+
+    // staggered reveal
+    document.querySelectorAll(".reveal").forEach(function(el, i){
+      el.style.animationDelay = (i * 0.08) + "s";
+    });
+  })();
+</script>
+
+</body>
+</html>
