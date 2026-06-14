@@ -56,6 +56,8 @@ defmodule AyumiWeb.Router do
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
 
       live "/service_users", ServiceUserLive.Index, :index
+      live "/service_users/new", ServiceUserLive.Form, :new
+      live "/service_users/:id/edit", ServiceUserLive.Form, :edit
       live "/service_users/:id", ServiceUserLive.Show, :show
       live "/service_users/:service_user_id/support_plans/new", SupportPlanLive.Form, :new
       live "/support_plans/:id", SupportPlanLive.Show, :show

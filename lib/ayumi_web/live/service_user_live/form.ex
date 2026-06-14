@@ -1,0 +1,167 @@
+defmodule AyumiWeb.ServiceUserLive.Form do
+  use AyumiWeb, :live_view
+
+  alias Ayumi.Plans
+  alias Ayumi.Plans.{CertificateKind, DisabilityCertificate, Gender, ServiceUser, SupportCategory}
+
+  @impl true
+  def mount(params, _session, socket) do
+    {:ok, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  defp apply_action(socket, :new, _params) do
+    service_user = %ServiceUser{}
+
+    changeset =
+      service_user
+      |> Plans.change_service_user()
+      |> Ecto.Changeset.put_assoc(:disability_certificates, [%DisabilityCertificate{}])
+
+    socket
+    |> assign(:page_title, "利用者の新規登録")
+    |> assign(:service_user, service_user)
+    |> assign_form(changeset)
+  end
+
+  defp apply_action(socket, :edit, %{"id" => id}) do
+    service_user = Plans.get_service_user!(id)
+
+    changeset =
+      if service_user.disability_certificates == [] do
+        Plans.change_service_user(service_user)
+        |> Ecto.Changeset.put_assoc(:disability_certificates, [%DisabilityCertificate{}])
+      else
+        Plans.change_service_user(service_user)
+      end
+
+    socket
+    |> assign(:page_title, "利用者の編集")
+    |> assign(:service_user, service_user)
+    |> assign_form(changeset)
+  end
+
+  @impl true
+  def handle_event("validate", %{"service_user" => params}, socket) do
+    changeset =
+      socket.assigns.service_user
+      |> Plans.change_service_user(params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign_form(socket, changeset)}
+  end
+
+  @impl true
+  def handle_event("save", %{"service_user" => params}, socket) do
+    save_service_user(socket, socket.assigns.live_action, params)
+  end
+
+  defp save_service_user(socket, :new, params) do
+    case Plans.create_service_user(params) do
+      {:ok, service_user} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "利用者を登録しました")
+         |> push_navigate(to: ~p"/service_users/#{service_user.id}")}
+
+      {:error, changeset} ->
+        {:noreply, assign_form(socket, changeset)}
+    end
+  end
+
+  defp save_service_user(socket, :edit, params) do
+    case Plans.update_service_user(socket.assigns.service_user, params) do
+      {:ok, service_user} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "利用者情報を更新しました")
+         |> push_navigate(to: ~p"/service_users/#{service_user.id}")}
+
+      {:error, changeset} ->
+        {:noreply, assign_form(socket, changeset)}
+    end
+  end
+
+  defp assign_form(socket, changeset), do: assign(socket, :form, to_form(changeset))
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <Layouts.app flash={@flash} current_scope={@current_scope}>
+      <.header>{@page_title}</.header>
+
+      <.form for={@form} id="service-user-form" phx-change="validate" phx-submit="save">
+        <section class="my-6">
+          <h2 class="text-lg font-semibold mb-2">基本</h2>
+          <.input field={@form[:name]} type="text" label="氏名" />
+          <.input field={@form[:name_kana]} type="text" label="ふりがな" />
+          <.input field={@form[:birthdate]} type="date" label="生年月日" />
+          <.input
+            field={@form[:gender]}
+            type="select"
+            label="性別"
+            options={Gender.options()}
+            prompt="選択してください"
+          />
+        </section>
+
+        <section class="my-6">
+          <h2 class="text-lg font-semibold mb-2">連絡先</h2>
+          <.input field={@form[:postal_code]} type="text" label="郵便番号" />
+          <.input field={@form[:address]} type="text" label="住所" />
+          <.input field={@form[:phone]} type="text" label="電話番号" />
+          <.input field={@form[:emergency_contact_name]} type="text" label="緊急連絡先 氏名" />
+          <.input field={@form[:emergency_contact_relation]} type="text" label="続柄" />
+          <.input field={@form[:emergency_contact_phone]} type="text" label="緊急連絡先 電話" />
+        </section>
+
+        <section class="my-6">
+          <h2 class="text-lg font-semibold mb-2">受給者証</h2>
+          <.input field={@form[:recipient_cert_number]} type="text" label="受給者証番号" />
+          <.input field={@form[:recipient_cert_municipality]} type="text" label="支給市町村" />
+          <.input
+            field={@form[:disability_support_category]}
+            type="select"
+            label="障害支援区分"
+            options={SupportCategory.options()}
+            prompt="選択してください"
+          />
+          <.input field={@form[:benefit_amount]} type="text" label="支給量" />
+          <.input field={@form[:recipient_cert_expiry]} type="date" label="受給者証 有効期限" />
+        </section>
+
+        <section class="my-6">
+          <h2 class="text-lg font-semibold mb-2">障害者手帳</h2>
+          <.inputs_for :let={cert} field={@form[:disability_certificates]}>
+            <.input
+              field={cert[:kind]}
+              type="select"
+              label="手帳の種類"
+              options={CertificateKind.options()}
+              prompt="選択してください"
+            />
+            <.input field={cert[:number]} type="text" label="手帳番号" />
+            <.input field={cert[:disability_name]} type="text" label="障害種類・障害名" />
+            <.input field={cert[:grade]} type="text" label="等級" />
+          </.inputs_for>
+        </section>
+
+        <section class="my-6">
+          <h2 class="text-lg font-semibold mb-2">医療</h2>
+          <.input field={@form[:clinic_name]} type="text" label="通院先" />
+          <.input field={@form[:attending_physician]} type="text" label="主治医" />
+          <.input field={@form[:medication_notes]} type="textarea" label="服薬・特記" />
+        </section>
+
+        <section class="my-6">
+          <h2 class="text-lg font-semibold mb-2">その他</h2>
+          <.input field={@form[:consultation_office]} type="text" label="相談支援事業所" />
+          <.input field={@form[:consultation_staff]} type="text" label="担当相談員" />
+          <.input field={@form[:notes]} type="textarea" label="備考" />
+        </section>
+
+        <.button phx-disable-with="保存中...">保存</.button>
+      </.form>
+    </Layouts.app>
+    """
+  end
+end
