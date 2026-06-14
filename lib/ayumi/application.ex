@@ -14,6 +14,7 @@ defmodule Ayumi.Application do
        repos: Application.fetch_env!(:ayumi, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:ayumi, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Ayumi.PubSub},
+      AyumiWeb.Presence,
       # Start a worker by calling: Ayumi.Worker.start_link(arg)
       # {Ayumi.Worker, arg},
       # Start to serve requests, typically the last entry
