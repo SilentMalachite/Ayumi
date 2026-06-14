@@ -45,7 +45,7 @@ defmodule AyumiWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
-            <.link navigate={~p"/service_users"} class="font-semibold">利用者</.link>
+            <.link navigate={~p"/service_users"} class="font-semibold">{gettext("利用者")}</.link>
           </li>
           <li>
             <.theme_toggle />
