@@ -5,7 +5,9 @@ config :ayumi, Ayumi.Repo,
   database: Path.expand("../ayumi_dev.db", __DIR__),
   pool_size: 5,
   stacktrace: true,
-  show_sensitive_data_on_connection_error: true
+  show_sensitive_data_on_connection_error: true,
+  journal_mode: :wal,
+  busy_timeout: 5_000
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
