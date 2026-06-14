@@ -112,6 +112,31 @@ defmodule Ayumi.Accounts.User do
   end
 
   @doc """
+  A changeset for creating a confirmed staff user with a password directly,
+  bypassing the email magic-link flow.
+
+  This is the offline-onboarding path: the facility has no email provider, so
+  staff accounts are created by seeds and the `mix ayumi.create_user` task
+  rather than through email confirmation. The account is confirmed immediately
+  and can log in with email + password.
+
+  Accepts the same options as `email_changeset/3` and `password_changeset/3`.
+  """
+  def staff_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :name, :password])
+    |> validate_required([:name])
+    |> validate_length(:name, max: 160)
+    |> validate_email(opts)
+    |> validate_password(opts)
+    |> maybe_confirm()
+  end
+
+  defp maybe_confirm(changeset) do
+    if changeset.valid?, do: confirm_changeset(changeset), else: changeset
+  end
+
+  @doc """
   Confirms the account by setting `confirmed_at`.
   """
   def confirm_changeset(user) do

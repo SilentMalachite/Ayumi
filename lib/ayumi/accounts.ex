@@ -85,6 +85,30 @@ defmodule Ayumi.Accounts do
     |> Repo.insert()
   end
 
+  @doc """
+  Registers a confirmed staff user with a password, bypassing the email
+  magic-link flow.
+
+  The facility runs offline with no email provider, so staff accounts are
+  created directly (by seeds and the `mix ayumi.create_user` task) instead of
+  through email confirmation. The returned user is confirmed and can log in
+  with email + password.
+
+  ## Examples
+
+      iex> register_staff_user(%{email: "a@b.test", name: "支援 太郎", password: "a strong pass"})
+      {:ok, %User{}}
+
+      iex> register_staff_user(%{email: "bad"})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def register_staff_user(attrs) do
+    %User{}
+    |> User.staff_changeset(attrs)
+    |> Repo.insert()
+  end
+
   ## Settings
 
   @doc """

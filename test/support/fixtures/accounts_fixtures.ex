@@ -41,6 +41,23 @@ defmodule Ayumi.AccountsFixtures do
     user
   end
 
+  @doc """
+  Creates a confirmed staff user with a password set, ready to log in with
+  email + password in one call. Mirrors how accounts are created in production
+  (offline, no email) via `Accounts.register_staff_user/1`.
+  """
+  def staff_fixture(attrs \\ %{}) do
+    attrs =
+      Enum.into(attrs, %{
+        email: unique_user_email(),
+        name: "支援 太郎",
+        password: valid_user_password()
+      })
+
+    {:ok, user} = Accounts.register_staff_user(attrs)
+    user
+  end
+
   def user_scope_fixture do
     user = user_fixture()
     user_scope_fixture(user)

@@ -87,6 +87,68 @@ defmodule Ayumi.AccountsTest do
     end
   end
 
+  describe "register_staff_user/1" do
+    test "creates a confirmed staff user with a working password" do
+      email = unique_user_email()
+
+      {:ok, user} =
+        Accounts.register_staff_user(%{
+          email: email,
+          name: "支援 太郎",
+          password: valid_user_password()
+        })
+
+      assert user.email == email
+      assert user.name == "支援 太郎"
+      assert user.confirmed_at
+      assert is_nil(user.password)
+      refute is_nil(user.hashed_password)
+
+      # The password actually works for login.
+      assert Accounts.get_user_by_email_and_password(email, valid_user_password())
+    end
+
+    test "requires email, name, and password" do
+      {:error, changeset} = Accounts.register_staff_user(%{})
+
+      errors = errors_on(changeset)
+      assert "can't be blank" in errors.email
+      assert "can't be blank" in errors.name
+      assert "can't be blank" in errors.password
+    end
+
+    test "enforces the minimum password length" do
+      {:error, changeset} =
+        Accounts.register_staff_user(%{
+          email: unique_user_email(),
+          name: "支援 太郎",
+          password: "short"
+        })
+
+      assert "should be at least 12 character(s)" in errors_on(changeset).password
+    end
+
+    test "rejects a duplicate email" do
+      email = unique_user_email()
+
+      {:ok, _} =
+        Accounts.register_staff_user(%{
+          email: email,
+          name: "職員 一",
+          password: valid_user_password()
+        })
+
+      {:error, changeset} =
+        Accounts.register_staff_user(%{
+          email: email,
+          name: "職員 二",
+          password: valid_user_password()
+        })
+
+      assert "has already been taken" in errors_on(changeset).email
+    end
+  end
+
   describe "sudo_mode?/2" do
     test "validates the authenticated_at time" do
       now = DateTime.utc_now()
