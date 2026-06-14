@@ -36,4 +36,14 @@ defmodule AyumiWeb.ServiceUserLiveTest do
     assert html =~ "表示 利用者"
     assert html =~ "長期目標テキスト"
   end
+
+  test "navigates to the new support plan form", %{conn: conn} do
+    su = service_user_fixture()
+    {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}")
+
+    {:ok, _form_lv, html} =
+      lv |> element("a", "支援計画を作成") |> render_click() |> follow_redirect(conn)
+
+    assert html =~ "支援計画の作成"
+  end
 end

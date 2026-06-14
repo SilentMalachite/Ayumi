@@ -13,9 +13,9 @@ defmodule AyumiWeb.SupportPlanLive.Show do
   @impl true
   def handle_event("add_goal", %{"goal" => params}, socket) do
     plan = socket.assigns.support_plan
-    params = Map.put(params, "support_plan_id", plan.id)
+    goal_params = Map.put(params, "support_plan_id", plan.id)
 
-    case Plans.create_goal(params) do
+    case Plans.create_goal(goal_params) do
       {:ok, _goal} ->
         {:noreply,
          socket
