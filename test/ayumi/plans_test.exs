@@ -28,6 +28,46 @@ defmodule Ayumi.PlansTest do
       su = service_user_fixture()
       assert Plans.get_service_user!(su.id).id == su.id
     end
+
+    test "drop_blank_certificates/1 removes an all-blank certificate row" do
+      attrs = %{
+        "name" => "山田",
+        "disability_certificates" => %{
+          "0" => %{"kind" => "", "number" => "", "disability_name" => "", "grade" => ""}
+        }
+      }
+
+      assert %{"disability_certificates" => certs} = Plans.drop_blank_certificates(attrs)
+      assert certs == %{}
+    end
+
+    test "drop_blank_certificates/1 treats whitespace-only fields as blank" do
+      attrs = %{
+        "disability_certificates" => %{
+          "0" => %{"kind" => "  ", "number" => "\t", "disability_name" => " ", "grade" => ""}
+        }
+      }
+
+      assert %{"disability_certificates" => certs} = Plans.drop_blank_certificates(attrs)
+      assert certs == %{}
+    end
+
+    test "drop_blank_certificates/1 keeps a row that has any content" do
+      attrs = %{
+        "name" => "山田",
+        "disability_certificates" => %{
+          "0" => %{"kind" => "physical", "number" => "", "disability_name" => "", "grade" => ""}
+        }
+      }
+
+      assert %{"disability_certificates" => %{"0" => kept}} = Plans.drop_blank_certificates(attrs)
+      assert kept["kind"] == "physical"
+    end
+
+    test "drop_blank_certificates/1 passes through attrs without the key" do
+      attrs = %{"name" => "山田"}
+      assert Plans.drop_blank_certificates(attrs) == attrs
+    end
   end
 
   describe "support plans" do

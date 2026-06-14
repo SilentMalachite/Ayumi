@@ -34,6 +34,40 @@ defmodule Ayumi.Plans do
     ServiceUser.changeset(service_user, attrs)
   end
 
+  @doc """
+  Removes all-blank disability-certificate rows from form params so an untouched
+  certificate row is never persisted. A row is blank when every content field
+  (`kind`/`number`/`disability_name`/`grade`) is empty. The key is kept (possibly
+  as an empty map) so `cast_assoc` still runs and deletes unmatched existing rows
+  on update. Pure and string-keyed (the form path); atom-keyed params pass through
+  unchanged. Safe to unit-test.
+  """
+  def drop_blank_certificates(attrs) when is_map(attrs) do
+    case Map.pop(attrs, "disability_certificates") do
+      {certs, rest} when is_map(certs) ->
+        kept =
+          certs
+          |> Enum.reject(fn {_index, cert} -> blank_certificate?(cert) end)
+          |> Map.new()
+
+        Map.put(rest, "disability_certificates", kept)
+
+      {_other, _rest} ->
+        attrs
+    end
+  end
+
+  defp blank_certificate?(cert) when is_map(cert) do
+    ~w(kind number disability_name grade)
+    |> Enum.all?(fn key -> blank_value?(Map.get(cert, key)) end)
+  end
+
+  defp blank_certificate?(_), do: false
+
+  defp blank_value?(nil), do: true
+  defp blank_value?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank_value?(_), do: false
+
   ## Support plans
 
   @doc "Lists a service user's plans, newest planning period first."

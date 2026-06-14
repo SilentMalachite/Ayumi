@@ -79,4 +79,16 @@ defmodule Ayumi.Plans.ServiceUserTest do
       assert ServiceUser.age(su, ~D[2026-06-14]) == 36
     end
   end
+
+  test "casts a nested disability certificate" do
+    attrs = %{
+      name: "山田 太郎",
+      disability_certificates: [%{kind: :physical, number: "B-1", grade: "2級"}]
+    }
+
+    changeset = ServiceUser.changeset(%ServiceUser{}, attrs)
+    assert changeset.valid?
+    assert [cert_cs] = get_change(changeset, :disability_certificates)
+    assert get_change(cert_cs, :kind) == :physical
+  end
 end

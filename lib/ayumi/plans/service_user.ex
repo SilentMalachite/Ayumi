@@ -54,6 +54,8 @@ defmodule Ayumi.Plans.ServiceUser do
 
     has_many :support_plans, Ayumi.Plans.SupportPlan
 
+    has_many :disability_certificates, Ayumi.Plans.DisabilityCertificate, on_replace: :delete
+
     timestamps(type: :utc_datetime)
   end
 
@@ -62,6 +64,9 @@ defmodule Ayumi.Plans.ServiceUser do
     service_user
     |> cast(attrs, @flat_fields)
     |> validate_required([:name])
+    |> cast_assoc(:disability_certificates,
+      with: &Ayumi.Plans.DisabilityCertificate.changeset/2
+    )
   end
 
   @doc """
