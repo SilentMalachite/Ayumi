@@ -1,6 +1,7 @@
 defmodule AyumiWeb.ServiceUserLive.Form do
   use AyumiWeb, :live_view
 
+  alias Ayumi.Accounts.User
   alias Ayumi.Plans
   alias Ayumi.Plans.{CertificateKind, DisabilityCertificate, Gender, ServiceUser, SupportCategory}
 
@@ -20,24 +21,18 @@ defmodule AyumiWeb.ServiceUserLive.Form do
     socket
     |> assign(:page_title, "利用者の新規登録")
     |> assign(:service_user, service_user)
+    |> assign(:other_editors, [])
     |> assign_form(changeset)
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     service_user = Plans.get_service_user!(id)
 
-    changeset =
-      if service_user.disability_certificates == [] do
-        Plans.change_service_user(service_user)
-        |> Ecto.Changeset.put_assoc(:disability_certificates, [%DisabilityCertificate{}])
-      else
-        Plans.change_service_user(service_user)
-      end
-
     socket
     |> assign(:page_title, "利用者の編集")
     |> assign(:service_user, service_user)
-    |> assign_form(changeset)
+    |> track_editing(service_user.id)
+    |> assign_form(edit_changeset(service_user))
   end
 
   @impl true
@@ -76,9 +71,70 @@ defmodule AyumiWeb.ServiceUserLive.Form do
          |> put_flash(:info, "利用者情報を更新しました")
          |> push_navigate(to: ~p"/service_users/#{service_user.id}")}
 
-      {:error, changeset} ->
+      {:error, :stale} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "他のスタッフが先にこの利用者を更新しました。最新を読み込みました。内容を確認して保存し直してください。"
+         )
+         |> reload_edit_form()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
     end
+  end
+
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
+    {:noreply, assign_other_editors(socket)}
+  end
+
+  defp edit_changeset(%ServiceUser{} = service_user) do
+    if service_user.disability_certificates == [] do
+      Plans.change_service_user(service_user)
+      |> Ecto.Changeset.put_assoc(:disability_certificates, [%DisabilityCertificate{}])
+    else
+      Plans.change_service_user(service_user)
+    end
+  end
+
+  defp track_editing(socket, service_user_id) do
+    topic = AyumiWeb.Presence.editing_topic(:service_user, service_user_id)
+
+    if connected?(socket) do
+      user = socket.assigns.current_scope.user
+      Phoenix.PubSub.subscribe(Ayumi.PubSub, topic)
+
+      AyumiWeb.Presence.track(self(), topic, to_string(user.id), %{
+        name: User.display_name(user)
+      })
+    end
+
+    socket
+    |> assign(:editing_topic, topic)
+    |> assign_other_editors()
+  end
+
+  defp assign_other_editors(socket) do
+    self_key = to_string(socket.assigns.current_scope.user.id)
+
+    others =
+      socket.assigns.editing_topic
+      |> AyumiWeb.Presence.list()
+      |> Enum.reject(fn {key, _presence} -> key == self_key end)
+      |> Enum.flat_map(fn {_key, %{metas: metas}} -> Enum.map(metas, & &1.name) end)
+      |> Enum.uniq()
+
+    assign(socket, :other_editors, others)
+  end
+
+  defp reload_edit_form(socket) do
+    service_user = Plans.get_service_user!(socket.assigns.service_user.id)
+
+    socket
+    |> assign(:service_user, service_user)
+    |> assign_form(edit_changeset(service_user))
   end
 
   defp assign_form(socket, changeset), do: assign(socket, :form, to_form(changeset))
@@ -88,6 +144,14 @@ defmodule AyumiWeb.ServiceUserLive.Form do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <.header>{@page_title}</.header>
+
+      <div
+        :if={@other_editors != []}
+        class="rounded border border-yellow-400 bg-yellow-100 px-4 py-2 my-4 text-yellow-800"
+        role="alert"
+      >
+        ⚠ {Enum.join(@other_editors, "、")} さんが現在この利用者を編集中です。同時に保存すると、一方の変更が反映されない場合があります。
+      </div>
 
       <.form for={@form} id="service-user-form" phx-change="validate" phx-submit="save">
         <section class="my-6">

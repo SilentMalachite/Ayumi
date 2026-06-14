@@ -3,6 +3,7 @@ defmodule AyumiWeb.ServiceUserLiveTest do
 
   import Phoenix.LiveViewTest
   import Ayumi.PlansFixtures
+  import Ayumi.AccountsFixtures
 
   setup :register_and_log_in_user
 
@@ -111,5 +112,47 @@ defmodule AyumiWeb.ServiceUserLiveTest do
 
     assert html =~ "編集後"
     assert html =~ "03-9999-0000"
+  end
+
+  test "saving after a concurrent update shows a stale warning and reloads the latest", %{
+    conn: conn
+  } do
+    su = service_user_fixture(%{name: "編集前", phone: "000"})
+    {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}/edit")
+
+    # Another staff member updates the same row behind this LiveView's back.
+    {:ok, _} = Ayumi.Plans.update_service_user(su, %{phone: "111-concurrent"})
+
+    html =
+      lv
+      |> form("#service-user-form", service_user: %{"name" => "編集後", "phone" => "222-mine"})
+      |> render_submit()
+
+    # Stayed on the edit form (no redirect), with a stale warning and the latest data.
+    assert html =~ "他のスタッフが先にこの利用者を更新しました"
+    assert html =~ "service-user-form"
+    assert html =~ "111-concurrent"
+    refute html =~ "222-mine"
+  end
+
+  test "edit form warns when another staff member is editing the same user", %{conn: conn} do
+    su = service_user_fixture()
+    topic = AyumiWeb.Presence.editing_topic(:service_user, su.id)
+
+    # Subscribe the test process to synchronize on presence broadcasts.
+    Phoenix.PubSub.subscribe(Ayumi.PubSub, topic)
+
+    {:ok, lv1, _html} = live(conn, ~p"/service_users/#{su.id}/edit")
+    assert_receive %Phoenix.Socket.Broadcast{event: "presence_diff"}, 500
+    refute render(lv1) =~ "編集中"
+
+    # A different staff member opens the same edit form in a separate session.
+    other = staff_fixture(%{name: "別 職員"})
+    conn2 = log_in_user(build_conn(), other)
+    {:ok, _lv2, _html} = live(conn2, ~p"/service_users/#{su.id}/edit")
+
+    assert_receive %Phoenix.Socket.Broadcast{event: "presence_diff"}, 500
+    assert render(lv1) =~ "別 職員"
+    assert render(lv1) =~ "編集中"
   end
 end
