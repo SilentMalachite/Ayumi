@@ -6,6 +6,40 @@ defmodule AyumiWeb.SupportPlanLiveTest do
 
   setup :register_and_log_in_user
 
+  test "creates a support plan for a service user", %{conn: conn, user: staff} do
+    su = service_user_fixture()
+
+    {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}/support_plans/new")
+
+    params = %{
+      staff_id: staff.id,
+      period_start: "2026-04-01",
+      period_end: "2026-09-30",
+      long_term_goal: "長期目標テキスト",
+      next_monitoring_date: "2026-07-01"
+    }
+
+    lv
+    |> form("#support-plan-form", support_plan: params)
+    |> render_submit()
+
+    assert_redirect(lv, ~p"/service_users/#{su.id}")
+    assert [plan] = Ayumi.Plans.list_support_plans_for_user(su)
+    assert plan.long_term_goal == "長期目標テキスト"
+  end
+
+  test "shows validation errors", %{conn: conn} do
+    su = service_user_fixture()
+    {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}/support_plans/new")
+
+    html =
+      lv
+      |> form("#support-plan-form", support_plan: %{long_term_goal: ""})
+      |> render_submit()
+
+    assert html =~ "can&#39;t be blank" or html =~ "入力してください"
+  end
+
   test "shows a plan and adds a goal", %{conn: conn} do
     plan = support_plan_fixture()
 
