@@ -1,0 +1,416 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
+msgid ""
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:143
+#, elixir-autogen, elixir-format
+msgid "%{birthdate}（%{age}歳）"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:47
+#, elixir-autogen, elixir-format
+msgid "%{user} ／ 担当 %{staff}"
+msgstr ""
+
+#: lib/ayumi_web/components/core_components.ex:342
+#, elixir-autogen, elixir-format
+msgid "Actions"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:91
+#: lib/ayumi_web/components/layouts.ex:103
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:98
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:86
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr ""
+
+#: lib/ayumi_web/components/core_components.ex:74
+#, elixir-autogen, elixir-format
+msgid "close"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:153
+#, elixir-autogen, elixir-format
+msgid "⚠ %{names} さんが現在この利用者を編集中です。同時に保存すると、一方の変更が反映されない場合があります。"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:222
+#: lib/ayumi_web/live/service_user_live/show.ex:101
+#, elixir-autogen, elixir-format
+msgid "その他"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:162
+#: lib/ayumi_web/live/service_user_live/index.ex:29
+#, elixir-autogen, elixir-format
+msgid "ふりがな"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:217
+#: lib/ayumi_web/live/service_user_live/show.ex:95
+#, elixir-autogen, elixir-format
+msgid "主治医"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:79
+#, elixir-autogen, elixir-format
+msgid "他のスタッフが先にこの利用者を更新しました。最新を読み込みました。内容を確認して保存し直してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:176
+#: lib/ayumi_web/live/service_user_live/show.ex:47
+#, elixir-autogen, elixir-format
+msgid "住所"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:228
+#: lib/ayumi_web/live/support_plan_live/form.ex:79
+#, elixir-autogen, elixir-format
+msgid "保存"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:228
+#: lib/ayumi_web/live/support_plan_live/form.ex:79
+#, elixir-autogen, elixir-format
+msgid "保存中..."
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:225
+#: lib/ayumi_web/live/service_user_live/show.ex:105
+#, elixir-autogen, elixir-format
+msgid "備考"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:67
+#, elixir-autogen, elixir-format
+msgid "内容"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:48
+#, elixir-autogen, elixir-format
+msgid "利用者"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:22
+#, elixir-autogen, elixir-format
+msgid "利用者の新規登録"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:32
+#, elixir-autogen, elixir-format
+msgid "利用者の編集"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:58
+#, elixir-autogen, elixir-format
+msgid "利用者を登録しました"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/index.ex:10
+#: lib/ayumi_web/live/service_user_live/index.ex:19
+#, elixir-autogen, elixir-format
+msgid "利用者一覧"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:71
+#, elixir-autogen, elixir-format
+msgid "利用者情報を更新しました"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:215
+#: lib/ayumi_web/live/service_user_live/show.ex:92
+#, elixir-autogen, elixir-format
+msgid "医療"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:184
+#: lib/ayumi_web/live/service_user_live/show.ex:60
+#, elixir-autogen, elixir-format
+msgid "受給者証"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:195
+#, elixir-autogen, elixir-format
+msgid "受給者証 有効期限"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:185
+#: lib/ayumi_web/live/service_user_live/index.ex:30
+#: lib/ayumi_web/live/service_user_live/show.ex:62
+#, elixir-autogen, elixir-format
+msgid "受給者証番号"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:160
+#: lib/ayumi_web/live/service_user_live/show.ex:36
+#, elixir-autogen, elixir-format
+msgid "基本"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:167
+#: lib/ayumi_web/live/service_user_live/show.ex:39
+#, elixir-autogen, elixir-format
+msgid "性別"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:204
+#, elixir-autogen, elixir-format
+msgid "手帳の種類"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:208
+#: lib/ayumi_web/live/service_user_live/show.ex:82
+#, elixir-autogen, elixir-format
+msgid "手帳番号"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:224
+#: lib/ayumi_web/live/service_user_live/show.ex:104
+#, elixir-autogen, elixir-format
+msgid "担当相談員"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:115
+#: lib/ayumi_web/live/support_plan_live/form.ex:67
+#, elixir-autogen, elixir-format
+msgid "担当者"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:110
+#: lib/ayumi_web/live/support_plan_live/show.ex:34
+#: lib/ayumi_web/live/support_plan_live/show.ex:45
+#, elixir-autogen, elixir-format
+msgid "支援計画"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/form.ex:15
+#: lib/ayumi_web/live/support_plan_live/form.ex:59
+#, elixir-autogen, elixir-format
+msgid "支援計画の作成"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:30
+#, elixir-autogen, elixir-format
+msgid "支援計画を作成"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/form.ex:37
+#, elixir-autogen, elixir-format
+msgid "支援計画を作成しました"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:186
+#: lib/ayumi_web/live/service_user_live/show.ex:63
+#, elixir-autogen, elixir-format
+msgid "支給市町村"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:194
+#: lib/ayumi_web/live/service_user_live/show.ex:69
+#, elixir-autogen, elixir-format
+msgid "支給量"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/index.ex:21
+#, elixir-autogen, elixir-format
+msgid "新規登録"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:70
+#, elixir-autogen, elixir-format
+msgid "有効期限"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:218
+#: lib/ayumi_web/live/service_user_live/show.ex:96
+#, elixir-autogen, elixir-format
+msgid "服薬・特記"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:117
+#, elixir-autogen, elixir-format
+msgid "次回モニタリング"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/form.ex:77
+#: lib/ayumi_web/live/support_plan_live/show.ex:59
+#, elixir-autogen, elixir-format
+msgid "次回モニタリング予定日"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:161
+#: lib/ayumi_web/live/service_user_live/index.ex:26
+#, elixir-autogen, elixir-format
+msgid "氏名"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:163
+#: lib/ayumi_web/live/service_user_live/show.ex:38
+#, elixir-autogen, elixir-format
+msgid "生年月日"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:87
+#, elixir-autogen, elixir-format
+msgid "登録なし"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:223
+#: lib/ayumi_web/live/service_user_live/show.ex:103
+#, elixir-autogen, elixir-format
+msgid "相談支援事業所"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:63
+#, elixir-autogen, elixir-format
+msgid "短期目標"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:76
+#, elixir-autogen, elixir-format
+msgid "短期目標を追加"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:22
+#, elixir-autogen, elixir-format
+msgid "短期目標を追加しました"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:81
+#, elixir-autogen, elixir-format
+msgid "種類"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:210
+#: lib/ayumi_web/live/service_user_live/show.ex:84
+#, elixir-autogen, elixir-format
+msgid "等級"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:179
+#: lib/ayumi_web/live/service_user_live/show.ex:52
+#, elixir-autogen, elixir-format
+msgid "続柄"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:178
+#: lib/ayumi_web/live/service_user_live/show.ex:49
+#, elixir-autogen, elixir-format
+msgid "緊急連絡先 氏名"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:180
+#: lib/ayumi_web/live/service_user_live/show.ex:53
+#, elixir-autogen, elixir-format
+msgid "緊急連絡先 電話"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:28
+#, elixir-autogen, elixir-format
+msgid "編集"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:112
+#: lib/ayumi_web/live/support_plan_live/show.ex:55
+#, elixir-autogen, elixir-format
+msgid "計画期間"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/form.ex:72
+#, elixir-autogen, elixir-format
+msgid "計画終了日"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/form.ex:71
+#, elixir-autogen, elixir-format
+msgid "計画開始日"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:119
+#, elixir-autogen, elixir-format
+msgid "詳細"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:77
+#, elixir-autogen, elixir-format
+msgid "追加"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:216
+#: lib/ayumi_web/live/service_user_live/show.ex:94
+#, elixir-autogen, elixir-format
+msgid "通院先"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:174
+#: lib/ayumi_web/live/service_user_live/show.ex:44
+#, elixir-autogen, elixir-format
+msgid "連絡先"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:169
+#: lib/ayumi_web/live/service_user_live/form.ex:192
+#: lib/ayumi_web/live/service_user_live/form.ex:206
+#: lib/ayumi_web/live/support_plan_live/form.ex:69
+#, elixir-autogen, elixir-format
+msgid "選択してください"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:175
+#: lib/ayumi_web/live/service_user_live/show.ex:46
+#, elixir-autogen, elixir-format
+msgid "郵便番号"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:116
+#: lib/ayumi_web/live/support_plan_live/form.ex:73
+#: lib/ayumi_web/live/support_plan_live/show.ex:58
+#, elixir-autogen, elixir-format
+msgid "長期目標"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:83
+#, elixir-autogen, elixir-format
+msgid "障害名"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:190
+#: lib/ayumi_web/live/service_user_live/show.ex:66
+#, elixir-autogen, elixir-format
+msgid "障害支援区分"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:209
+#, elixir-autogen, elixir-format
+msgid "障害種類・障害名"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:199
+#: lib/ayumi_web/live/service_user_live/show.ex:75
+#, elixir-autogen, elixir-format
+msgid "障害者手帳"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/form.ex:177
+#: lib/ayumi_web/live/service_user_live/show.ex:48
+#, elixir-autogen, elixir-format
+msgid "電話番号"
+msgstr ""
