@@ -1,6 +1,7 @@
 # 歩み（Ayumi）
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/SilentMalachite/Ayumi/actions/workflows/ci.yml/badge.svg)](https://github.com/SilentMalachite/Ayumi/actions/workflows/ci.yml)
 
 **就労継続支援B型** 事業所向けの、個別支援計画 進捗トラッカーです。
 支援スタッフが各利用者の個別支援計画の状況を記録し、短期目標の進み具合を残し、
