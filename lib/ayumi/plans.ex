@@ -136,11 +136,37 @@ defmodule Ayumi.Plans do
   def create_goal(attrs) do
     %Goal{}
     |> Goal.changeset(attrs)
-    |> Repo.insert()
+    |> insert_goal()
   end
 
   @doc "Returns a changeset for a goal (forms)."
   def change_goal(%Goal{} = goal, attrs \\ %{}) do
     Goal.changeset(goal, attrs)
   end
+
+  defp insert_goal(changeset) do
+    Repo.insert(changeset)
+  rescue
+    exception in Ecto.ConstraintError ->
+      if unnamed_foreign_key_constraint_error?(exception) do
+        {:error,
+         Ecto.Changeset.add_error(
+           changeset,
+           :support_plan_id,
+           "does not exist",
+           constraint: :foreign,
+           constraint_name: nil
+         )}
+      else
+        reraise exception, __STACKTRACE__
+      end
+  end
+
+  defp unnamed_foreign_key_constraint_error?(%Ecto.ConstraintError{
+         type: :foreign_key,
+         constraint: nil
+       }),
+       do: true
+
+  defp unnamed_foreign_key_constraint_error?(_exception), do: false
 end

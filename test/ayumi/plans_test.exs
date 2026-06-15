@@ -198,10 +198,11 @@ defmodule Ayumi.PlansTest do
   end
 
   describe "referential integrity" do
-    test "creating a goal for a non-existent plan is rejected by the database" do
-      assert_raise Ecto.ConstraintError, fn ->
-        Plans.create_goal(%{support_plan_id: -1, description: "孤児"})
-      end
+    test "creating a goal for a non-existent plan returns an error changeset" do
+      assert {:error, changeset} =
+               Plans.create_goal(%{support_plan_id: -1, description: "孤児"})
+
+      assert errors_on(changeset)[:support_plan_id]
     end
   end
 end
