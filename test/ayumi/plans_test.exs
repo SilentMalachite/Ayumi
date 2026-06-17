@@ -277,6 +277,61 @@ defmodule Ayumi.PlansTest do
       assert Enum.map(history, & &1.stage) == [:working, :met]
     end
 
+    test "record_goal_progress_for_plan/2 records when the goal belongs to the plan" do
+      plan = support_plan_fixture()
+      goal = goal_fixture(%{support_plan_id: plan.id})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      recorded_at = ~U[2026-06-17 01:02:03Z]
+
+      assert {:ok, %GoalProgress{} = progress} =
+               Plans.record_goal_progress_for_plan(plan, %{
+                 "goal_id" => to_string(goal.id),
+                 "stage" => "working",
+                 "note" => "午前の作業に参加できた",
+                 "recorded_by_id" => staff.id,
+                 "recorded_at" => recorded_at
+               })
+
+      assert progress.goal_id == goal.id
+      assert progress.stage == :working
+      assert progress.note == "午前の作業に参加できた"
+      assert progress.recorded_by_id == staff.id
+      assert progress.recorded_at == recorded_at
+    end
+
+    test "record_goal_progress_for_plan/2 rejects a goal from a different plan" do
+      plan = support_plan_fixture()
+      other_plan = support_plan_fixture()
+      other_goal = goal_fixture(%{support_plan_id: other_plan.id})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_goal_progress_for_plan(plan, %{
+                 goal_id: other_goal.id,
+                 stage: :working,
+                 recorded_by_id: staff.id,
+                 recorded_at: ~U[2026-06-17 01:02:03Z]
+               })
+
+      assert errors_on(changeset)[:goal_id]
+      assert Plans.list_goal_progress(other_goal) == []
+    end
+
+    test "record_goal_progress_for_plan/2 rejects a malformed goal_id without raising" do
+      plan = support_plan_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_goal_progress_for_plan(plan, %{
+                 "goal_id" => "not-a-goal-id",
+                 "stage" => "working",
+                 "recorded_by_id" => staff.id,
+                 "recorded_at" => ~U[2026-06-17 01:02:03Z]
+               })
+
+      assert errors_on(changeset)[:goal_id]
+    end
+
     test "list_goal_progress/1 returns one goal's history in insertion order with staff preloaded" do
       goal = goal_fixture()
       staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "記録 職員"})
@@ -299,6 +354,53 @@ defmodule Ayumi.PlansTest do
 
       assert [:working, :mostly_met] = Plans.list_goal_progress(goal) |> Enum.map(& &1.stage)
       assert [%{recorded_by: %{name: "記録 職員"}} | _] = Plans.list_goal_progress(goal)
+    end
+
+    test "list_goal_progress_for_goals/1 returns grouped histories and empty lists" do
+      plan = support_plan_fixture()
+      first_goal = goal_fixture(%{support_plan_id: plan.id, description: "1番目"})
+      second_goal = goal_fixture(%{support_plan_id: plan.id, description: "2番目"})
+      empty_goal = goal_fixture(%{support_plan_id: plan.id, description: "未記録"})
+      staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "記録 職員"})
+
+      first_progress =
+        goal_progress_fixture(%{
+          goal_id: first_goal.id,
+          stage: :working,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 01:00:00Z]
+        })
+
+      second_progress =
+        goal_progress_fixture(%{
+          goal_id: first_goal.id,
+          stage: :met,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 02:00:00Z]
+        })
+
+      third_progress =
+        goal_progress_fixture(%{
+          goal_id: second_goal.id,
+          stage: :partially_met,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 03:00:00Z]
+        })
+
+      histories = Plans.list_goal_progress_for_goals([first_goal, second_goal, empty_goal])
+
+      assert Enum.map(histories[first_goal.id], & &1.id) == [
+               first_progress.id,
+               second_progress.id
+             ]
+
+      assert Enum.map(histories[second_goal.id], & &1.id) == [third_progress.id]
+      assert histories[empty_goal.id] == []
+      assert [%{recorded_by: %{name: "記録 職員"}} | _] = histories[first_goal.id]
+    end
+
+    test "list_goal_progress_for_goals/1 returns an empty map for an empty goal list" do
+      assert Plans.list_goal_progress_for_goals([]) == %{}
     end
 
     test "current_goal_progress/1 returns nil for an empty history" do

@@ -5,7 +5,6 @@ defmodule AyumiWeb.SupportPlanLive.Show do
   alias Ayumi.Plans
   alias Ayumi.Plans.Goal
   alias Ayumi.Plans.GoalProgress
-  alias Ayumi.Plans.GoalProgressStage
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -44,7 +43,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
       |> Map.put("recorded_by_id", socket.assigns.current_scope.user.id)
       |> Map.put("recorded_at", now)
 
-    case Plans.record_goal_progress(progress_params) do
+    case Plans.record_goal_progress_for_plan(plan, progress_params) do
       {:ok, _progress} ->
         {:noreply,
          socket
@@ -52,14 +51,16 @@ defmodule AyumiWeb.SupportPlanLive.Show do
          |> load(plan.id)}
 
       {:error, changeset} ->
-        goal_progress_forms =
-          Map.put(
-            socket.assigns.goal_progress_forms,
-            String.to_integer(goal_id),
-            to_form(changeset)
-          )
+        case existing_goal_progress_form_key(goal_id, socket.assigns.goal_progress_forms) do
+          {:ok, goal_id} ->
+            goal_progress_forms =
+              Map.put(socket.assigns.goal_progress_forms, goal_id, to_form(changeset))
 
-        {:noreply, assign(socket, :goal_progress_forms, goal_progress_forms)}
+            {:noreply, assign(socket, :goal_progress_forms, goal_progress_forms)}
+
+          :error ->
+            {:noreply, put_flash(socket, :error, gettext("進捗を記録できませんでした"))}
+        end
     end
   end
 
@@ -84,8 +85,28 @@ defmodule AyumiWeb.SupportPlanLive.Show do
   end
 
   defp goal_progress_history_by_goal(goals) do
-    Map.new(goals, fn goal -> {goal.id, Plans.list_goal_progress(goal)} end)
+    Plans.list_goal_progress_for_goals(goals)
   end
+
+  defp existing_goal_progress_form_key(goal_id, goal_progress_forms) do
+    with {:ok, goal_id} <- parse_goal_id(goal_id),
+         true <- Map.has_key?(goal_progress_forms, goal_id) do
+      {:ok, goal_id}
+    else
+      _ -> :error
+    end
+  end
+
+  defp parse_goal_id(goal_id) when is_integer(goal_id), do: {:ok, goal_id}
+
+  defp parse_goal_id(goal_id) when is_binary(goal_id) do
+    case Integer.parse(String.trim(goal_id)) do
+      {goal_id, ""} -> {:ok, goal_id}
+      _ -> :error
+    end
+  end
+
+  defp parse_goal_id(_goal_id), do: :error
 
   @impl true
   def render(assigns) do
@@ -142,7 +163,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
                 type="select"
                 label={gettext("進捗ステージ")}
                 prompt={gettext("選択してください")}
-                options={GoalProgressStage.options()}
+                options={goal_progress_stage_options()}
               />
               <.input
                 field={@goal_progress_forms[goal.id][:note]}
@@ -172,7 +193,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
               >
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span class="font-medium text-zinc-900">
-                    {GoalProgressStage.label(progress.stage)}
+                    {goal_progress_stage_label(progress.stage)}
                   </span>
                   <span class="text-zinc-600">{User.display_name(progress.recorded_by)}</span>
                   <span class="text-zinc-500">{progress.recorded_at}</span>
@@ -200,5 +221,22 @@ defmodule AyumiWeb.SupportPlanLive.Show do
   end
 
   defp goal_progress_label(nil), do: gettext("未記録")
-  defp goal_progress_label(progress), do: GoalProgressStage.label(progress.stage)
+  defp goal_progress_label(progress), do: goal_progress_stage_label(progress.stage)
+
+  defp goal_progress_stage_options do
+    [
+      {:not_started, goal_progress_stage_label(:not_started)},
+      {:working, goal_progress_stage_label(:working)},
+      {:partially_met, goal_progress_stage_label(:partially_met)},
+      {:mostly_met, goal_progress_stage_label(:mostly_met)},
+      {:met, goal_progress_stage_label(:met)}
+    ]
+    |> Enum.map(fn {value, label} -> {label, value} end)
+  end
+
+  defp goal_progress_stage_label(:not_started), do: gettext("未着手")
+  defp goal_progress_stage_label(:working), do: gettext("取組中")
+  defp goal_progress_stage_label(:partially_met), do: gettext("一部達成")
+  defp goal_progress_stage_label(:mostly_met), do: gettext("概ね達成")
+  defp goal_progress_stage_label(:met), do: gettext("達成")
 end

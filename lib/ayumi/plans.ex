@@ -160,6 +160,24 @@ defmodule Ayumi.Plans do
     |> insert_goal_progress()
   end
 
+  @doc "Appends progress only when the goal belongs to the given support plan."
+  def record_goal_progress_for_plan(%SupportPlan{id: support_plan_id}, attrs)
+      when is_map(attrs) do
+    case parse_goal_progress_goal_id(attrs) do
+      {:ok, goal_id} ->
+        if goal_belongs_to_support_plan?(goal_id, support_plan_id) do
+          attrs
+          |> normalize_goal_progress_attrs(goal_id)
+          |> record_goal_progress()
+        else
+          {:error, scoped_goal_progress_changeset(attrs, goal_id)}
+        end
+
+      :error ->
+        {:error, scoped_goal_progress_changeset(attrs, nil)}
+    end
+  end
+
   @doc "Lists one goal's progress history in insertion order."
   def list_goal_progress(%Goal{id: id}), do: list_goal_progress(id)
 
@@ -169,6 +187,24 @@ defmodule Ayumi.Plans do
     |> order_by([p], asc: p.id)
     |> preload([:recorded_by])
     |> Repo.all()
+  end
+
+  @doc "Lists progress histories for multiple goals, grouped by goal id."
+  def list_goal_progress_for_goals([]), do: %{}
+
+  def list_goal_progress_for_goals(goals) when is_list(goals) do
+    goal_ids = Enum.map(goals, & &1.id)
+    empty_map = Map.new(goal_ids, &{&1, []})
+
+    histories =
+      GoalProgress
+      |> where([p], p.goal_id in ^goal_ids)
+      |> order_by([p], asc: p.goal_id, asc: p.id)
+      |> preload([:recorded_by])
+      |> Repo.all()
+      |> Enum.group_by(& &1.goal_id)
+
+    Map.merge(empty_map, histories)
   end
 
   @doc """
@@ -206,6 +242,56 @@ defmodule Ayumi.Plans do
       |> Map.new(&{&1.goal_id, &1})
 
     Map.merge(empty_map, latest)
+  end
+
+  defp parse_goal_progress_goal_id(attrs) do
+    attrs
+    |> goal_progress_attr(:goal_id)
+    |> parse_id()
+  end
+
+  defp parse_id(value) when is_integer(value), do: {:ok, value}
+
+  defp parse_id(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {id, ""} -> {:ok, id}
+      _ -> :error
+    end
+  end
+
+  defp parse_id(_value), do: :error
+
+  defp goal_belongs_to_support_plan?(goal_id, support_plan_id) do
+    Goal
+    |> where([g], g.id == ^goal_id and g.support_plan_id == ^support_plan_id)
+    |> Repo.exists?()
+  end
+
+  defp scoped_goal_progress_changeset(attrs, goal_id) do
+    changeset =
+      %GoalProgress{}
+      |> GoalProgress.changeset(normalize_goal_progress_attrs(attrs, goal_id))
+      |> Ecto.Changeset.add_error(:goal_id, "does not belong to support plan")
+
+    case Ecto.Changeset.apply_action(changeset, :insert) do
+      {:error, changeset} -> changeset
+    end
+  end
+
+  defp normalize_goal_progress_attrs(attrs, goal_id) do
+    %{
+      goal_id: goal_id,
+      stage: goal_progress_attr(attrs, :stage),
+      note: goal_progress_attr(attrs, :note),
+      recorded_by_id: goal_progress_attr(attrs, :recorded_by_id),
+      recorded_at: goal_progress_attr(attrs, :recorded_at)
+    }
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+    |> Map.new()
+  end
+
+  defp goal_progress_attr(attrs, key) do
+    Map.get(attrs, Atom.to_string(key)) || Map.get(attrs, key)
   end
 
   defp insert_goal_progress(changeset) do

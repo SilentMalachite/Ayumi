@@ -73,5 +73,43 @@ defmodule AyumiWeb.SupportPlanLiveTest do
     assert html =~ "取組中"
     assert html =~ "午前の作業に参加できた"
     assert html =~ staff.email
+
+    assert [progress] = Ayumi.Plans.list_goal_progress(goal)
+    assert progress.recorded_by_id == staff.id
+  end
+
+  test "rejects forged goal progress for a goal from another support plan", %{conn: conn} do
+    plan = support_plan_fixture()
+    visible_goal = goal_fixture(%{support_plan_id: plan.id})
+    other_plan = support_plan_fixture()
+    other_goal = goal_fixture(%{support_plan_id: other_plan.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/support_plans/#{plan.id}")
+
+    html =
+      render_submit(lv, "record_goal_progress", %{
+        "goal_id" => to_string(other_goal.id),
+        "goal_progress" => %{"stage" => "working", "note" => "改ざんされた記録"}
+      })
+
+    assert html =~ "進捗を記録できませんでした"
+    assert has_element?(lv, "#goal-progress-form-#{visible_goal.id}")
+    assert Ayumi.Plans.list_goal_progress(other_goal) == []
+  end
+
+  test "rejects nonnumeric goal progress goal_id without crashing", %{conn: conn} do
+    plan = support_plan_fixture()
+    visible_goal = goal_fixture(%{support_plan_id: plan.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/support_plans/#{plan.id}")
+
+    html =
+      render_submit(lv, "record_goal_progress", %{
+        "goal_id" => "not-a-goal-id",
+        "goal_progress" => %{"stage" => "working", "note" => "改ざんされた記録"}
+      })
+
+    assert html =~ "進捗を記録できませんでした"
+    assert has_element?(lv, "#goal-progress-form-#{visible_goal.id}")
   end
 end
