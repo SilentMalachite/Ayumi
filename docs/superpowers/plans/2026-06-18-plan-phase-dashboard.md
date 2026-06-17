@@ -4,6 +4,8 @@
 
 **Goal:** Add append-only support-plan lifecycle phase records and replace the authenticated top page with a monitoring-deadline dashboard.
 
+**Status:** Implemented on `codex/plan-phase-dashboard` as of 2026-06-18. This file is retained as the historical Step 3 implementation plan.
+
 **Architecture:** Keep lifecycle and deadline logic in `Ayumi.Plans`: enum labels, schema validation, append-only insert, chronological history, current-stage derivation, and monitoring-deadline classification. `SupportPlanLive.Show` records and renders phase events while staying thin; the new `DashboardLive.Index` only loads context data and renders it. No current phase is stored on `support_plans`; it is derived from the latest `plan_phase_events` row.
 
 **Tech Stack:** Elixir, Phoenix 1.8, Phoenix LiveView, Ecto + `ecto_sqlite3`, SQLite, Gettext, ExUnit, Phoenix.LiveViewTest/LazyHTML. Verification uses the existing `mix review` and `mix precommit` aliases.
@@ -43,7 +45,7 @@
 - Modify: `test/ayumi/plans/enumerations_test.exs`
 - Create: `lib/ayumi/plans/plan_phase_stage.ex`
 
-- [ ] **Step 1: Write the failing enum tests**
+- [x] **Step 1: Write the failing enum tests**
 
 In `test/ayumi/plans/enumerations_test.exs`, add `PlanPhaseStage` to the alias and append this describe block:
 
@@ -85,7 +87,7 @@ describe "PlanPhaseStage" do
 end
 ```
 
-- [ ] **Step 2: Run the enum test and verify it fails**
+- [x] **Step 2: Run the enum test and verify it fails**
 
 Run:
 
@@ -95,7 +97,7 @@ mix test test/ayumi/plans/enumerations_test.exs
 
 Expected: FAIL with `Ayumi.Plans.PlanPhaseStage` undefined.
 
-- [ ] **Step 3: Implement the enum module**
+- [x] **Step 3: Implement the enum module**
 
 Create `lib/ayumi/plans/plan_phase_stage.ex`:
 
@@ -124,7 +126,7 @@ defmodule Ayumi.Plans.PlanPhaseStage do
 end
 ```
 
-- [ ] **Step 4: Run the enum test and verify it passes**
+- [x] **Step 4: Run the enum test and verify it passes**
 
 Run:
 
@@ -134,7 +136,7 @@ mix test test/ayumi/plans/enumerations_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/ayumi/plans/plan_phase_stage.ex test/ayumi/plans/enumerations_test.exs
@@ -151,7 +153,7 @@ git commit -m "feat: add plan phase stage enum"
 - Create: `test/ayumi/plans/plan_phase_event_test.exs`
 - Modify: `lib/ayumi/plans/support_plan.ex`
 
-- [ ] **Step 1: Write the failing changeset tests**
+- [x] **Step 1: Write the failing changeset tests**
 
 Create `test/ayumi/plans/plan_phase_event_test.exs`:
 
@@ -208,7 +210,7 @@ defmodule Ayumi.Plans.PlanPhaseEventTest do
 end
 ```
 
-- [ ] **Step 2: Run the focused schema test and verify it fails**
+- [x] **Step 2: Run the focused schema test and verify it fails**
 
 Run:
 
@@ -218,7 +220,7 @@ mix test test/ayumi/plans/plan_phase_event_test.exs
 
 Expected: FAIL with `Ayumi.Plans.PlanPhaseEvent` undefined.
 
-- [ ] **Step 3: Create the migration**
+- [x] **Step 3: Create the migration**
 
 Create `priv/repo/migrations/20260618000000_create_plan_phase_events.exs`:
 
@@ -249,7 +251,7 @@ Why this shape:
 - `recorded_at` is supplied server-side by the LiveView flow and displayed as the staff-facing record time.
 - `[:support_plan_id, :id]` supports history listing and latest-stage derivation in insertion order.
 
-- [ ] **Step 4: Create the schema**
+- [x] **Step 4: Create the schema**
 
 Create `lib/ayumi/plans/plan_phase_event.ex`:
 
@@ -287,7 +289,7 @@ defmodule Ayumi.Plans.PlanPhaseEvent do
 end
 ```
 
-- [ ] **Step 5: Add the association to support plans**
+- [x] **Step 5: Add the association to support plans**
 
 In `lib/ayumi/plans/support_plan.ex`, add this association below `has_many :goals`:
 
@@ -295,7 +297,7 @@ In `lib/ayumi/plans/support_plan.ex`, add this association below `has_many :goal
 has_many :plan_phase_events, Ayumi.Plans.PlanPhaseEvent
 ```
 
-- [ ] **Step 6: Migrate and run the focused schema test**
+- [x] **Step 6: Migrate and run the focused schema test**
 
 Run:
 
@@ -306,7 +308,7 @@ mix test test/ayumi/plans/plan_phase_event_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/ayumi/plans/support_plan.ex lib/ayumi/plans/plan_phase_event.ex priv/repo/migrations/20260618000000_create_plan_phase_events.exs test/ayumi/plans/plan_phase_event_test.exs
@@ -322,7 +324,7 @@ git commit -m "feat: add plan phase event schema"
 - Modify: `test/ayumi/plans_test.exs`
 - Modify: `test/support/fixtures/plans_fixtures.ex`
 
-- [ ] **Step 1: Write failing context tests for phase events**
+- [x] **Step 1: Write failing context tests for phase events**
 
 In `test/ayumi/plans_test.exs`, add `PlanPhaseEvent` to the aliases:
 
@@ -353,6 +355,36 @@ describe "plan phase events" do
     assert event.note == "会議で支援内容を確認した"
     assert event.recorded_by_id == staff.id
     assert event.recorded_at == recorded_at
+  end
+
+  test "record_plan_phase_event/1 returns a changeset error for an invalid support plan" do
+    staff = Ayumi.AccountsFixtures.staff_fixture()
+
+    assert {:error, changeset} =
+             Plans.record_plan_phase_event(%{
+               support_plan_id: -1,
+               stage: :assessment,
+               recorded_by_id: staff.id,
+               recorded_at: ~U[2026-06-18 01:02:03Z]
+             })
+
+    assert errors_on(changeset)[:support_plan_id]
+    refute errors_on(changeset)[:recorded_by_id]
+  end
+
+  test "record_plan_phase_event/1 returns a changeset error for an invalid recording staff" do
+    plan = support_plan_fixture()
+
+    assert {:error, changeset} =
+             Plans.record_plan_phase_event(%{
+               support_plan_id: plan.id,
+               stage: :assessment,
+               recorded_by_id: -1,
+               recorded_at: ~U[2026-06-18 01:02:03Z]
+             })
+
+    assert errors_on(changeset)[:recorded_by_id]
+    refute errors_on(changeset)[:support_plan_id]
   end
 
   test "record_plan_phase_event/1 never updates previous phase rows" do
@@ -421,7 +453,7 @@ describe "plan phase events" do
 end
 ```
 
-- [ ] **Step 2: Write failing context tests for monitoring deadlines**
+- [x] **Step 2: Write failing context tests for monitoring deadlines**
 
 Append this describe block after the phase-event describe block:
 
@@ -512,7 +544,7 @@ describe "monitoring deadline alerts" do
 end
 ```
 
-- [ ] **Step 3: Run the context tests and verify they fail**
+- [x] **Step 3: Run the context tests and verify they fail**
 
 Run:
 
@@ -522,7 +554,7 @@ mix test test/ayumi/plans_test.exs
 
 Expected: FAIL because the `Plans` phase-event and monitoring functions do not exist yet.
 
-- [ ] **Step 4: Add the fixture helper**
+- [x] **Step 4: Add the fixture helper**
 
 In `test/support/fixtures/plans_fixtures.ex`, add:
 
@@ -546,7 +578,7 @@ def plan_phase_event_fixture(attrs \\ %{}) do
 end
 ```
 
-- [ ] **Step 5: Implement the context aliases**
+- [x] **Step 5: Implement the context aliases**
 
 In `lib/ayumi/plans.ex`, add `PlanPhaseEvent` and `Scope` to the aliases:
 
@@ -555,9 +587,9 @@ alias Ayumi.Accounts.Scope
 alias Ayumi.Plans.PlanPhaseEvent
 ```
 
-- [ ] **Step 6: Implement the phase-event context API**
+- [x] **Step 6: Implement the phase-event context API**
 
-In `lib/ayumi/plans.ex`, add this section after the existing Goals section and before private helpers:
+In `lib/ayumi/plans.ex`, add these public functions after the existing Goal Progress section and before the Monitoring deadlines section:
 
 ```elixir
 ## Plan phase events
@@ -571,7 +603,7 @@ end
 def record_plan_phase_event(attrs) do
   %PlanPhaseEvent{}
   |> PlanPhaseEvent.changeset(attrs)
-  |> Repo.insert()
+  |> insert_plan_phase_event()
 end
 
 @doc "Lists one support plan's phase history in insertion order."
@@ -599,7 +631,30 @@ def current_plan_stage(events) do
 end
 ```
 
-- [ ] **Step 7: Implement the monitoring-deadline context API**
+Then add these private helpers near the existing `insert_goal_progress/1` helper so SQLite unnamed foreign-key errors are normalized in the same way as goal progress:
+
+```elixir
+defp insert_plan_phase_event(changeset) do
+  Repo.insert(changeset)
+rescue
+  exception in Ecto.ConstraintError ->
+    if unnamed_foreign_key_constraint_error?(exception) do
+      changeset = add_plan_phase_event_foreign_key_errors(changeset)
+
+      if changeset.valid?, do: reraise(exception, __STACKTRACE__), else: {:error, changeset}
+    else
+      reraise exception, __STACKTRACE__
+    end
+end
+
+defp add_plan_phase_event_foreign_key_errors(changeset) do
+  changeset
+  |> add_missing_assoc_error(:support_plan_id, SupportPlan)
+  |> add_missing_assoc_error(:recorded_by_id, User)
+end
+```
+
+- [x] **Step 7: Implement the monitoring-deadline context API**
 
 In `lib/ayumi/plans.ex`, add this section after the phase-event context API:
 
@@ -666,7 +721,7 @@ defp monitoring_deadline_alert(plan, current_staff_id, today, near_days) do
 end
 ```
 
-- [ ] **Step 8: Run the focused context tests**
+- [x] **Step 8: Run the focused context tests**
 
 Run:
 
@@ -676,7 +731,7 @@ mix test test/ayumi/plans_test.exs test/ayumi/plans/plan_phase_event_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add lib/ayumi/plans.ex test/ayumi/plans_test.exs test/support/fixtures/plans_fixtures.ex
@@ -692,7 +747,7 @@ git commit -m "feat: add phase event and deadline context"
 - Modify: `test/ayumi_web/live/support_plan_live_test.exs`
 - Modify: `priv/gettext/default.pot`
 
-- [ ] **Step 1: Write the failing LiveView flow test**
+- [x] **Step 1: Write the failing LiveView flow test**
 
 In `test/ayumi_web/live/support_plan_live_test.exs`, add this test:
 
@@ -718,7 +773,7 @@ test "records a plan phase event and shows current phase and history", %{conn: c
 end
 ```
 
-- [ ] **Step 2: Run the LiveView test and verify it fails**
+- [x] **Step 2: Run the LiveView test and verify it fails**
 
 Run:
 
@@ -728,13 +783,12 @@ mix test test/ayumi_web/live/support_plan_live_test.exs
 
 Expected: FAIL because `#plan-phase-form` does not exist.
 
-- [ ] **Step 3: Add aliases and event handling**
+- [x] **Step 3: Add aliases and event handling**
 
 In `lib/ayumi_web/live/support_plan_live/show.ex`, add:
 
 ```elixir
 alias Ayumi.Plans.PlanPhaseEvent
-alias Ayumi.Plans.PlanPhaseStage
 ```
 
 Add this event handler below the existing `handle_event("add_goal", ...)` handler:
@@ -764,29 +818,31 @@ def handle_event("record_plan_phase_event", %{"plan_phase_event" => params}, soc
 end
 ```
 
-- [ ] **Step 4: Load phase assigns**
+- [x] **Step 4: Load phase assigns**
 
 In `lib/ayumi_web/live/support_plan_live/show.ex`, update `load/2` so it assigns phase history, current phase, and a form:
 
 ```elixir
 defp load(socket, id) do
   support_plan = Plans.get_support_plan!(id)
+  goals = Plans.list_goals(support_plan)
   phase_events = Plans.list_plan_phase_events(support_plan)
 
   socket
   |> assign(:page_title, gettext("支援計画"))
   |> assign(:support_plan, support_plan)
-  |> assign(:goals, Plans.list_goals(support_plan))
+  |> assign(:goals, goals)
   |> assign(:goal_form, to_form(Plans.change_goal(%Goal{})))
+  |> assign(:goal_progress_forms, goal_progress_forms(goals))
+  |> assign(:latest_goal_progress_by_goal, Plans.latest_goal_progress_by_goal(goals))
+  |> assign(:goal_progress_history_by_goal, goal_progress_history_by_goal(goals))
   |> assign(:plan_phase_events, phase_events)
   |> assign(:current_plan_phase, Plans.current_plan_stage(phase_events))
   |> assign(:plan_phase_form, to_form(Plans.change_plan_phase_event(%PlanPhaseEvent{})))
 end
 ```
 
-If Step 2 is already implemented, preserve its goal-progress assigns and add the four phase assigns to that existing `load/2` instead of replacing them.
-
-- [ ] **Step 5: Add the phase panel to the template**
+- [x] **Step 5: Add the phase panel to the template**
 
 In `SupportPlanLive.Show.render/1`, insert this block after the `<.list>` that shows period, goal, and monitoring date, and before the short-term goals section:
 
@@ -812,7 +868,7 @@ In `SupportPlanLive.Show.render/1`, insert this block after the `<.list>` that s
         type="select"
         label={gettext("ステージ")}
         prompt={gettext("選択してください")}
-        options={PlanPhaseStage.options()}
+        options={plan_phase_stage_options()}
       />
       <.input field={@plan_phase_form[:note]} type="textarea" label={gettext("所見")} />
       <.button id="record-plan-phase" phx-disable-with={gettext("記録中...")}>
@@ -837,7 +893,7 @@ In `SupportPlanLive.Show.render/1`, insert this block after the `<.list>` that s
         class="rounded-md border border-zinc-100 px-3 py-2 text-sm"
       >
         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span class="font-medium text-zinc-900">{PlanPhaseStage.label(event.stage)}</span>
+          <span class="font-medium text-zinc-900">{plan_phase_stage_label(event.stage)}</span>
           <span class="text-zinc-600">{User.display_name(event.recorded_by)}</span>
           <span class="text-zinc-500">{event.recorded_at}</span>
         </div>
@@ -850,16 +906,37 @@ In `SupportPlanLive.Show.render/1`, insert this block after the `<.list>` that s
 </section>
 ```
 
-- [ ] **Step 6: Add a label helper**
+- [x] **Step 6: Add a label helper**
 
 Add this private helper near the bottom of `SupportPlanLive.Show`:
 
 ```elixir
 defp plan_phase_label(nil), do: gettext("未記録")
-defp plan_phase_label(event), do: PlanPhaseStage.label(event.stage)
+defp plan_phase_label(event), do: plan_phase_stage_label(event.stage)
+
+defp plan_phase_stage_options do
+  [
+    {:assessment, plan_phase_stage_label(:assessment)},
+    {:draft, plan_phase_stage_label(:draft)},
+    {:support_meeting, plan_phase_stage_label(:support_meeting)},
+    {:consent, plan_phase_stage_label(:consent)},
+    {:in_progress, plan_phase_stage_label(:in_progress)},
+    {:monitoring, plan_phase_stage_label(:monitoring)},
+    {:review, plan_phase_stage_label(:review)}
+  ]
+  |> Enum.map(fn {value, label} -> {label, value} end)
+end
+
+defp plan_phase_stage_label(:assessment), do: gettext("アセスメント")
+defp plan_phase_stage_label(:draft), do: gettext("計画原案")
+defp plan_phase_stage_label(:support_meeting), do: gettext("個別支援会議")
+defp plan_phase_stage_label(:consent), do: gettext("説明・同意・交付")
+defp plan_phase_stage_label(:in_progress), do: gettext("支援の実施")
+defp plan_phase_stage_label(:monitoring), do: gettext("モニタリング")
+defp plan_phase_stage_label(:review), do: gettext("見直し")
 ```
 
-- [ ] **Step 7: Run the LiveView test**
+- [x] **Step 7: Run the LiveView test**
 
 Run:
 
@@ -869,7 +946,7 @@ mix test test/ayumi_web/live/support_plan_live_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 8: Extract gettext messages**
+- [x] **Step 8: Extract gettext messages**
 
 Run:
 
@@ -880,7 +957,7 @@ mix gettext.extract --check-up-to-date
 
 Expected: `priv/gettext/default.pot` is updated and the check exits 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add lib/ayumi_web/live/support_plan_live/show.ex test/ayumi_web/live/support_plan_live_test.exs priv/gettext/default.pot
@@ -898,7 +975,7 @@ git commit -m "feat: record plan phase events"
 - Delete: `test/ayumi_web/controllers/page_controller_test.exs`
 - Modify: `priv/gettext/default.pot`
 
-- [ ] **Step 1: Write failing dashboard LiveView tests**
+- [x] **Step 1: Write failing dashboard LiveView tests**
 
 Create `test/ayumi_web/live/dashboard_live_test.exs`:
 
@@ -975,7 +1052,7 @@ defmodule AyumiWeb.DashboardLiveTest do
 end
 ```
 
-- [ ] **Step 2: Run the dashboard tests and verify they fail**
+- [x] **Step 2: Run the dashboard tests and verify they fail**
 
 Run:
 
@@ -985,7 +1062,7 @@ mix test test/ayumi_web/live/dashboard_live_test.exs
 
 Expected: FAIL because `AyumiWeb.DashboardLive.Index` and the authenticated root route do not exist.
 
-- [ ] **Step 3: Create the dashboard LiveView**
+- [x] **Step 3: Create the dashboard LiveView**
 
 Create `lib/ayumi_web/live/dashboard_live/index.ex`:
 
@@ -1103,7 +1180,7 @@ end
 
 After formatting, split the long `assign(:monitoring_alerts, ...)` line if `mix format` rewrites it. Keep the code behavior identical.
 
-- [ ] **Step 4: Replace the public root route with the authenticated dashboard route**
+- [x] **Step 4: Replace the public root route with the authenticated dashboard route**
 
 In `lib/ayumi_web/router.ex`, remove this public root scope:
 
@@ -1141,11 +1218,11 @@ end
 
 Reason: `/` now renders operational data and must run behind `:require_authenticated_user`. It uses the existing live session rather than a duplicate live-session name, preserving the phx.gen.auth route structure.
 
-- [ ] **Step 5: Remove the obsolete public-home controller test**
+- [x] **Step 5: Remove the obsolete public-home controller test**
 
 Delete `test/ayumi_web/controllers/page_controller_test.exs`. The default Phoenix home page is no longer a routed behavior; guest root access is now covered by `test/ayumi_web/live/dashboard_live_test.exs`.
 
-- [ ] **Step 6: Run dashboard tests**
+- [x] **Step 6: Run dashboard tests**
 
 Run:
 
@@ -1155,7 +1232,7 @@ mix test test/ayumi_web/live/dashboard_live_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 7: Run auth/session tests touched by the root route**
+- [x] **Step 7: Run auth/session tests touched by the root route**
 
 Run:
 
@@ -1165,7 +1242,7 @@ mix test test/ayumi_web/controllers/user_session_controller_test.exs test/ayumi_
 
 Expected: PASS. If a test still asserts Phoenix default home text, replace that assertion with dashboard structure such as `#monitoring-alerts`; do not reintroduce a public root page.
 
-- [ ] **Step 8: Extract gettext messages**
+- [x] **Step 8: Extract gettext messages**
 
 Run:
 
@@ -1176,7 +1253,7 @@ mix gettext.extract --check-up-to-date
 
 Expected: `priv/gettext/default.pot` is updated and the check exits 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add lib/ayumi_web/live/dashboard_live/index.ex lib/ayumi_web/router.ex test/ayumi_web/live/dashboard_live_test.exs priv/gettext/default.pot
@@ -1191,7 +1268,7 @@ git commit -m "feat: add monitoring deadline dashboard"
 **Files:**
 - All files changed in Tasks 1-5.
 
-- [ ] **Step 1: Run focused domain tests**
+- [x] **Step 1: Run focused domain tests**
 
 Run:
 
@@ -1201,7 +1278,7 @@ mix test test/ayumi/plans/enumerations_test.exs test/ayumi/plans/plan_phase_even
 
 Expected: PASS.
 
-- [ ] **Step 2: Run focused LiveView tests**
+- [x] **Step 2: Run focused LiveView tests**
 
 Run:
 
@@ -1211,7 +1288,7 @@ mix test test/ayumi_web/live/support_plan_live_test.exs test/ayumi_web/live/dash
 
 Expected: PASS.
 
-- [ ] **Step 3: Run auth tests affected by `/`**
+- [x] **Step 3: Run auth tests affected by `/`**
 
 Run:
 
@@ -1221,7 +1298,7 @@ mix test test/ayumi_web/controllers/user_session_controller_test.exs test/ayumi_
 
 Expected: PASS.
 
-- [ ] **Step 4: Run the full review gate**
+- [x] **Step 4: Run the full review gate**
 
 Run:
 
@@ -1231,7 +1308,7 @@ mix review
 
 Expected: `format --check-formatted`, `compile --warnings-as-errors --force`, `credo`, and `test` all pass.
 
-- [ ] **Step 5: Run the project precommit alias**
+- [x] **Step 5: Run the project precommit alias**
 
 Run:
 
@@ -1241,7 +1318,7 @@ mix precommit
 
 Expected: compile, unused-dependency check, format, and tests pass. If `mix precommit` formats files, continue to the next step and re-run `mix review`.
 
-- [ ] **Step 6: If formatting changes are reported**
+- [x] **Step 6: If formatting changes are reported**
 
 Run:
 
@@ -1253,7 +1330,7 @@ mix precommit
 
 Expected: PASS after formatting. Include formatting changes only when they touch files from this plan.
 
-- [ ] **Step 7: Final commit if earlier commits were skipped**
+- [x] **Step 7: Final commit if earlier commits were skipped**
 
 If the implementation was not committed task-by-task, make one final commit:
 
@@ -1267,17 +1344,17 @@ git commit -m "feat: add plan phase tracking and dashboard"
 
 ## Self-Review Checklist
 
-- [ ] Step 3 lifecycle order is exactly `assessment -> draft -> support_meeting -> consent -> in_progress -> monitoring -> review`.
-- [ ] `plan_phase_events` has `inserted_at` and no `updated_at`, `lock_version`, edit UI, delete UI, or mutable current-stage column.
-- [ ] `recorded_by_id` is supplied from `@current_scope.user.id` in the authenticated LiveView flow.
-- [ ] `recorded_at` is assigned server-side with `DateTime.utc_now(:second)`.
-- [ ] Current phase is derived by `Plans.current_plan_stage/1` using latest inserted id.
-- [ ] Phase history preloads `:recorded_by` before rendering staff names.
-- [ ] Dashboard uses all service users' current plans, where current means newest `period_start` and highest id as tie-breaker.
-- [ ] Dashboard classification uses `days_until < 0` as `:overdue`, `0 <= days_until <= 30` as `:near`, and everything else as `:ok`.
-- [ ] Dashboard sorts current staff's assigned plans first, then `days_until` ascending.
-- [ ] `/` is in `pipe_through [:browser, :require_authenticated_user]` and the existing `live_session :require_authenticated_user`; there is no duplicate live-session name.
-- [ ] All new templates begin with `<Layouts.app flash={@flash} current_scope={@current_scope}>`.
-- [ ] Templates use `@current_scope.user` or context-provided structs, never `@current_user`.
-- [ ] New Japanese UI strings are wrapped in `gettext(...)` and `priv/gettext/default.pot` is updated.
-- [ ] `mix review` and `mix precommit` pass before the implementation is considered complete.
+- [x] Step 3 lifecycle order is exactly `assessment -> draft -> support_meeting -> consent -> in_progress -> monitoring -> review`.
+- [x] `plan_phase_events` has `inserted_at` and no `updated_at`, `lock_version`, edit UI, delete UI, or mutable current-stage column.
+- [x] `recorded_by_id` is supplied from `@current_scope.user.id` in the authenticated LiveView flow.
+- [x] `recorded_at` is assigned server-side with `DateTime.utc_now(:second)`.
+- [x] Current phase is derived by `Plans.current_plan_stage/1` using latest inserted id.
+- [x] Phase history preloads `:recorded_by` before rendering staff names.
+- [x] Dashboard uses all service users' current plans, where current means newest `period_start` and highest id as tie-breaker.
+- [x] Dashboard classification uses `days_until < 0` as `:overdue`, `0 <= days_until <= 30` as `:near`, and everything else as `:ok`.
+- [x] Dashboard sorts current staff's assigned plans first, then `days_until` ascending.
+- [x] `/` is in `pipe_through [:browser, :require_authenticated_user]` and the existing `live_session :require_authenticated_user`; there is no duplicate live-session name.
+- [x] All new templates begin with `<Layouts.app flash={@flash} current_scope={@current_scope}>`.
+- [x] Templates use `@current_scope.user` or context-provided structs, never `@current_user`.
+- [x] New Japanese UI strings are wrapped in `gettext(...)` and `priv/gettext/default.pot` is updated.
+- [x] `mix review` and `mix precommit` pass before the implementation is considered complete.

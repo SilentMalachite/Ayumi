@@ -67,8 +67,8 @@ Append-only logs (the core idea):
 ### Append-only principle (do not violate)
 
 - State changes are recorded as **new rows**, never by overwriting existing rows.
-- Corrections are also new rows (an explicit correction record) so history is never
-  lost. This matters for welfare documentation and auditability.
+- Corrections are also new rows, so history is never lost. This matters for welfare
+  documentation and auditability.
 - "Current state" is **derived**, not stored: the latest `plan_phase_event` for a
   plan is its current stage; the latest `goal_progress` for a goal is its current
   progress. Do **not** add a mutable `current_stage` column that gets updated in
@@ -169,8 +169,8 @@ Scaffold with `mix phx.new ayumi --database sqlite3`.
    Plus `phx.gen.auth` staff login.
 2. Done: `goal_progress`: record progress updates per goal (the most-used screen).
    Derive current progress from the latest row.
-3. Next: `plan_phase_event` + the monitoring-deadline dashboard: stage transitions, and the
-   "deadlines near / overdue" surfacing on the dashboard.
+3. Done: `plan_phase_event` + the monitoring-deadline dashboard: stage transitions, and the
+   "deadlines near / overdue" surfacing on the authenticated dashboard.
 
 Do these one at a time. Each step must be green and `mix review`-clean before moving
 to the next.
