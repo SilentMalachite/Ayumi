@@ -86,8 +86,9 @@ Plan lifecycle stages (`plan_phase_event.stage`), in order:
 (JP: アセスメント → 計画原案 → 個別支援会議 → 説明・同意・交付 → 支援の実施 →
 モニタリング → 見直し)
 
-Goal progress stages (`goal_progress.stage`) — proposed set, **confirm with the
-facility before finalizing**:
+Goal progress stages (`goal_progress.stage`) — current implemented set. Labels live
+in `Ayumi.Plans.GoalProgressStage`; if the facility changes the wording, update the
+enum module, tests, and UI together:
 
 `not_started` / `working` / `partially_met` / `mostly_met` / `met`
 
@@ -111,9 +112,8 @@ team where email is routinely ignored.
   in-app list is the guarantee.
 - Out of scope: email, Apple push, mobile push. Do not add them.
 
-Open decision — ask before assuming: should the dashboard show **all** facility
-deadlines, or only the logged-in staff member's **assigned** users? Default for now:
-show all, sort the viewer's own assigned users first.
+Dashboard defaults for the current plan: show **all** facility deadlines, sort the
+viewer’s own assigned users first, and treat deadlines within 30 days as near.
 
 ## How to work in this repo
 
@@ -161,15 +161,15 @@ show all, sort the viewer's own assigned users first.
 - Keep auth simple (local staff accounts). Role separation (サビ管 vs 支援者) can come
   later, not now.
 
-## Build order (current plan)
+## Build order (current status)
 
 Scaffold with `mix phx.new ayumi --database sqlite3`.
 
-1. `support_plan` + `goal`: create a plan, attach short-term goals, list them. Plus
-   `phx.gen.auth` staff login.
-2. `goal_progress`: record progress updates per goal (the most-used screen). Derive
-   current progress from the latest row.
-3. `plan_phase_event` + the monitoring-deadline dashboard: stage transitions, and the
+1. Done: `support_plan` + `goal`: create a plan, attach short-term goals, list them.
+   Plus `phx.gen.auth` staff login.
+2. Done: `goal_progress`: record progress updates per goal (the most-used screen).
+   Derive current progress from the latest row.
+3. Next: `plan_phase_event` + the monitoring-deadline dashboard: stage transitions, and the
    "deadlines near / overdue" surfacing on the dashboard.
 
 Do these one at a time. Each step must be green and `mix review`-clean before moving

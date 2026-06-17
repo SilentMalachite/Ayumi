@@ -337,9 +337,9 @@
 
       <div class="meta-row">
         <span class="chip"><span class="dot" style="background:var(--matsuba)"></span><b>STEP 1</b> 完了</span>
-        <span class="chip"><span class="dot" style="background:var(--shu)"></span><b>STEP 2</b> 着手予定</span>
+        <span class="chip"><span class="dot" style="background:var(--matsuba)"></span><b>STEP 2</b> 完了</span>
         <span class="chip"><span class="dot" style="background:var(--ai)"></span><b>STEP 3</b> 未着手</span>
-        <span class="chip">📅 2026-06-15 時点</span>
+        <span class="chip">📅 2026-06-18 時点</span>
         <span class="chip">⚙ Elixir · Phoenix LiveView · SQLite(WAL)</span>
       </div>
 
@@ -377,7 +377,7 @@
   <div class="wrap reveal">
     <div class="sec-head"><span class="sec-kicker">The core idea</span></div>
     <h2>中核アイデア — ログを畳んで現在状態に</h2>
-    <p class="sec-sub">未実装の <span class="tok">goal_progress</span> と <span class="tok">plan_phase_event</span> は共にこの形。新しい行を積み、純粋関数が最新を返す。</p>
+    <p class="sec-sub"><span class="tok">goal_progress</span> はこの形で実装済み。次は <span class="tok">plan_phase_event</span> も同じ追記専用ログとして進める。</p>
 
     <div class="concept">
       <div class="flow">
@@ -415,7 +415,7 @@
       <div class="dm">
         <div class="ent body"><div class="en-kind">Body · 本体</div><div class="en-name">support_plan</div><div class="en-jp">個別支援計画（1計画期間）</div><div class="rel">└ has_many ▸</div></div>
         <div class="ent body"><div class="en-kind">Body · 本体</div><div class="en-name">goal</div><div class="en-jp">短期目標（複数）</div><div class="rel">└ has_many ▸</div></div>
-        <div class="ent log"><div class="en-kind">Log · 追記専用</div><div class="en-name">goal_progress</div><div class="en-jp">進捗更新（未実装 / Step 2）</div><div class="rel">→ belongs_to goal</div></div>
+        <div class="ent log"><div class="en-kind">Log · 追記専用</div><div class="en-name">goal_progress</div><div class="en-jp">進捗更新（実装済み / Step 2）</div><div class="rel">→ belongs_to goal</div></div>
         <div class="ent log"><div class="en-kind">Log · 追記専用</div><div class="en-name">plan_phase_event</div><div class="en-jp">ライフサイクル遷移（未実装 / Step 3）</div><div class="rel">→ belongs_to support_plan</div></div>
       </div>
     </div>
@@ -456,12 +456,12 @@
         </div>
       </div>
 
-      <!-- STEP 2 — CURRENT -->
+      <!-- STEP 2 — DONE -->
       <div class="stage">
-        <div class="node cur" aria-hidden="true">弐</div>
+        <div class="node done" aria-hidden="true">弐</div>
         <div class="card" data-step>
           <div class="card-top">
-            <span class="badge b-cur">着手予定 · NEXT UP</span>
+            <span class="badge b-done">完了 · DONE</span>
             <h3><span class="tok">goal_progress</span> — 最頻出画面</h3>
             <div class="mini"><div class="mtrack"><div class="mfill" data-step-fill></div></div><span class="mnum" data-step-count>0/0</span></div>
             <p class="obj">各短期目標の進捗更新を<strong>追記専用ログ</strong>として記録し、最新行から現在の進捗を導出する。</p>
@@ -471,10 +471,10 @@
             <div class="group">
               <div class="group-label">列挙体</div>
               <ul class="checklist">
-                <li class="task confirm"><input type="checkbox" id="t2-enum"><label for="t2-enum"><span class="tok green">Ayumi.Plans.GoalProgressStage</span> を既存 enum と同形で追加（<span class="tok">all/0</span> / <span class="tok">label/1</span> / <span class="tok">options/0</span>）。テスト先行。<span class="sub">※ ステージ語彙は施設確認が前提（下記「確認事項」）。</span></label></li>
+                <li class="task"><input type="checkbox" id="t2-enum" checked><label for="t2-enum"><span class="tok green">Ayumi.Plans.GoalProgressStage</span> を既存 enum と同形で追加（<span class="tok">all/0</span> / <span class="tok">label/1</span> / <span class="tok">options/0</span>）。テスト先行。<span class="sub">ステージ語彙は現行仕様として実装済み。</span></label></li>
               </ul>
               <div class="diagram">
-                <div class="dtitle">進捗ステージ（案 — 要施設確認）</div>
+                <div class="dtitle">進捗ステージ（実装済み）</div>
                 <div class="scale">
                   <div class="seg"><div class="jp">未着手</div><div class="en">not_started</div></div>
                   <div class="seg"><div class="jp">取組中</div><div class="en">working</div></div>
@@ -488,29 +488,29 @@
             <div class="group">
               <div class="group-label">スキーマ + マイグレーション</div>
               <ul class="checklist">
-                <li class="task"><input type="checkbox" id="t2-mig"><label for="t2-mig">マイグレーション <span class="tok">create_goal_progresses</span>：<span class="tok">goal_id</span>/<span class="tok">stage</span>/<span class="tok">note</span>(所見)/<span class="tok">recorded_by_id</span>/<span class="tok">recorded_at</span>/<span class="tok">inserted_at</span>。<span class="sub">追記専用なので <span class="tok">lock_version</span> は不要。</span></label></li>
-                <li class="task"><input type="checkbox" id="t2-schema"><label for="t2-schema"><span class="tok green">Ayumi.Plans.GoalProgress</span> スキーマ ＋ <span class="tok">belongs_to :goal</span> / <span class="tok">belongs_to :recorded_by</span>。</label></li>
-                <li class="task"><input type="checkbox" id="t2-cs"><label for="t2-cs"><span class="tok">changeset/2</span>：<span class="tok">stage</span> を許可値に inclusion 制約、必須項目を validate。訂正も新規行として扱う。</label></li>
+                <li class="task"><input type="checkbox" id="t2-mig" checked><label for="t2-mig">マイグレーション <span class="tok">create_goal_progresses</span>：<span class="tok">goal_id</span>/<span class="tok">stage</span>/<span class="tok">note</span>(所見)/<span class="tok">recorded_by_id</span>/<span class="tok">recorded_at</span>/<span class="tok">inserted_at</span>。<span class="sub">追記専用なので <span class="tok">lock_version</span> は不要。</span></label></li>
+                <li class="task"><input type="checkbox" id="t2-schema" checked><label for="t2-schema"><span class="tok green">Ayumi.Plans.GoalProgress</span> スキーマ ＋ <span class="tok">belongs_to :goal</span> / <span class="tok">belongs_to :recorded_by</span>。</label></li>
+                <li class="task"><input type="checkbox" id="t2-cs" checked><label for="t2-cs"><span class="tok">changeset/2</span>：<span class="tok">stage</span> を許可値に inclusion 制約、必須項目を validate。訂正も新規行として扱う。</label></li>
               </ul>
             </div>
 
             <div class="group">
               <div class="group-label">Context（純粋関数 + 永続化）</div>
               <ul class="checklist">
-                <li class="task"><input type="checkbox" id="t2-record"><label for="t2-record"><span class="tok">record_goal_progress(attrs)</span> — 進捗行を1件 insert（更新しない）。</label></li>
-                <li class="task"><input type="checkbox" id="t2-list"><label for="t2-list"><span class="tok">list_goal_progress(goal)</span> — 1目標の履歴を時系列で返す。</label></li>
-                <li class="task"><input type="checkbox" id="t2-current"><label for="t2-current"><span class="tok">current_goal_progress(events)</span> — <strong>純粋関数</strong>で最新行を畳み込み現在進捗を返す。</label></li>
-                <li class="task"><input type="checkbox" id="t2-batch"><label for="t2-batch">N+1 を避け、複数 goal の最新進捗をまとめて取得（plan 詳細表示用）。</label></li>
+                <li class="task"><input type="checkbox" id="t2-record" checked><label for="t2-record"><span class="tok">record_goal_progress(attrs)</span> — 進捗行を1件 insert（更新しない）。</label></li>
+                <li class="task"><input type="checkbox" id="t2-list" checked><label for="t2-list"><span class="tok">list_goal_progress(goal)</span> — 1目標の履歴を時系列で返す。</label></li>
+                <li class="task"><input type="checkbox" id="t2-current" checked><label for="t2-current"><span class="tok">current_goal_progress(events)</span> — <strong>純粋関数</strong>で最新行を畳み込み現在進捗を返す。</label></li>
+                <li class="task"><input type="checkbox" id="t2-batch" checked><label for="t2-batch">N+1 を避け、複数 goal の最新進捗をまとめて取得（plan 詳細表示用）。</label></li>
               </ul>
             </div>
 
             <div class="group">
               <div class="group-label">LiveView（最も使う画面）</div>
               <ul class="checklist">
-                <li class="task"><input type="checkbox" id="t2-form"><label for="t2-form">進捗記録フォーム（ステージ選択＋所見）。<span class="tok">recorded_by</span>＝ログイン職員、<span class="tok">recorded_at</span>＝サーバ付与。</label></li>
-                <li class="task"><input type="checkbox" id="t2-showcur"><label for="t2-showcur"><span class="tok">SupportPlanLive.Show</span> の goal 一覧に<strong>現在の進捗</strong>を表示。</label></li>
-                <li class="task"><input type="checkbox" id="t2-history"><label for="t2-history">進捗<strong>履歴</strong>（誰が・いつ・どのステージ・所見）を表示。</label></li>
-                <li class="task"><input type="checkbox" id="t2-lvtest"><label for="t2-lvtest">LiveView フローのテスト（記録 → 一覧・最新表示の反映）。</label></li>
+                <li class="task"><input type="checkbox" id="t2-form" checked><label for="t2-form">進捗記録フォーム（ステージ選択＋所見）。<span class="tok">recorded_by</span>＝ログイン職員、<span class="tok">recorded_at</span>＝サーバ付与。</label></li>
+                <li class="task"><input type="checkbox" id="t2-showcur" checked><label for="t2-showcur"><span class="tok">SupportPlanLive.Show</span> の goal 一覧に<strong>現在の進捗</strong>を表示。</label></li>
+                <li class="task"><input type="checkbox" id="t2-history" checked><label for="t2-history">進捗<strong>履歴</strong>（誰が・いつ・どのステージ・所見）を表示。</label></li>
+                <li class="task"><input type="checkbox" id="t2-lvtest" checked><label for="t2-lvtest">LiveView フローのテスト（記録 → 一覧・最新表示の反映）。</label></li>
               </ul>
             </div>
 
@@ -560,13 +560,13 @@
                 <div class="dtitle">期限の区分 — ページ表示時の Ecto クエリで上部に常時表示（メール・定期ジョブ不使用）</div>
                 <div class="bands">
                   <div class="band over"><div class="bt">超過 · Overdue</div><div class="bd">期日を過ぎた計画。最優先で最上部。</div></div>
-                  <div class="band near"><div class="bt">近接 · Near</div><div class="bd">しきい値内（例: 14日）。続けて表示。</div></div>
+                  <div class="band near"><div class="bt">近接 · Near</div><div class="bd">30日以内。続けて表示。</div></div>
                   <div class="band ok"><div class="bt">余裕 · OK</div><div class="bd">しきい値外。一覧では強調しない。</div></div>
                 </div>
               </div>
               <ul class="checklist">
-                <li class="task confirm"><input type="checkbox" id="t3b-scope"><label for="t3b-scope">表示範囲を確定：全施設 or 担当のみ。<span class="sub">既定 = 全件表示・自分の担当を先頭ソート。</span></label></li>
-                <li class="task"><input type="checkbox" id="t3b-query"><label for="t3b-query">Context クエリ：<span class="tok">next_monitoring_date</span> を基準に near/overdue を抽出。日付→区分の<strong>純粋ヘルパ</strong>を分離して単体テスト。</label></li>
+                <li class="task"><input type="checkbox" id="t3b-scope"><label for="t3b-scope">表示範囲：全施設の期限を表示し、自分の担当を先頭にソート。</label></li>
+                <li class="task"><input type="checkbox" id="t3b-query"><label for="t3b-query">Context クエリ：<span class="tok">next_monitoring_date</span> を基準に near/overdue を抽出。近接は30日以内。日付→区分の<strong>純粋ヘルパ</strong>を分離して単体テスト。</label></li>
                 <li class="task"><input type="checkbox" id="t3b-home"><label for="t3b-home">ホーム差し替え：現状 <span class="tok">page_html/home.html.heex</span> は Phoenix デフォルト。認証済みダッシュボード LiveView を新設し期限を最上部に。</label></li>
                 <li class="task"><input type="checkbox" id="t3b-sort"><label for="t3b-sort">ソート：超過 → 近接の順、ログイン職員の担当を先頭に。</label></li>
                 <li class="task"><input type="checkbox" id="t3b-link"><label for="t3b-link">各行から該当 support_plan / service_user 詳細へ遷移。</label></li>
@@ -604,27 +604,21 @@
 <!-- ═══════════════════  OPEN QUESTIONS  ═══════════════════ -->
 <section>
   <div class="wrap reveal">
-    <div class="sec-head"><span class="sec-kicker">Decide first</span></div>
-    <h2>確認事項 — 実装前に施設へ / 仕様確定</h2>
-    <p class="sec-sub">CLAUDE.md が「ask before assuming」としている未決定。着手前に潰す。</p>
+    <div class="sec-head"><span class="sec-kicker">Step 3 defaults</span></div>
+    <h2>Step 3 の既定方針</h2>
+    <p class="sec-sub">仕様書と実装計画に合わせた、ダッシュボード実装時の前提。</p>
     <div class="q-grid">
       <div class="qcard">
-        <div class="qmark">?</div>
-        <h4>進捗ステージの語彙</h4>
-        <p><span class="tok">not_started / working / partially_met / mostly_met / met</span> で確定してよいか。</p>
-        <div class="deflt">影響：<b>Step 2</b> の列挙体・changeset・UI。</div>
-      </div>
-      <div class="qcard">
-        <div class="qmark">?</div>
+        <div class="qmark">✓</div>
         <h4>ダッシュボードの範囲</h4>
-        <p>全施設の期限を出すか、ログイン職員の担当ユーザのみか。</p>
+        <p>全施設の期限を表示し、ログイン職員の担当ユーザを先頭に並べる。</p>
         <div class="deflt">既定：<b>全件表示・自分の担当を先頭ソート</b>。</div>
       </div>
       <div class="qcard">
-        <div class="qmark">?</div>
+        <div class="qmark">✓</div>
         <h4>「近接」しきい値</h4>
-        <p>何日前から「近接」とみなすか。</p>
-        <div class="deflt">既定の目安：<b>14日</b>（要確認）。</div>
+        <p>今日から30日以内のモニタリング期限を「近接」とみなす。</p>
+        <div class="deflt">既定：<b>30日</b>。</div>
       </div>
     </div>
   </div>
@@ -666,7 +660,7 @@
 <footer class="foot">
   <div class="ko">歩 み</div>
   Ayumi — 一歩ずつ。1つずつ・TDDで・mix review グリーンで次へ。<br>
-  TODO.md の図解 · 2026-06-15 · オフライン環境ではシステムフォントで表示されます。
+  TODO.md の図解 · 2026-06-18 · オフライン環境ではシステムフォントで表示されます。
 </footer>
 
 <script>
