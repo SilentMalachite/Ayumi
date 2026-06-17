@@ -3,6 +3,7 @@ defmodule Ayumi.PlansTest do
 
   alias Ayumi.Plans
   alias Ayumi.Plans.GoalProgress
+  alias Ayumi.Plans.PlanPhaseEvent
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
   alias Ayumi.Plans.Goal
@@ -470,6 +471,208 @@ defmodule Ayumi.PlansTest do
       assert latest_by_goal[first_goal.id].id == latest_first.id
       assert latest_by_goal[second_goal.id].id == latest_second.id
       assert latest_by_goal[empty_goal.id] == nil
+    end
+  end
+
+  describe "plan phase events" do
+    test "record_plan_phase_event/1 appends a phase event row" do
+      plan = support_plan_fixture()
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+      recorded_at = ~U[2026-06-18 01:02:03Z]
+
+      assert {:ok, %PlanPhaseEvent{} = event} =
+               Plans.record_plan_phase_event(%{
+                 support_plan_id: plan.id,
+                 stage: :support_meeting,
+                 note: "会議で支援内容を確認した",
+                 recorded_by_id: staff.id,
+                 recorded_at: recorded_at
+               })
+
+      assert event.support_plan_id == plan.id
+      assert event.stage == :support_meeting
+      assert event.note == "会議で支援内容を確認した"
+      assert event.recorded_by_id == staff.id
+      assert event.recorded_at == recorded_at
+    end
+
+    test "record_plan_phase_event/1 returns a changeset error for an invalid support plan" do
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_plan_phase_event(%{
+                 support_plan_id: -1,
+                 stage: :assessment,
+                 recorded_by_id: staff.id,
+                 recorded_at: ~U[2026-06-18 01:02:03Z]
+               })
+
+      assert errors_on(changeset)[:support_plan_id]
+      refute errors_on(changeset)[:recorded_by_id]
+    end
+
+    test "record_plan_phase_event/1 returns a changeset error for an invalid recording staff" do
+      plan = support_plan_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_plan_phase_event(%{
+                 support_plan_id: plan.id,
+                 stage: :assessment,
+                 recorded_by_id: -1,
+                 recorded_at: ~U[2026-06-18 01:02:03Z]
+               })
+
+      assert errors_on(changeset)[:recorded_by_id]
+      refute errors_on(changeset)[:support_plan_id]
+    end
+
+    test "record_plan_phase_event/1 never updates previous phase rows" do
+      plan = support_plan_fixture()
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      {:ok, first} =
+        Plans.record_plan_phase_event(%{
+          support_plan_id: plan.id,
+          stage: :assessment,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-18 01:00:00Z]
+        })
+
+      {:ok, second} =
+        Plans.record_plan_phase_event(%{
+          support_plan_id: plan.id,
+          stage: :draft,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-18 02:00:00Z]
+        })
+
+      history = Plans.list_plan_phase_events(plan)
+
+      assert first.id != second.id
+      assert Enum.map(history, & &1.id) == [first.id, second.id]
+      assert Enum.map(history, & &1.stage) == [:assessment, :draft]
+    end
+
+    test "list_plan_phase_events/1 returns one plan's history in insertion order with staff preloaded" do
+      plan = support_plan_fixture()
+      staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "記録 職員"})
+
+      {:ok, _} =
+        Plans.record_plan_phase_event(%{
+          support_plan_id: plan.id,
+          stage: :assessment,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-18 01:00:00Z]
+        })
+
+      {:ok, _} =
+        Plans.record_plan_phase_event(%{
+          support_plan_id: plan.id,
+          stage: :consent,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-18 02:00:00Z]
+        })
+
+      assert [:assessment, :consent] =
+               Plans.list_plan_phase_events(plan) |> Enum.map(& &1.stage)
+
+      assert [%{recorded_by: %{name: "記録 職員"}} | _] = Plans.list_plan_phase_events(plan)
+    end
+
+    test "current_plan_stage/1 returns nil for an empty history" do
+      assert Plans.current_plan_stage([]) == nil
+    end
+
+    test "current_plan_stage/1 returns the latest inserted phase event" do
+      older = %PlanPhaseEvent{id: 1, stage: :assessment}
+      newer = %PlanPhaseEvent{id: 2, stage: :in_progress}
+
+      assert Plans.current_plan_stage([newer, older]) == newer
+    end
+  end
+
+  describe "monitoring deadline alerts" do
+    test "monitoring_deadline_status/3 classifies overdue, near, and ok" do
+      today = ~D[2026-06-18]
+
+      assert Plans.monitoring_deadline_status(~D[2026-06-17], today, 30) == :overdue
+      assert Plans.monitoring_deadline_status(~D[2026-06-18], today, 30) == :near
+      assert Plans.monitoring_deadline_status(~D[2026-07-18], today, 30) == :near
+      assert Plans.monitoring_deadline_status(~D[2026-07-19], today, 30) == :ok
+    end
+
+    test "list_monitoring_deadline_alerts/3 ignores older plans for the same service user" do
+      today = ~D[2026-06-18]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+      service_user = service_user_fixture(%{name: "期またぎ 太郎", name_kana: "きまたぎ たろう"})
+
+      _old_overdue =
+        support_plan_fixture(%{
+          service_user_id: service_user.id,
+          staff_id: staff.id,
+          period_start: ~D[2025-04-01],
+          period_end: ~D[2025-09-30],
+          next_monitoring_date: ~D[2025-05-01]
+        })
+
+      current_ok =
+        support_plan_fixture(%{
+          service_user_id: service_user.id,
+          staff_id: staff.id,
+          period_start: ~D[2026-04-01],
+          period_end: ~D[2026-09-30],
+          next_monitoring_date: ~D[2026-08-01]
+        })
+
+      alerts = Plans.list_monitoring_deadline_alerts(Ayumi.Accounts.Scope.for_user(staff), today, 30)
+
+      refute Enum.any?(alerts, &(&1.support_plan.id == current_ok.id))
+      assert alerts == []
+    end
+
+    test "list_monitoring_deadline_alerts/3 includes all users and sorts current staff first, then urgent" do
+      today = ~D[2026-06-18]
+      current_staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "担当 職員"})
+      other_staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "別 職員"})
+
+      own_user = service_user_fixture(%{name: "自分 担当", name_kana: "じぶん たんとう"})
+      other_overdue_user = service_user_fixture(%{name: "他 超過", name_kana: "た ちょうか"})
+      other_near_user = service_user_fixture(%{name: "他 近接", name_kana: "た きんせつ"})
+
+      own_near =
+        support_plan_fixture(%{
+          service_user_id: own_user.id,
+          staff_id: current_staff.id,
+          next_monitoring_date: ~D[2026-06-25]
+        })
+
+      other_overdue =
+        support_plan_fixture(%{
+          service_user_id: other_overdue_user.id,
+          staff_id: other_staff.id,
+          next_monitoring_date: ~D[2026-06-01]
+        })
+
+      other_near =
+        support_plan_fixture(%{
+          service_user_id: other_near_user.id,
+          staff_id: other_staff.id,
+          next_monitoring_date: ~D[2026-06-20]
+        })
+
+      alerts =
+        current_staff
+        |> Ayumi.Accounts.Scope.for_user()
+        |> Plans.list_monitoring_deadline_alerts(today, 30)
+
+      assert Enum.map(alerts, & &1.support_plan.id) == [
+               own_near.id,
+               other_overdue.id,
+               other_near.id
+             ]
+
+      assert [%{status: :near, assigned_to_current_user?: true} | _] = alerts
+      assert Enum.map(alerts, & &1.days_until) == [7, -17, 2]
     end
   end
 

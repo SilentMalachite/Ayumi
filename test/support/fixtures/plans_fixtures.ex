@@ -74,4 +74,22 @@ defmodule Ayumi.PlansFixtures do
 
     goal_progress
   end
+
+  def plan_phase_event_fixture(attrs \\ %{}) do
+    support_plan_id = attrs[:support_plan_id] || support_plan_fixture().id
+    recorded_by_id = attrs[:recorded_by_id] || user_fixture().id
+
+    {:ok, plan_phase_event} =
+      attrs
+      |> Enum.into(%{
+        support_plan_id: support_plan_id,
+        stage: :assessment,
+        note: "アセスメントを記録した",
+        recorded_by_id: recorded_by_id,
+        recorded_at: ~U[2026-06-18 01:02:03Z]
+      })
+      |> Plans.record_plan_phase_event()
+
+    plan_phase_event
+  end
 end

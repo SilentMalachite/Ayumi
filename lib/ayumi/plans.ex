@@ -6,9 +6,11 @@ defmodule Ayumi.Plans do
   import Ecto.Query, warn: false
   alias Ayumi.Repo
 
+  alias Ayumi.Accounts.Scope
   alias Ayumi.Accounts.User
   alias Ayumi.Plans.Goal
   alias Ayumi.Plans.GoalProgress
+  alias Ayumi.Plans.PlanPhaseEvent
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
 
@@ -244,6 +246,105 @@ defmodule Ayumi.Plans do
     Map.merge(empty_map, latest)
   end
 
+  ## Plan phase events
+
+  @doc "Returns a changeset for a plan phase event row (forms)."
+  def change_plan_phase_event(%PlanPhaseEvent{} = event, attrs \\ %{}) do
+    PlanPhaseEvent.changeset(event, attrs)
+  end
+
+  @doc "Appends a plan phase event row. Existing rows are never updated."
+  def record_plan_phase_event(attrs) do
+    %PlanPhaseEvent{}
+    |> PlanPhaseEvent.changeset(attrs)
+    |> insert_plan_phase_event()
+  end
+
+  @doc "Lists one support plan's phase history in insertion order."
+  def list_plan_phase_events(%SupportPlan{id: id}), do: list_plan_phase_events(id)
+
+  def list_plan_phase_events(support_plan_id) when is_integer(support_plan_id) do
+    PlanPhaseEvent
+    |> where([e], e.support_plan_id == ^support_plan_id)
+    |> order_by([e], asc: e.id)
+    |> preload([:recorded_by])
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns the latest phase event from an enumerable history.
+
+  This is pure and DB-independent. Latest is defined by the greatest id, not by
+  `recorded_at`, because corrections and rapid inserts should be resolved by
+  append order.
+  """
+  def current_plan_stage(events) do
+    events
+    |> Enum.reject(&is_nil(&1.id))
+    |> Enum.max_by(& &1.id, fn -> nil end)
+  end
+
+  ## Monitoring deadlines
+
+  @doc "Classifies a monitoring deadline relative to a date."
+  def monitoring_deadline_status(next_monitoring_date, today, near_days)
+      when is_integer(near_days) and near_days >= 0 do
+    days_until = Date.diff(next_monitoring_date, today)
+
+    cond do
+      days_until < 0 -> :overdue
+      days_until <= near_days -> :near
+      true -> :ok
+    end
+  end
+
+  @doc """
+  Returns monitoring-deadline alerts for the current support plan of every service user.
+
+  All users are included. Alerts assigned to the current staff user sort first,
+  then rows sort by `days_until` ascending so the most urgent deadlines are easiest
+  to scan. Current plan means the newest `period_start`, with highest id breaking
+  ties.
+  """
+  def list_monitoring_deadline_alerts(%Scope{user: user}, today \\ Date.utc_today(), near_days \\ 30) do
+    current_staff_id = user.id
+
+    current_support_plans()
+    |> Enum.map(&monitoring_deadline_alert(&1, current_staff_id, today, near_days))
+    |> Enum.reject(&(&1.status == :ok))
+    |> Enum.sort_by(fn alert ->
+      plan = alert.support_plan
+      own_order = if alert.assigned_to_current_user?, do: 0, else: 1
+
+      {
+        own_order,
+        alert.days_until,
+        plan.service_user.name_kana || "",
+        plan.service_user.name || "",
+        plan.id
+      }
+    end)
+  end
+
+  defp current_support_plans do
+    SupportPlan
+    |> order_by([p], asc: p.service_user_id, desc: p.period_start, desc: p.id)
+    |> preload([:service_user, :staff])
+    |> Repo.all()
+    |> Enum.uniq_by(& &1.service_user_id)
+  end
+
+  defp monitoring_deadline_alert(plan, current_staff_id, today, near_days) do
+    days_until = Date.diff(plan.next_monitoring_date, today)
+
+    %{
+      support_plan: plan,
+      status: monitoring_deadline_status(plan.next_monitoring_date, today, near_days),
+      days_until: days_until,
+      assigned_to_current_user?: plan.staff_id == current_staff_id
+    }
+  end
+
   defp parse_goal_progress_goal_id(attrs) do
     attrs
     |> goal_progress_attr(:goal_id)
@@ -310,6 +411,25 @@ defmodule Ayumi.Plans do
   defp add_goal_progress_foreign_key_errors(changeset) do
     changeset
     |> add_missing_assoc_error(:goal_id, Goal)
+    |> add_missing_assoc_error(:recorded_by_id, User)
+  end
+
+  defp insert_plan_phase_event(changeset) do
+    Repo.insert(changeset)
+  rescue
+    exception in Ecto.ConstraintError ->
+      if unnamed_foreign_key_constraint_error?(exception) do
+        changeset = add_plan_phase_event_foreign_key_errors(changeset)
+
+        if changeset.valid?, do: reraise(exception, __STACKTRACE__), else: {:error, changeset}
+      else
+        reraise exception, __STACKTRACE__
+      end
+  end
+
+  defp add_plan_phase_event_foreign_key_errors(changeset) do
+    changeset
+    |> add_missing_assoc_error(:support_plan_id, SupportPlan)
     |> add_missing_assoc_error(:recorded_by_id, User)
   end
 
