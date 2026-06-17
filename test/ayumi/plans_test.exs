@@ -220,6 +220,36 @@ defmodule Ayumi.PlansTest do
       assert progress.recorded_at == recorded_at
     end
 
+    test "record_goal_progress/1 returns a changeset error for an invalid goal" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_goal_progress(%{
+                 goal_id: -1,
+                 stage: :working,
+                 recorded_by_id: staff.id,
+                 recorded_at: ~U[2026-06-17 01:02:03Z]
+               })
+
+      assert errors_on(changeset)[:goal_id]
+      refute errors_on(changeset)[:recorded_by_id]
+    end
+
+    test "record_goal_progress/1 returns a changeset error for an invalid recording staff" do
+      goal = goal_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_goal_progress(%{
+                 goal_id: goal.id,
+                 stage: :working,
+                 recorded_by_id: -1,
+                 recorded_at: ~U[2026-06-17 01:02:03Z]
+               })
+
+      assert errors_on(changeset)[:recorded_by_id]
+      refute errors_on(changeset)[:goal_id]
+    end
+
     test "record_goal_progress/1 never updates previous progress rows" do
       goal = goal_fixture()
       staff = Ayumi.AccountsFixtures.user_fixture()
@@ -280,6 +310,10 @@ defmodule Ayumi.PlansTest do
       newer = %GoalProgress{id: 2, stage: :met}
 
       assert Plans.current_goal_progress([newer, older]) == newer
+    end
+
+    test "latest_goal_progress_by_goal/1 returns an empty map for an empty goal list" do
+      assert Plans.latest_goal_progress_by_goal([]) == %{}
     end
 
     test "latest_goal_progress_by_goal/1 returns latest progress for multiple goals without losing empty goals" do

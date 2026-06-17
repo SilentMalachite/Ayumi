@@ -6,6 +6,7 @@ defmodule Ayumi.Plans do
   import Ecto.Query, warn: false
   alias Ayumi.Repo
 
+  alias Ayumi.Accounts.User
   alias Ayumi.Plans.Goal
   alias Ayumi.Plans.GoalProgress
   alias Ayumi.Plans.ServiceUser
@@ -156,7 +157,7 @@ defmodule Ayumi.Plans do
   def record_goal_progress(attrs) do
     %GoalProgress{}
     |> GoalProgress.changeset(attrs)
-    |> Repo.insert()
+    |> insert_goal_progress()
   end
 
   @doc "Lists one goal's progress history in insertion order."
@@ -184,22 +185,67 @@ defmodule Ayumi.Plans do
   end
 
   @doc "Returns `%{goal_id => latest_progress_or_nil}` for a list of goals."
+  def latest_goal_progress_by_goal([]), do: %{}
+
   def latest_goal_progress_by_goal(goals) when is_list(goals) do
     goal_ids = Enum.map(goals, & &1.id)
     empty_map = Map.new(goal_ids, &{&1, nil})
 
+    latest_ids_query =
+      from p in GoalProgress,
+        where: p.goal_id in ^goal_ids,
+        group_by: p.goal_id,
+        select: max(p.id)
+
     latest =
       GoalProgress
-      |> where([p], p.goal_id in ^goal_ids)
+      |> where([p], p.id in subquery(latest_ids_query))
       |> order_by([p], asc: p.goal_id, asc: p.id)
       |> preload([:recorded_by])
       |> Repo.all()
-      |> Enum.group_by(& &1.goal_id)
-      |> Map.new(fn {goal_id, progress_events} ->
-        {goal_id, current_goal_progress(progress_events)}
-      end)
+      |> Map.new(&{&1.goal_id, &1})
 
     Map.merge(empty_map, latest)
+  end
+
+  defp insert_goal_progress(changeset) do
+    Repo.insert(changeset)
+  rescue
+    exception in Ecto.ConstraintError ->
+      if unnamed_foreign_key_constraint_error?(exception) do
+        changeset = add_goal_progress_foreign_key_errors(changeset)
+
+        if changeset.valid?, do: reraise(exception, __STACKTRACE__), else: {:error, changeset}
+      else
+        reraise exception, __STACKTRACE__
+      end
+  end
+
+  defp add_goal_progress_foreign_key_errors(changeset) do
+    changeset
+    |> add_missing_assoc_error(:goal_id, Goal)
+    |> add_missing_assoc_error(:recorded_by_id, User)
+  end
+
+  defp add_missing_assoc_error(%Ecto.Changeset{valid?: true} = changeset, field, schema) do
+    id = Ecto.Changeset.get_field(changeset, field)
+
+    if is_integer(id) and assoc_exists?(schema, id) do
+      changeset
+    else
+      Ecto.Changeset.add_error(changeset, field, "does not exist",
+        constraint: :foreign,
+        constraint_name: nil
+      )
+    end
+  end
+
+  defp add_missing_assoc_error(changeset, _field, _schema), do: changeset
+
+  defp assoc_exists?(schema, id) do
+    schema
+    |> where([record], record.id == ^id)
+    |> Repo.exists?()
   end
 
   defp insert_goal(changeset) do
