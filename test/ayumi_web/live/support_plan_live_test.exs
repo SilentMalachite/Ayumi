@@ -78,6 +78,32 @@ defmodule AyumiWeb.SupportPlanLiveTest do
     assert progress.recorded_by_id == staff.id
   end
 
+  test "records a plan phase event and shows current phase and history", %{
+    conn: conn,
+    user: staff
+  } do
+    plan = support_plan_fixture()
+
+    {:ok, lv, html} = live(conn, ~p"/support_plans/#{plan.id}")
+
+    assert has_element?(lv, "#plan-phase-form")
+    assert html =~ "未記録"
+
+    html =
+      lv
+      |> form("#plan-phase-form",
+        plan_phase_event: %{stage: "support_meeting", note: "会議で支援内容を確認した"}
+      )
+      |> render_submit()
+
+    assert html =~ "個別支援会議"
+    assert html =~ "会議で支援内容を確認した"
+    assert html =~ staff.email
+
+    assert [event] = Ayumi.Plans.list_plan_phase_events(plan)
+    assert event.recorded_by_id == staff.id
+  end
+
   test "rejects forged goal progress for a goal from another support plan", %{conn: conn} do
     plan = support_plan_fixture()
     visible_goal = goal_fixture(%{support_plan_id: plan.id})
