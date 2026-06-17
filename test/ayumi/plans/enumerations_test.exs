@@ -1,7 +1,7 @@
 defmodule Ayumi.Plans.EnumerationsTest do
   use ExUnit.Case, async: true
 
-  alias Ayumi.Plans.{CertificateKind, Gender, SupportCategory}
+  alias Ayumi.Plans.{CertificateKind, Gender, GoalProgressStage, SupportCategory}
 
   describe "Gender" do
     test "all/0 lists values in display order" do
@@ -73,6 +73,36 @@ defmodule Ayumi.Plans.EnumerationsTest do
     test "options/0 returns {label, value} pairs for selects" do
       assert {"身体障害者手帳", :physical} in CertificateKind.options()
       assert length(CertificateKind.options()) == 3
+    end
+  end
+
+  describe "GoalProgressStage" do
+    test "all/0 lists stages in display order" do
+      assert GoalProgressStage.all() == [
+               :not_started,
+               :working,
+               :partially_met,
+               :mostly_met,
+               :met
+             ]
+    end
+
+    test "label/1 maps values to Japanese" do
+      assert GoalProgressStage.label(:not_started) == "未着手"
+      assert GoalProgressStage.label(:working) == "取組中"
+      assert GoalProgressStage.label(:partially_met) == "一部達成"
+      assert GoalProgressStage.label(:mostly_met) == "概ね達成"
+      assert GoalProgressStage.label(:met) == "達成"
+    end
+
+    test "label/1 returns nil for unknown or nil" do
+      assert GoalProgressStage.label(nil) == nil
+      assert GoalProgressStage.label(:bogus) == nil
+    end
+
+    test "options/0 returns {label, value} pairs for selects" do
+      assert {"未着手", :not_started} in GoalProgressStage.options()
+      assert length(GoalProgressStage.options()) == 5
     end
   end
 end
