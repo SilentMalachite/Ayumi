@@ -64,6 +64,10 @@ defmodule AyumiWeb.SupportPlanLive.Show do
     end
   end
 
+  def handle_event("record_goal_progress", _params, socket) do
+    {:noreply, put_flash(socket, :error, gettext("進捗を記録できませんでした"))}
+  end
+
   defp load(socket, id) do
     support_plan = Plans.get_support_plan!(id)
     goals = Plans.list_goals(support_plan)

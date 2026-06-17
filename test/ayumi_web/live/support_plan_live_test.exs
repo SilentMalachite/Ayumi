@@ -112,4 +112,20 @@ defmodule AyumiWeb.SupportPlanLiveTest do
     assert html =~ "進捗を記録できませんでした"
     assert has_element?(lv, "#goal-progress-form-#{visible_goal.id}")
   end
+
+  test "rejects missing goal progress goal_id without crashing", %{conn: conn} do
+    plan = support_plan_fixture()
+    visible_goal = goal_fixture(%{support_plan_id: plan.id})
+
+    {:ok, lv, _html} = live(conn, ~p"/support_plans/#{plan.id}")
+
+    html =
+      render_submit(lv, "record_goal_progress", %{
+        "goal_progress" => %{"stage" => "working", "note" => "改ざんされた記録"}
+      })
+
+    assert html =~ "進捗を記録できませんでした"
+    assert has_element?(lv, "#goal-progress-form-#{visible_goal.id}")
+    assert Ayumi.Plans.list_goal_progress(visible_goal) == []
+  end
 end
