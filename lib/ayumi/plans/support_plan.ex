@@ -23,6 +23,7 @@ defmodule Ayumi.Plans.SupportPlan do
     belongs_to :service_user, Ayumi.Plans.ServiceUser
     belongs_to :staff, Ayumi.Accounts.User
     has_many :goals, Ayumi.Plans.Goal
+    has_many :plan_phase_events, Ayumi.Plans.PlanPhaseEvent
 
     timestamps(type: :utc_datetime)
   end
