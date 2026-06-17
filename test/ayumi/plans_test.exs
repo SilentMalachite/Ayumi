@@ -332,6 +332,22 @@ defmodule Ayumi.PlansTest do
       assert errors_on(changeset)[:goal_id]
     end
 
+    test "record_goal_progress_for_plan/2 rejects a missing goal_id without inserting progress" do
+      plan = support_plan_fixture()
+      goal = goal_fixture(%{support_plan_id: plan.id})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      assert {:error, changeset} =
+               Plans.record_goal_progress_for_plan(plan, %{
+                 stage: :working,
+                 recorded_by_id: staff.id,
+                 recorded_at: ~U[2026-06-17 01:00:00Z]
+               })
+
+      assert errors_on(changeset)[:goal_id]
+      assert Plans.list_goal_progress(goal) == []
+    end
+
     test "list_goal_progress/1 returns one goal's history in insertion order with staff preloaded" do
       goal = goal_fixture()
       staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "記録 職員"})
