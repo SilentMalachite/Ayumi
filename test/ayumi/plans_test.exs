@@ -2,6 +2,7 @@ defmodule Ayumi.PlansTest do
   use Ayumi.DataCase, async: true
 
   alias Ayumi.Plans
+  alias Ayumi.Plans.GoalProgress
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
   alias Ayumi.Plans.Goal
@@ -194,6 +195,129 @@ defmodule Ayumi.PlansTest do
       {:ok, _} = Plans.create_goal(%{support_plan_id: plan.id, description: "1番目"})
       {:ok, _} = Plans.create_goal(%{support_plan_id: plan.id, description: "2番目"})
       assert ["1番目", "2番目"] = Plans.list_goals(plan) |> Enum.map(& &1.description)
+    end
+  end
+
+  describe "goal progress" do
+    test "record_goal_progress/1 appends a progress row" do
+      goal = goal_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      recorded_at = ~U[2026-06-17 01:02:03Z]
+
+      assert {:ok, %GoalProgress{} = progress} =
+               Plans.record_goal_progress(%{
+                 goal_id: goal.id,
+                 stage: :working,
+                 note: "午前の作業に参加できた",
+                 recorded_by_id: staff.id,
+                 recorded_at: recorded_at
+               })
+
+      assert progress.goal_id == goal.id
+      assert progress.stage == :working
+      assert progress.note == "午前の作業に参加できた"
+      assert progress.recorded_by_id == staff.id
+      assert progress.recorded_at == recorded_at
+    end
+
+    test "record_goal_progress/1 never updates previous progress rows" do
+      goal = goal_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      {:ok, first} =
+        Plans.record_goal_progress(%{
+          goal_id: goal.id,
+          stage: :working,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 01:00:00Z]
+        })
+
+      {:ok, second} =
+        Plans.record_goal_progress(%{
+          goal_id: goal.id,
+          stage: :met,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 02:00:00Z]
+        })
+
+      history = Plans.list_goal_progress(goal)
+
+      assert first.id != second.id
+      assert Enum.map(history, & &1.id) == [first.id, second.id]
+      assert Enum.map(history, & &1.stage) == [:working, :met]
+    end
+
+    test "list_goal_progress/1 returns one goal's history in insertion order with staff preloaded" do
+      goal = goal_fixture()
+      staff = Ayumi.AccountsFixtures.staff_fixture(%{name: "記録 職員"})
+
+      {:ok, _} =
+        Plans.record_goal_progress(%{
+          goal_id: goal.id,
+          stage: :working,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 01:00:00Z]
+        })
+
+      {:ok, _} =
+        Plans.record_goal_progress(%{
+          goal_id: goal.id,
+          stage: :mostly_met,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 02:00:00Z]
+        })
+
+      assert [:working, :mostly_met] = Plans.list_goal_progress(goal) |> Enum.map(& &1.stage)
+      assert [%{recorded_by: %{name: "記録 職員"}} | _] = Plans.list_goal_progress(goal)
+    end
+
+    test "current_goal_progress/1 returns nil for an empty history" do
+      assert Plans.current_goal_progress([]) == nil
+    end
+
+    test "current_goal_progress/1 returns the latest inserted progress row" do
+      older = %GoalProgress{id: 1, stage: :working}
+      newer = %GoalProgress{id: 2, stage: :met}
+
+      assert Plans.current_goal_progress([newer, older]) == newer
+    end
+
+    test "latest_goal_progress_by_goal/1 returns latest progress for multiple goals without losing empty goals" do
+      plan = support_plan_fixture()
+      first_goal = goal_fixture(%{support_plan_id: plan.id, description: "1番目"})
+      second_goal = goal_fixture(%{support_plan_id: plan.id, description: "2番目"})
+      empty_goal = goal_fixture(%{support_plan_id: plan.id, description: "未記録"})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      {:ok, _} =
+        Plans.record_goal_progress(%{
+          goal_id: first_goal.id,
+          stage: :working,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 01:00:00Z]
+        })
+
+      {:ok, latest_first} =
+        Plans.record_goal_progress(%{
+          goal_id: first_goal.id,
+          stage: :met,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 02:00:00Z]
+        })
+
+      {:ok, latest_second} =
+        Plans.record_goal_progress(%{
+          goal_id: second_goal.id,
+          stage: :partially_met,
+          recorded_by_id: staff.id,
+          recorded_at: ~U[2026-06-17 03:00:00Z]
+        })
+
+      latest_by_goal = Plans.latest_goal_progress_by_goal([first_goal, second_goal, empty_goal])
+
+      assert latest_by_goal[first_goal.id].id == latest_first.id
+      assert latest_by_goal[second_goal.id].id == latest_second.id
+      assert latest_by_goal[empty_goal.id] == nil
     end
   end
 

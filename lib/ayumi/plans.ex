@@ -7,6 +7,7 @@ defmodule Ayumi.Plans do
   alias Ayumi.Repo
 
   alias Ayumi.Plans.Goal
+  alias Ayumi.Plans.GoalProgress
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
 
@@ -142,6 +143,63 @@ defmodule Ayumi.Plans do
   @doc "Returns a changeset for a goal (forms)."
   def change_goal(%Goal{} = goal, attrs \\ %{}) do
     Goal.changeset(goal, attrs)
+  end
+
+  ## Goal progress
+
+  @doc "Returns a changeset for a goal progress row (forms)."
+  def change_goal_progress(%GoalProgress{} = goal_progress, attrs \\ %{}) do
+    GoalProgress.changeset(goal_progress, attrs)
+  end
+
+  @doc "Appends a goal progress row. Existing rows are never updated."
+  def record_goal_progress(attrs) do
+    %GoalProgress{}
+    |> GoalProgress.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc "Lists one goal's progress history in insertion order."
+  def list_goal_progress(%Goal{id: id}), do: list_goal_progress(id)
+
+  def list_goal_progress(goal_id) when is_integer(goal_id) do
+    GoalProgress
+    |> where([p], p.goal_id == ^goal_id)
+    |> order_by([p], asc: p.id)
+    |> preload([:recorded_by])
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns the latest progress row from an enumerable history.
+
+  This is pure and DB-independent. Latest is defined by the greatest id, not by
+  `recorded_at`, because corrections and rapid inserts should be resolved by
+  append order.
+  """
+  def current_goal_progress(progress_events) do
+    progress_events
+    |> Enum.reject(&is_nil(&1.id))
+    |> Enum.max_by(& &1.id, fn -> nil end)
+  end
+
+  @doc "Returns `%{goal_id => latest_progress_or_nil}` for a list of goals."
+  def latest_goal_progress_by_goal(goals) when is_list(goals) do
+    goal_ids = Enum.map(goals, & &1.id)
+    empty_map = Map.new(goal_ids, &{&1, nil})
+
+    latest =
+      GoalProgress
+      |> where([p], p.goal_id in ^goal_ids)
+      |> order_by([p], asc: p.goal_id, asc: p.id)
+      |> preload([:recorded_by])
+      |> Repo.all()
+      |> Enum.group_by(& &1.goal_id)
+      |> Map.new(fn {goal_id, progress_events} ->
+        {goal_id, current_goal_progress(progress_events)}
+      end)
+
+    Map.merge(empty_map, latest)
   end
 
   defp insert_goal(changeset) do

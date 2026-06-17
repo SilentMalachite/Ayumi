@@ -56,4 +56,22 @@ defmodule Ayumi.PlansFixtures do
 
     goal
   end
+
+  def goal_progress_fixture(attrs \\ %{}) do
+    goal_id = attrs[:goal_id] || goal_fixture().id
+    recorded_by_id = attrs[:recorded_by_id] || user_fixture().id
+
+    {:ok, goal_progress} =
+      attrs
+      |> Enum.into(%{
+        goal_id: goal_id,
+        stage: :working,
+        note: "午前の作業に参加できた",
+        recorded_by_id: recorded_by_id,
+        recorded_at: ~U[2026-06-17 01:02:03Z]
+      })
+      |> Plans.record_goal_progress()
+
+    goal_progress
+  end
 end
