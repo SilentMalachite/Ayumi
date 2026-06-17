@@ -9,6 +9,7 @@ defmodule Ayumi.Plans.Goal do
     field :lock_version, :integer, default: 0
 
     belongs_to :support_plan, Ayumi.Plans.SupportPlan
+    has_many :goal_progresses, Ayumi.Plans.GoalProgress
 
     timestamps(type: :utc_datetime)
   end
