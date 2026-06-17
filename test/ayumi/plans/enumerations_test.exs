@@ -1,7 +1,7 @@
 defmodule Ayumi.Plans.EnumerationsTest do
   use ExUnit.Case, async: true
 
-  alias Ayumi.Plans.{CertificateKind, Gender, GoalProgressStage, SupportCategory}
+  alias Ayumi.Plans.{CertificateKind, Gender, GoalProgressStage, PlanPhaseStage, SupportCategory}
 
   describe "Gender" do
     test "all/0 lists values in display order" do
@@ -103,6 +103,40 @@ defmodule Ayumi.Plans.EnumerationsTest do
     test "options/0 returns {label, value} pairs for selects" do
       assert {"未着手", :not_started} in GoalProgressStage.options()
       assert length(GoalProgressStage.options()) == 5
+    end
+  end
+
+  describe "PlanPhaseStage" do
+    test "all/0 lists stages in lifecycle order" do
+      assert PlanPhaseStage.all() == [
+               :assessment,
+               :draft,
+               :support_meeting,
+               :consent,
+               :in_progress,
+               :monitoring,
+               :review
+             ]
+    end
+
+    test "label/1 maps values to Japanese" do
+      assert PlanPhaseStage.label(:assessment) == "アセスメント"
+      assert PlanPhaseStage.label(:draft) == "計画原案"
+      assert PlanPhaseStage.label(:support_meeting) == "個別支援会議"
+      assert PlanPhaseStage.label(:consent) == "説明・同意・交付"
+      assert PlanPhaseStage.label(:in_progress) == "支援の実施"
+      assert PlanPhaseStage.label(:monitoring) == "モニタリング"
+      assert PlanPhaseStage.label(:review) == "見直し"
+    end
+
+    test "label/1 returns nil for unknown or nil" do
+      assert PlanPhaseStage.label(nil) == nil
+      assert PlanPhaseStage.label(:bogus) == nil
+    end
+
+    test "options/0 returns {label, value} pairs for selects" do
+      assert {"アセスメント", :assessment} in PlanPhaseStage.options()
+      assert length(PlanPhaseStage.options()) == 7
     end
   end
 end
