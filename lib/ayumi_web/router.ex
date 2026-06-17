@@ -17,12 +17,6 @@ defmodule AyumiWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", AyumiWeb do
-    pipe_through :browser
-
-    get "/", PageController, :home
-  end
-
   # Other scopes may use custom stacks.
   # scope "/api", AyumiWeb do
   #   pipe_through :api
@@ -52,6 +46,7 @@ defmodule AyumiWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}] do
+      live "/", DashboardLive.Index, :index
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
 

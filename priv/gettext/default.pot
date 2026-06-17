@@ -245,6 +245,7 @@ msgstr ""
 msgid "次回モニタリング"
 msgstr ""
 
+#: lib/ayumi_web/live/dashboard_live/index.ex:89
 #: lib/ayumi_web/live/support_plan_live/form.ex:77
 #: lib/ayumi_web/live/support_plan_live/show.ex:162
 #, elixir-autogen, elixir-format
@@ -559,4 +560,80 @@ msgstr ""
 #: lib/ayumi_web/live/support_plan_live/show.ex:352
 #, elixir-autogen, elixir-format
 msgid "説明・同意・交付"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:121
+#, elixir-autogen, elixir-format
+msgid "%{days}日超過"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:125
+#, elixir-autogen, elixir-format
+msgid "あと%{days}日"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:13
+#: lib/ayumi_web/live/dashboard_live/index.ex:26
+#, elixir-autogen, elixir-format
+msgid "ダッシュボード"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:33
+#, elixir-autogen, elixir-format
+msgid "モニタリング期限"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:27
+#, elixir-autogen, elixir-format
+msgid "モニタリング期限と担当状況を確認します"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:42
+#, elixir-autogen, elixir-format
+msgid "利用者一覧へ"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:108
+#, elixir-autogen, elixir-format
+msgid "利用者詳細"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:84
+#, elixir-autogen, elixir-format
+msgid "担当"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:51
+#, elixir-autogen, elixir-format
+msgid "期限が近いモニタリング予定はありません"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:124
+#, elixir-autogen, elixir-format
+msgid "本日期限"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:73
+#, elixir-autogen, elixir-format
+msgid "自分の担当"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:102
+#, elixir-autogen, elixir-format
+msgid "計画を開く"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:117
+#, elixir-autogen, elixir-format
+msgid "超過"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:35
+#, elixir-autogen, elixir-format
+msgid "超過と%{days}日以内の予定を表示しています"
+msgstr ""
+
+#: lib/ayumi_web/live/dashboard_live/index.ex:118
+#, elixir-autogen, elixir-format
+msgid "近接"
 msgstr ""
