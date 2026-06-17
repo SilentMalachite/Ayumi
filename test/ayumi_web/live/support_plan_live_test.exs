@@ -53,4 +53,25 @@ defmodule AyumiWeb.SupportPlanLiveTest do
 
     assert html =~ "毎日昼食を完食する"
   end
+
+  test "records goal progress and shows current progress and history", %{conn: conn, user: staff} do
+    plan = support_plan_fixture()
+    goal = goal_fixture(%{support_plan_id: plan.id, description: "毎日昼食を完食する"})
+
+    {:ok, lv, html} = live(conn, ~p"/support_plans/#{plan.id}")
+
+    assert has_element?(lv, "#goal-progress-form-#{goal.id}")
+    assert html =~ "未記録"
+
+    html =
+      lv
+      |> form("#goal-progress-form-#{goal.id}",
+        goal_progress: %{stage: "working", note: "午前の作業に参加できた"}
+      )
+      |> render_submit()
+
+    assert html =~ "取組中"
+    assert html =~ "午前の作業に参加できた"
+    assert html =~ staff.email
+  end
 end

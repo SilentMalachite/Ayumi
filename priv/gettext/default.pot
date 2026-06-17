@@ -16,7 +16,7 @@ msgstr ""
 msgid "%{birthdate}（%{age}歳）"
 msgstr ""
 
-#: lib/ayumi_web/live/support_plan_live/show.ex:47
+#: lib/ayumi_web/live/support_plan_live/show.ex:97
 #, elixir-autogen, elixir-format
 msgid "%{user} ／ 担当 %{staff}"
 msgstr ""
@@ -97,11 +97,6 @@ msgstr ""
 #: lib/ayumi_web/live/service_user_live/show.ex:105
 #, elixir-autogen, elixir-format
 msgid "備考"
-msgstr ""
-
-#: lib/ayumi_web/live/support_plan_live/show.ex:67
-#, elixir-autogen, elixir-format
-msgid "内容"
 msgstr ""
 
 #: lib/ayumi_web/components/layouts.ex:48
@@ -195,8 +190,8 @@ msgid "担当者"
 msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:110
-#: lib/ayumi_web/live/support_plan_live/show.ex:34
-#: lib/ayumi_web/live/support_plan_live/show.ex:45
+#: lib/ayumi_web/live/support_plan_live/show.ex:71
+#: lib/ayumi_web/live/support_plan_live/show.ex:95
 #, elixir-autogen, elixir-format
 msgid "支援計画"
 msgstr ""
@@ -251,7 +246,7 @@ msgid "次回モニタリング"
 msgstr ""
 
 #: lib/ayumi_web/live/support_plan_live/form.ex:77
-#: lib/ayumi_web/live/support_plan_live/show.ex:59
+#: lib/ayumi_web/live/support_plan_live/show.ex:109
 #, elixir-autogen, elixir-format
 msgid "次回モニタリング予定日"
 msgstr ""
@@ -279,17 +274,17 @@ msgstr ""
 msgid "相談支援事業所"
 msgstr ""
 
-#: lib/ayumi_web/live/support_plan_live/show.ex:63
+#: lib/ayumi_web/live/support_plan_live/show.ex:113
 #, elixir-autogen, elixir-format
 msgid "短期目標"
 msgstr ""
 
-#: lib/ayumi_web/live/support_plan_live/show.ex:76
+#: lib/ayumi_web/live/support_plan_live/show.ex:195
 #, elixir-autogen, elixir-format
 msgid "短期目標を追加"
 msgstr ""
 
-#: lib/ayumi_web/live/support_plan_live/show.ex:22
+#: lib/ayumi_web/live/support_plan_live/show.ex:24
 #, elixir-autogen, elixir-format
 msgid "短期目標を追加しました"
 msgstr ""
@@ -329,7 +324,7 @@ msgid "編集"
 msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:112
-#: lib/ayumi_web/live/support_plan_live/show.ex:55
+#: lib/ayumi_web/live/support_plan_live/show.ex:105
 #, elixir-autogen, elixir-format
 msgid "計画期間"
 msgstr ""
@@ -349,7 +344,7 @@ msgstr ""
 msgid "詳細"
 msgstr ""
 
-#: lib/ayumi_web/live/support_plan_live/show.ex:77
+#: lib/ayumi_web/live/support_plan_live/show.ex:196
 #, elixir-autogen, elixir-format
 msgid "追加"
 msgstr ""
@@ -370,6 +365,7 @@ msgstr ""
 #: lib/ayumi_web/live/service_user_live/form.ex:192
 #: lib/ayumi_web/live/service_user_live/form.ex:206
 #: lib/ayumi_web/live/support_plan_live/form.ex:69
+#: lib/ayumi_web/live/support_plan_live/show.ex:144
 #, elixir-autogen, elixir-format
 msgid "選択してください"
 msgstr ""
@@ -382,7 +378,7 @@ msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:116
 #: lib/ayumi_web/live/support_plan_live/form.ex:73
-#: lib/ayumi_web/live/support_plan_live/show.ex:58
+#: lib/ayumi_web/live/support_plan_live/show.ex:108
 #, elixir-autogen, elixir-format
 msgid "長期目標"
 msgstr ""
@@ -413,4 +409,49 @@ msgstr ""
 #: lib/ayumi_web/live/service_user_live/show.ex:48
 #, elixir-autogen, elixir-format
 msgid "電話番号"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:165
+#, elixir-autogen, elixir-format
+msgid "まだ進捗記録はありません"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:150
+#, elixir-autogen, elixir-format
+msgid "所見"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:202
+#, elixir-autogen, elixir-format
+msgid "未記録"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:126
+#, elixir-autogen, elixir-format
+msgid "現在の進捗"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:152
+#, elixir-autogen, elixir-format
+msgid "記録中..."
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:153
+#, elixir-autogen, elixir-format
+msgid "進捗を記録"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:51
+#, elixir-autogen, elixir-format
+msgid "進捗を記録しました"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:143
+#, elixir-autogen, elixir-format
+msgid "進捗ステージ"
+msgstr ""
+
+#: lib/ayumi_web/live/support_plan_live/show.ex:159
+#, elixir-autogen, elixir-format
+msgid "進捗履歴"
 msgstr ""
