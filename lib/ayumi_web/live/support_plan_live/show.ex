@@ -162,7 +162,10 @@ defmodule AyumiWeb.SupportPlanLive.Show do
         <:item title={gettext("次回モニタリング予定日")}>{@support_plan.next_monitoring_date}</:item>
       </.list>
 
-      <section id="plan-phase-panel" class="mt-8 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+      <section
+        id="plan-phase-panel"
+        class="mt-8 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
+      >
         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 class="text-base font-semibold text-zinc-900">{gettext("計画ライフサイクル")}</h2>

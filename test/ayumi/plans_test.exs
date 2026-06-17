@@ -624,7 +624,8 @@ defmodule Ayumi.PlansTest do
           next_monitoring_date: ~D[2026-08-01]
         })
 
-      alerts = Plans.list_monitoring_deadline_alerts(Ayumi.Accounts.Scope.for_user(staff), today, 30)
+      alerts =
+        Plans.list_monitoring_deadline_alerts(Ayumi.Accounts.Scope.for_user(staff), today, 30)
 
       refute Enum.any?(alerts, &(&1.support_plan.id == current_ok.id))
       assert alerts == []

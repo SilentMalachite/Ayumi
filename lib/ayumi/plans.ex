@@ -306,7 +306,11 @@ defmodule Ayumi.Plans do
   to scan. Current plan means the newest `period_start`, with highest id breaking
   ties.
   """
-  def list_monitoring_deadline_alerts(%Scope{user: user}, today \\ Date.utc_today(), near_days \\ 30) do
+  def list_monitoring_deadline_alerts(
+        %Scope{user: user},
+        today \\ Date.utc_today(),
+        near_days \\ 30
+      ) do
     current_staff_id = user.id
 
     current_support_plans()
