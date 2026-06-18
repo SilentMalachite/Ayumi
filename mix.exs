@@ -14,6 +14,7 @@ defmodule Ayumi.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      releases: releases(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -25,6 +26,15 @@ defmodule Ayumi.MixProject do
     [
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/SilentMalachite/Ayumi"}
+    ]
+  end
+
+  defp releases do
+    [
+      ayumi: [
+        include_executables_for: [:windows, :unix],
+        cookie: "ayumi-LAN-only-cookie"
+      ]
     ]
   end
 
@@ -99,6 +109,7 @@ defmodule Ayumi.MixProject do
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind ayumi", "esbuild ayumi"],
       "assets.deploy": [
+        "compile",
         "tailwind ayumi --minify",
         "esbuild ayumi --minify",
         "phx.digest"
