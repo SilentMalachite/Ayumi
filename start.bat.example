@@ -1,0 +1,29 @@
+@echo off
+chcp 65001 >nul
+echo.
+echo Ayumi を起動しています...
+echo.
+
+rem --- ここを編集してください ---
+rem SECRET_KEY_BASE は mix phx.gen.secret で生成できます（64文字以上）
+set SECRET_KEY_BASE=CHANGE_ME_run_mix_phx_gen_secret_to_generate
+rem ---------------------------------
+
+if "%SECRET_KEY_BASE%"=="CHANGE_ME_run_mix_phx_gen_secret_to_generate" (
+    echo [エラー] start.bat を編集して SECRET_KEY_BASE を設定してください。
+    echo 生成コマンド: mix phx.gen.secret
+    pause
+    exit /b 1
+)
+
+set DATABASE_PATH=%~dp0data\ayumi.db
+set PHX_SERVER=true
+set PHX_HOST=localhost
+set PORT=4000
+
+echo サーバを起動します: http://localhost:%PORT%
+echo LAN 上の他の端末からは http://（このPCのIPアドレス）:%PORT% でアクセスできます。
+echo 停止するには Ctrl+C を押してください。
+echo.
+
+call _build\prod\rel\ayumi\bin\ayumi.bat start

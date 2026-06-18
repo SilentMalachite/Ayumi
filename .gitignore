@@ -39,3 +39,9 @@ npm-debug.log
 *.db
 *.db-*
 
+# Start script with SECRET_KEY_BASE (use start.bat.example as template)
+/start.bat
+
+# Runtime data directory
+/data/
+
