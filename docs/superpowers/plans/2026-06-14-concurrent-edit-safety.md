@@ -1,6 +1,6 @@
 # 同時編集の安全化 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Eliminate silent lost-updates when two staff edit the same body record (service_user / support_plan / goal), and surface "○○さん編集中" so collisions are reduced — fully offline, no external dependency.
 
@@ -45,7 +45,7 @@ Add the column to all three body tables and the (non-cast) field to all three sc
 - Modify: `lib/ayumi/plans/goal.ex`
 - Test: `test/ayumi/plans_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add this `describe` block to `test/ayumi/plans_test.exs` (after the existing `describe "goals"` block, before `describe "referential integrity"`):
 
@@ -64,12 +64,12 @@ Add this `describe` block to `test/ayumi/plans_test.exs` (after the existing `de
   end
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `mix test test/ayumi/plans_test.exs --only describe:"optimistic locking"` — or simply `mix test test/ayumi/plans_test.exs`
 Expected: FAIL — the `lock_version == 0` test raises `KeyError` (no such struct field) / DB error (no such column). The non-cast test will pass already (it is a regression guard, kept for intent).
 
-- [ ] **Step 3: Create the migration**
+- [x] **Step 3: Create the migration**
 
 Create `priv/repo/migrations/20260614020000_add_lock_version_to_bodies.exs`:
 
@@ -93,7 +93,7 @@ defmodule Ayumi.Repo.Migrations.AddLockVersionToBodies do
 end
 ```
 
-- [ ] **Step 4: Add the field to `ServiceUser`**
+- [x] **Step 4: Add the field to `ServiceUser`**
 
 In `lib/ayumi/plans/service_user.ex`, inside `schema "service_users" do`, add the field immediately after `field :notes, :string` (the last flat field, before the `has_many` associations). Do **not** add it to `@flat_fields`.
 
@@ -105,7 +105,7 @@ In `lib/ayumi/plans/service_user.ex`, inside `schema "service_users" do`, add th
     has_many :support_plans, Ayumi.Plans.SupportPlan
 ```
 
-- [ ] **Step 5: Add the field to `SupportPlan`**
+- [x] **Step 5: Add the field to `SupportPlan`**
 
 In `lib/ayumi/plans/support_plan.ex`, inside `schema "support_plans" do`, add the field after `field :next_monitoring_date, :date` (before the `belongs_to` associations). Do **not** add it to `@required`.
 
@@ -117,7 +117,7 @@ In `lib/ayumi/plans/support_plan.ex`, inside `schema "support_plans" do`, add th
     belongs_to :service_user, Ayumi.Plans.ServiceUser
 ```
 
-- [ ] **Step 6: Add the field to `Goal`**
+- [x] **Step 6: Add the field to `Goal`**
 
 In `lib/ayumi/plans/goal.ex`, inside `schema "goals" do`, add the field after `field :description, :string` (before the `belongs_to`). Do **not** add it to the `cast/3` list.
 
@@ -129,7 +129,7 @@ In `lib/ayumi/plans/goal.ex`, inside `schema "goals" do`, add the field after `f
     belongs_to :support_plan, Ayumi.Plans.SupportPlan
 ```
 
-- [ ] **Step 7: Migrate and run the tests**
+- [x] **Step 7: Migrate and run the tests**
 
 Run: `mix ecto.migrate`
 Expected: three `alter table ... add :lock_version` statements succeed.
@@ -137,7 +137,7 @@ Expected: three `alter table ... add :lock_version` statements succeed.
 Run: `mix test test/ayumi/plans_test.exs`
 Expected: PASS (including the existing service-users / support-plans / goals tests, unchanged).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add priv/repo/migrations/20260614020000_add_lock_version_to_bodies.exs \
@@ -156,7 +156,7 @@ Wire `optimistic_lock` into the only existing update path and rescue the stale w
 - Modify: `lib/ayumi/plans.ex:40-44` (`update_service_user/2`)
 - Test: `test/ayumi/plans_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add these two tests **inside the `describe "optimistic locking"` block** created in Task 1:
 
@@ -183,12 +183,12 @@ Add these two tests **inside the `describe "optimistic locking"` block** created
     end
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `mix test test/ayumi/plans_test.exs`
 Expected: FAIL — `bumps lock_version` fails (`updated.lock_version == 0`, no increment); `returns {:error, :stale}` fails because the second update silently succeeds (`{:ok, _}` instead of `{:error, :stale}`), proving the lost-update bug is currently present.
 
-- [ ] **Step 3: Add `optimistic_lock` + rescue**
+- [x] **Step 3: Add `optimistic_lock` + rescue**
 
 Replace the body of `update_service_user/2` in `lib/ayumi/plans.ex` (currently lines 40-44):
 
@@ -205,12 +205,12 @@ Replace the body of `update_service_user/2` in `lib/ayumi/plans.ex` (currently l
 
 Note: `optimistic_lock/2` adds `WHERE lock_version = <loaded value>` and increments the column on success, so the in-memory struct returned by `{:ok, _}` already has the bumped value. `service_user.data` (the struct passed in) supplies the expected version — no hidden form field needed.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `mix test test/ayumi/plans_test.exs`
 Expected: PASS — all optimistic-locking tests green, and the existing `update_service_user/2` tests (flat fields, certificate update/delete) still pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/ayumi/plans.ex test/ayumi/plans_test.exs
@@ -228,7 +228,7 @@ Add the Presence server (advisory layer) and a topic helper. Built on the alread
 - Modify: `lib/ayumi/application.ex`
 - Test: `test/ayumi_web/presence_test.exs`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/ayumi_web/presence_test.exs`:
 
@@ -242,12 +242,12 @@ defmodule AyumiWeb.PresenceTest do
 end
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `mix test test/ayumi_web/presence_test.exs`
 Expected: FAIL — `AyumiWeb.Presence` does not exist (compile error / `UndefinedFunctionError`).
 
-- [ ] **Step 3: Create the Presence module**
+- [x] **Step 3: Create the Presence module**
 
 Create `lib/ayumi_web/presence.ex`:
 
@@ -271,7 +271,7 @@ defmodule AyumiWeb.Presence do
 end
 ```
 
-- [ ] **Step 4: Add Presence to the supervision tree**
+- [x] **Step 4: Add Presence to the supervision tree**
 
 In `lib/ayumi/application.ex`, add `AyumiWeb.Presence` to the `children` list immediately after the PubSub entry:
 
@@ -281,12 +281,12 @@ In `lib/ayumi/application.ex`, add `AyumiWeb.Presence` to the `children` list im
       # Start a worker by calling: Ayumi.Worker.start_link(arg)
 ```
 
-- [ ] **Step 5: Run the test**
+- [x] **Step 5: Run the test**
 
 Run: `mix test test/ayumi_web/presence_test.exs`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/ayumi_web/presence.ex lib/ayumi/application.ex test/ayumi_web/presence_test.exs
@@ -303,7 +303,7 @@ Add the `{:error, :stale}` save branch with reload (Layer A UX) and Presence tra
 - Modify: `lib/ayumi_web/live/service_user_live/form.ex`
 - Test: `test/ayumi_web/live/service_user_live_test.exs`
 
-- [ ] **Step 1: Write the failing LiveView tests**
+- [x] **Step 1: Write the failing LiveView tests**
 
 Append these two tests to `test/ayumi_web/live/service_user_live_test.exs` (after the existing `"edits a service user via the edit form"` test):
 
@@ -353,12 +353,12 @@ Append these two tests to `test/ayumi_web/live/service_user_live_test.exs` (afte
 
 These rely on helpers already imported/aliased in the test module: `service_user_fixture/1`, `staff_fixture/1` (from `Ayumi.PlansFixtures` / `Ayumi.AccountsFixtures`), and `log_in_user/2` + `build_conn/0` (from `AyumiWeb.ConnCase`). `staff_fixture/1` sets `name`, so `User.display_name/1` returns "別 職員".
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/ayumi_web/live/service_user_live_test.exs`
 Expected: FAIL — the stale test currently gets a redirect/crash (no `:stale` branch), and the warning test never sees "編集中" (no Presence wiring / no banner).
 
-- [ ] **Step 3: Add the `User` alias**
+- [x] **Step 3: Add the `User` alias**
 
 In `lib/ayumi_web/live/service_user_live/form.ex`, add an alias for the accounts `User` (used for `display_name/1`) below the existing aliases:
 
@@ -368,7 +368,7 @@ In `lib/ayumi_web/live/service_user_live/form.ex`, add an alias for the accounts
   alias Ayumi.Accounts.User
 ```
 
-- [ ] **Step 4: Default `:other_editors` on the new form**
+- [x] **Step 4: Default `:other_editors` on the new form**
 
 In `apply_action(socket, :new, _params)`, add `|> assign(:other_editors, [])` so the banner code can render on the new form too. Replace the trailing assign chain:
 
@@ -381,7 +381,7 @@ In `apply_action(socket, :new, _params)`, add `|> assign(:other_editors, [])` so
   end
 ```
 
-- [ ] **Step 5: Refactor `apply_action(:edit)` to extract the changeset and start presence**
+- [x] **Step 5: Refactor `apply_action(:edit)` to extract the changeset and start presence**
 
 Replace the whole `apply_action(socket, :edit, %{"id" => id})` clause with:
 
@@ -397,7 +397,7 @@ Replace the whole `apply_action(socket, :edit, %{"id" => id})` clause with:
   end
 ```
 
-- [ ] **Step 6: Add the private helpers**
+- [x] **Step 6: Add the private helpers**
 
 Add these private functions to `lib/ayumi_web/live/service_user_live/form.ex` (place them next to the other private helpers, e.g. just above `defp assign_form/2`):
 
@@ -450,7 +450,7 @@ Add these private functions to `lib/ayumi_web/live/service_user_live/form.ex` (p
   end
 ```
 
-- [ ] **Step 7: Handle presence diffs**
+- [x] **Step 7: Handle presence diffs**
 
 Add a `handle_info/2` clause to `lib/ayumi_web/live/service_user_live/form.ex` (e.g. just below the `handle_event("save", ...)` clause):
 
@@ -461,7 +461,7 @@ Add a `handle_info/2` clause to `lib/ayumi_web/live/service_user_live/form.ex` (
   end
 ```
 
-- [ ] **Step 8: Add the `{:error, :stale}` save branch**
+- [x] **Step 8: Add the `{:error, :stale}` save branch**
 
 Replace `save_service_user(socket, :edit, params)` with a three-way case that adds the stale branch:
 
@@ -489,7 +489,7 @@ Replace `save_service_user(socket, :edit, params)` with a three-way case that ad
   end
 ```
 
-- [ ] **Step 9: Add the warning banner to `render/1`**
+- [x] **Step 9: Add the warning banner to `render/1`**
 
 In the `render/1` HEEx, immediately after `<.header>{@page_title}</.header>`, add the advisory banner:
 
@@ -505,12 +505,12 @@ In the `render/1` HEEx, immediately after `<.header>{@page_title}</.header>`, ad
       </div>
 ```
 
-- [ ] **Step 10: Run the LiveView tests**
+- [x] **Step 10: Run the LiveView tests**
 
 Run: `mix test test/ayumi_web/live/service_user_live_test.exs`
 Expected: PASS — both new tests green, and the existing edit/new/show tests still pass.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add lib/ayumi_web/live/service_user_live/form.ex test/ayumi_web/live/service_user_live_test.exs
@@ -523,17 +523,17 @@ git commit -m "feat: stale-save handling and editing-presence warning on service
 
 Run the full gate and confirm green before declaring done.
 
-- [ ] **Step 1: Run the full suite**
+- [x] **Step 1: Run the full suite**
 
 Run: `mix test`
 Expected: PASS, 0 failures.
 
-- [ ] **Step 2: Run the review gate**
+- [x] **Step 2: Run the review gate**
 
 Run: `mix review`
 Expected: `format --check-formatted` clean, `compile --warnings-as-errors --force` clean, `credo` clean, `test` green. Fix any issue (commonly: run `mix format`) and re-run until clean.
 
-- [ ] **Step 3: Final commit (only if the gate forced changes)**
+- [x] **Step 3: Final commit (only if the gate forced changes)**
 
 ```bash
 git add -A

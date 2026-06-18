@@ -1,6 +1,6 @@
 # Goal Progress Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add append-only `goal_progresses` records so staff can record each short-term goal's progress from the support-plan detail screen and see both the current progress and history.
 
@@ -41,7 +41,7 @@
 - Modify: `test/ayumi/plans/enumerations_test.exs`
 - Create: `lib/ayumi/plans/goal_progress_stage.ex`
 
-- [ ] **Step 1: Write the failing enum tests**
+- [x] **Step 1: Write the failing enum tests**
 
 In `test/ayumi/plans/enumerations_test.exs`, add `GoalProgressStage` to the alias and append this describe block:
 
@@ -79,7 +79,7 @@ describe "GoalProgressStage" do
 end
 ```
 
-- [ ] **Step 2: Run the enum test and verify it fails**
+- [x] **Step 2: Run the enum test and verify it fails**
 
 Run:
 
@@ -89,7 +89,7 @@ mix test test/ayumi/plans/enumerations_test.exs
 
 Expected: FAIL with `Ayumi.Plans.GoalProgressStage` undefined.
 
-- [ ] **Step 3: Implement the enum module**
+- [x] **Step 3: Implement the enum module**
 
 Create `lib/ayumi/plans/goal_progress_stage.ex`:
 
@@ -116,7 +116,7 @@ defmodule Ayumi.Plans.GoalProgressStage do
 end
 ```
 
-- [ ] **Step 4: Run the enum test and verify it passes**
+- [x] **Step 4: Run the enum test and verify it passes**
 
 Run:
 
@@ -126,7 +126,7 @@ mix test test/ayumi/plans/enumerations_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/ayumi/plans/goal_progress_stage.ex test/ayumi/plans/enumerations_test.exs
@@ -143,7 +143,7 @@ git commit -m "feat: add goal progress stage enum"
 - Create: `test/ayumi/plans/goal_progress_test.exs`
 - Modify: `lib/ayumi/plans/goal.ex`
 
-- [ ] **Step 1: Write the failing changeset tests**
+- [x] **Step 1: Write the failing changeset tests**
 
 Create `test/ayumi/plans/goal_progress_test.exs`:
 
@@ -200,7 +200,7 @@ defmodule Ayumi.Plans.GoalProgressTest do
 end
 ```
 
-- [ ] **Step 2: Run the focused schema test and verify it fails**
+- [x] **Step 2: Run the focused schema test and verify it fails**
 
 Run:
 
@@ -210,7 +210,7 @@ mix test test/ayumi/plans/goal_progress_test.exs
 
 Expected: FAIL with `Ayumi.Plans.GoalProgress` undefined.
 
-- [ ] **Step 3: Create the migration**
+- [x] **Step 3: Create the migration**
 
 Create `priv/repo/migrations/20260617000000_create_goal_progresses.exs`:
 
@@ -241,7 +241,7 @@ Why this shape:
 - `recorded_at` is server supplied by the context/UI flow and shown as the staff-facing record time.
 - `[:goal_id, :id]` supports fetching histories and latest progress per goal in insertion order.
 
-- [ ] **Step 4: Create the schema**
+- [x] **Step 4: Create the schema**
 
 Create `lib/ayumi/plans/goal_progress.ex`:
 
@@ -279,7 +279,7 @@ defmodule Ayumi.Plans.GoalProgress do
 end
 ```
 
-- [ ] **Step 5: Add the association to goals**
+- [x] **Step 5: Add the association to goals**
 
 In `lib/ayumi/plans/goal.ex`, add this association below `belongs_to :support_plan`:
 
@@ -287,7 +287,7 @@ In `lib/ayumi/plans/goal.ex`, add this association below `belongs_to :support_pl
 has_many :goal_progresses, Ayumi.Plans.GoalProgress
 ```
 
-- [ ] **Step 6: Migrate and run the focused schema test**
+- [x] **Step 6: Migrate and run the focused schema test**
 
 Run:
 
@@ -298,7 +298,7 @@ mix test test/ayumi/plans/goal_progress_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/ayumi/plans/goal.ex lib/ayumi/plans/goal_progress.ex priv/repo/migrations/20260617000000_create_goal_progresses.exs test/ayumi/plans/goal_progress_test.exs
@@ -314,7 +314,7 @@ git commit -m "feat: add goal progress schema"
 - Modify: `test/ayumi/plans_test.exs`
 - Modify: `test/support/fixtures/plans_fixtures.ex`
 
-- [ ] **Step 1: Write failing context tests**
+- [x] **Step 1: Write failing context tests**
 
 In `test/ayumi/plans_test.exs`, add `GoalProgress` to the aliases:
 
@@ -449,7 +449,7 @@ describe "goal progress" do
 end
 ```
 
-- [ ] **Step 2: Run the context tests and verify they fail**
+- [x] **Step 2: Run the context tests and verify they fail**
 
 Run:
 
@@ -459,7 +459,7 @@ mix test test/ayumi/plans_test.exs
 
 Expected: FAIL because the `Plans` goal-progress functions do not exist yet.
 
-- [ ] **Step 3: Add the fixture helper**
+- [x] **Step 3: Add the fixture helper**
 
 In `test/support/fixtures/plans_fixtures.ex`, add:
 
@@ -483,7 +483,7 @@ def goal_progress_fixture(attrs \\ %{}) do
 end
 ```
 
-- [ ] **Step 4: Implement the context API**
+- [x] **Step 4: Implement the context API**
 
 In `lib/ayumi/plans.ex`, add `GoalProgress` to the aliases:
 
@@ -552,7 +552,7 @@ def latest_goal_progress_by_goal(goals) when is_list(goals) do
 end
 ```
 
-- [ ] **Step 5: Run the context tests**
+- [x] **Step 5: Run the context tests**
 
 Run:
 
@@ -562,7 +562,7 @@ mix test test/ayumi/plans_test.exs test/ayumi/plans/goal_progress_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/ayumi/plans.ex test/ayumi/plans_test.exs test/support/fixtures/plans_fixtures.ex
@@ -578,7 +578,7 @@ git commit -m "feat: add goal progress context functions"
 - Modify: `test/ayumi_web/live/support_plan_live_test.exs`
 - Modify: `priv/gettext/default.pot`
 
-- [ ] **Step 1: Write the failing LiveView flow test**
+- [x] **Step 1: Write the failing LiveView flow test**
 
 In `test/ayumi_web/live/support_plan_live_test.exs`, add this test:
 
@@ -605,7 +605,7 @@ test "records goal progress and shows current progress and history", %{conn: con
 end
 ```
 
-- [ ] **Step 2: Run the LiveView test and verify it fails**
+- [x] **Step 2: Run the LiveView test and verify it fails**
 
 Run:
 
@@ -615,7 +615,7 @@ mix test test/ayumi_web/live/support_plan_live_test.exs
 
 Expected: FAIL because `#goal-progress-form-<id>` does not exist.
 
-- [ ] **Step 3: Add aliases and event handling**
+- [x] **Step 3: Add aliases and event handling**
 
 In `lib/ayumi_web/live/support_plan_live/show.ex`, add:
 
@@ -656,7 +656,7 @@ end
 
 If `String.to_integer/1` raises in tests for non-integer `goal_id`, keep the crash: the event is emitted only by server-rendered forms for known integer goals. Do not add ad-hoc validation in LiveView.
 
-- [ ] **Step 4: Load progress assigns**
+- [x] **Step 4: Load progress assigns**
 
 Replace the `load/2` body with this structure:
 
@@ -690,7 +690,7 @@ defp goal_progress_history_by_goal(goals) do
 end
 ```
 
-- [ ] **Step 5: Replace the simple goals table with per-goal sections**
+- [x] **Step 5: Replace the simple goals table with per-goal sections**
 
 Replace the existing goals table block:
 
@@ -771,7 +771,7 @@ with:
 </div>
 ```
 
-- [ ] **Step 6: Add a label helper**
+- [x] **Step 6: Add a label helper**
 
 Add this private helper near the bottom of `SupportPlanLive.Show`:
 
@@ -780,7 +780,7 @@ defp goal_progress_label(nil), do: gettext("未記録")
 defp goal_progress_label(progress), do: GoalProgressStage.label(progress.stage)
 ```
 
-- [ ] **Step 7: Run the LiveView test**
+- [x] **Step 7: Run the LiveView test**
 
 Run:
 
@@ -790,7 +790,7 @@ mix test test/ayumi_web/live/support_plan_live_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 8: Extract gettext messages**
+- [x] **Step 8: Extract gettext messages**
 
 Run:
 
@@ -801,7 +801,7 @@ mix gettext.extract --check-up-to-date
 
 Expected: `priv/gettext/default.pot` is updated and the check exits 0.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add lib/ayumi_web/live/support_plan_live/show.ex test/ayumi_web/live/support_plan_live_test.exs priv/gettext/default.pot
@@ -815,7 +815,7 @@ git commit -m "feat: record goal progress from support plan detail"
 **Files:**
 - All files changed in Tasks 1-4.
 
-- [ ] **Step 1: Run focused domain tests**
+- [x] **Step 1: Run focused domain tests**
 
 Run:
 
@@ -825,7 +825,7 @@ mix test test/ayumi/plans/enumerations_test.exs test/ayumi/plans/goal_progress_t
 
 Expected: PASS.
 
-- [ ] **Step 2: Run focused LiveView tests**
+- [x] **Step 2: Run focused LiveView tests**
 
 Run:
 
@@ -835,7 +835,7 @@ mix test test/ayumi_web/live/support_plan_live_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 3: Run the full review gate**
+- [x] **Step 3: Run the full review gate**
 
 Run:
 
@@ -845,7 +845,7 @@ mix review
 
 Expected: `format --check-formatted`, `compile --warnings-as-errors --force`, `credo`, and `test` all pass.
 
-- [ ] **Step 4: Run the project precommit alias**
+- [x] **Step 4: Run the project precommit alias**
 
 Run:
 
@@ -855,7 +855,7 @@ mix precommit
 
 Expected: compile, unused-dependency check, format, and tests pass. If `mix precommit` formats files, continue to the next step and re-run `mix review`.
 
-- [ ] **Step 5: If `mix review` or `mix precommit` reports formatting changes**
+- [x] **Step 5: If `mix review` or `mix precommit` reports formatting changes**
 
 Run:
 
@@ -867,7 +867,7 @@ mix precommit
 
 Expected: PASS after formatting. Include formatting changes in the final commit if they touch only files from this plan.
 
-- [ ] **Step 6: Final commit if earlier commits were skipped**
+- [x] **Step 6: Final commit if earlier commits were skipped**
 
 If the implementation was not committed task-by-task, make one final commit:
 
@@ -880,12 +880,12 @@ git commit -m "feat: add append-only goal progress tracking"
 
 ## Self-Review Checklist
 
-- [ ] The progress stage vocabulary was confirmed or deliberately kept as the TODO-proposed five stages.
-- [ ] `goal_progresses` has `inserted_at` and no `updated_at`, `lock_version`, edit UI, delete UI, or mutable current-state column.
-- [ ] `recorded_by_id` is always supplied from `@current_scope.user.id` in the authenticated LiveView flow.
-- [ ] `recorded_at` is assigned server-side with `DateTime.utc_now(:second)`.
-- [ ] Current progress is derived by `Plans.current_goal_progress/1` using latest inserted id.
-- [ ] Plan detail uses a single grouped latest lookup for current progress and avoids one latest query per goal.
-- [ ] Progress history preloads `:recorded_by` before rendering staff names.
-- [ ] New Japanese UI strings are wrapped in `gettext(...)` and `priv/gettext/default.pot` is updated.
-- [ ] `mix review` and `mix precommit` pass before the implementation is considered complete.
+- [x] The progress stage vocabulary was confirmed or deliberately kept as the TODO-proposed five stages.
+- [x] `goal_progresses` has `inserted_at` and no `updated_at`, `lock_version`, edit UI, delete UI, or mutable current-state column.
+- [x] `recorded_by_id` is always supplied from `@current_scope.user.id` in the authenticated LiveView flow.
+- [x] `recorded_at` is assigned server-side with `DateTime.utc_now(:second)`.
+- [x] Current progress is derived by `Plans.current_goal_progress/1` using latest inserted id.
+- [x] Plan detail uses a single grouped latest lookup for current progress and avoids one latest query per goal.
+- [x] Progress history preloads `:recorded_by` before rendering staff names.
+- [x] New Japanese UI strings are wrapped in `gettext(...)` and `priv/gettext/default.pot` is updated.
+- [x] `mix review` and `mix precommit` pass before the implementation is considered complete.

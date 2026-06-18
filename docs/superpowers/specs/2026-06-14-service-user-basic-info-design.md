@@ -4,6 +4,7 @@
 - 対象: `service_user`（利用者）に就労継続支援B型のフェイスシート相当の基本情報を持たせ、
   登録時に入力できるようにする。
 - 前提: 既存の Ayumi（Step 0+1 完了済み・`main`）。`service_user` は現状 `name`/`name_kana` のみ。
+- ステータス: 実装完了（2026-06-14）
 - 関連: [[sqlite-ecto-gotchas]]（FK は raise / DB テストは async:false）。
 
 ## 0. 確定した決定事項（ブレインストーミング結果）

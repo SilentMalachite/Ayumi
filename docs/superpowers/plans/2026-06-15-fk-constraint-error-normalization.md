@@ -1,6 +1,6 @@
 # FK Constraint Error Normalization Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make `Plans.create_goal/1` return `{:error, changeset}` for an invalid `support_plan_id`, matching the original foundation plan instead of raising `Ecto.ConstraintError`.
 
@@ -22,7 +22,7 @@
 **Files:**
 - Modify: `test/ayumi/plans_test.exs`
 
-- [ ] **Step 1: Replace the current raise-based test**
+- [x] **Step 1: Replace the current raise-based test**
 
 In `test/ayumi/plans_test.exs`, replace the current `describe "referential integrity"` block:
 
@@ -49,7 +49,7 @@ with:
   end
 ```
 
-- [ ] **Step 2: Run the focused test to verify it fails**
+- [x] **Step 2: Run the focused test to verify it fails**
 
 Run:
 
@@ -59,7 +59,7 @@ mix test test/ayumi/plans_test.exs:201
 
 Expected: FAIL with `Ecto.ConstraintError`, proving the current implementation still raises instead of returning `{:error, changeset}`.
 
-- [ ] **Step 3: Commit the failing regression test only if using separate TDD commits**
+- [x] **Step 3: Commit the failing regression test only if using separate TDD commits**
 
 If committing every red/green checkpoint:
 
@@ -77,7 +77,7 @@ If keeping one final commit for this small fix, skip this commit and continue.
 **Files:**
 - Modify: `lib/ayumi/plans.ex`
 
-- [ ] **Step 1: Replace `create_goal/1` with an insert helper**
+- [x] **Step 1: Replace `create_goal/1` with an insert helper**
 
 In `lib/ayumi/plans.ex`, replace:
 
@@ -101,7 +101,7 @@ with:
   end
 ```
 
-- [ ] **Step 2: Add the private insert helper**
+- [x] **Step 2: Add the private insert helper**
 
 In `lib/ayumi/plans.ex`, add these private functions below `change_goal/2` and before the module's final `end`:
 
@@ -139,7 +139,7 @@ Why this shape:
 - The helper is scoped to `create_goal/1`, so an unnamed FK here maps to `support_plan_id`.
 - Other constraint errors are reraised, preserving fail-fast behavior for unexpected database failures.
 
-- [ ] **Step 3: Run the focused test**
+- [x] **Step 3: Run the focused test**
 
 Run:
 
@@ -149,7 +149,7 @@ mix test test/ayumi/plans_test.exs:201
 
 Expected: PASS.
 
-- [ ] **Step 4: Run the related domain tests**
+- [x] **Step 4: Run the related domain tests**
 
 Run:
 
@@ -159,7 +159,7 @@ mix test test/ayumi/plans_test.exs test/ayumi/plans/goal_test.exs
 
 Expected: PASS.
 
-- [ ] **Step 5: Run the full quality gate**
+- [x] **Step 5: Run the full quality gate**
 
 Run:
 
@@ -169,7 +169,7 @@ mix review
 
 Expected: format clean, compile clean, credo no issues, all tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/ayumi/plans.ex test/ayumi/plans_test.exs

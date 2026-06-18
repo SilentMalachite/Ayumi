@@ -172,5 +172,4 @@ Scaffold with `mix phx.new ayumi --database sqlite3`.
 3. Done: `plan_phase_event` + the monitoring-deadline dashboard: stage transitions, and the
    "deadlines near / overdue" surfacing on the authenticated dashboard.
 
-Do these one at a time. Each step must be green and `mix review`-clean before moving
-to the next.
+All three steps are complete and green. Each was `mix review`-clean before merging.
