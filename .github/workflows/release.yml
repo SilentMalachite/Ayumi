@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Extract changelog and create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          changelog=$(sed -n '/^## \[未リリース\]/,/^## \[/{/^## \[/!p}' CHANGELOG.md)
+
+          notes="${changelog}
+
+          ---
+
+          ## セットアップ手順
+
+          事業所 PC (Windows) でのセットアップは [README の「本番デプロイ」セクション](https://github.com/SilentMalachite/Ayumi#本番デプロイwindows-事業所-pc) を参照してください。"
+
+          gh release create "$TAG_NAME" \
+            --title "Ayumi $TAG_NAME" \
+            --notes "$notes"
