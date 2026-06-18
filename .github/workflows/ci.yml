@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
 
 permissions:
@@ -37,12 +39,48 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-mix-test-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-
+            ${{ runner.os }}-mix-test-
 
       - name: Install dependencies
         run: mix deps.get
 
       - name: Run review gate
         run: mix review
+
+  release-build:
+    name: release build check
+    runs-on: ubuntu-24.04
+
+    env:
+      MIX_ENV: prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Erlang/OTP and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.20"
+
+      - name: Restore dependencies and build cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-prod-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-prod-
+
+      - name: Install dependencies
+        run: mix deps.get --only prod
+
+      - name: Deploy assets
+        run: mix assets.deploy
+
+      - name: Build release
+        run: mix release
