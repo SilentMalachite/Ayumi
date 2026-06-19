@@ -44,6 +44,19 @@ defmodule AyumiWeb.Router do
   scope "/", AyumiWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    # Manager-only routes must be declared before :id catch-all routes so that
+    # the literal segment "new" is not mismatched as a service-user ID.
+    live_session :require_manager,
+      on_mount: [
+        AyumiWeb.LanOnly,
+        {AyumiWeb.UserAuth, :require_authenticated},
+        {AyumiWeb.UserAuth, :require_manager}
+      ] do
+      live "/service_users/new", ServiceUserLive.Form, :new
+      live "/service_users/:id/edit", ServiceUserLive.Form, :edit
+      live "/service_users/:service_user_id/support_plans/new", SupportPlanLive.Form, :new
+    end
+
     live_session :require_authenticated_user,
       on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}] do
       live "/", DashboardLive.Index, :index
@@ -51,10 +64,7 @@ defmodule AyumiWeb.Router do
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
 
       live "/service_users", ServiceUserLive.Index, :index
-      live "/service_users/new", ServiceUserLive.Form, :new
-      live "/service_users/:id/edit", ServiceUserLive.Form, :edit
       live "/service_users/:id", ServiceUserLive.Show, :show
-      live "/service_users/:service_user_id/support_plans/new", SupportPlanLive.Form, :new
       live "/support_plans/:id", SupportPlanLive.Show, :show
     end
 

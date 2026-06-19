@@ -4,7 +4,7 @@ defmodule AyumiWeb.SupportPlanLiveTest do
   import Phoenix.LiveViewTest
   import Ayumi.PlansFixtures
 
-  setup :register_and_log_in_user
+  setup :register_and_log_in_manager
 
   test "creates a support plan for a service user", %{conn: conn, user: staff} do
     su = service_user_fixture()
@@ -72,7 +72,7 @@ defmodule AyumiWeb.SupportPlanLiveTest do
 
     assert html =~ "取組中"
     assert html =~ "午前の作業に参加できた"
-    assert html =~ staff.email
+    assert html =~ (staff.name || staff.email)
 
     assert [progress] = Ayumi.Plans.list_goal_progress(goal)
     assert progress.recorded_by_id == staff.id
@@ -98,7 +98,7 @@ defmodule AyumiWeb.SupportPlanLiveTest do
 
     assert html =~ "個別支援会議"
     assert html =~ "会議で支援内容を確認した"
-    assert html =~ staff.email
+    assert html =~ (staff.name || staff.email)
 
     assert [event] = Ayumi.Plans.list_plan_phase_events(plan)
     assert event.recorded_by_id == staff.id
@@ -153,5 +153,34 @@ defmodule AyumiWeb.SupportPlanLiveTest do
     assert html =~ "進捗を記録できませんでした"
     assert has_element?(lv, "#goal-progress-form-#{visible_goal.id}")
     assert Ayumi.Plans.list_goal_progress(visible_goal) == []
+  end
+
+  describe "supporter access to support plans" do
+    setup :register_and_log_in_user
+
+    test "supporter cannot access new support plan form", %{conn: conn} do
+      su = service_user_fixture()
+
+      assert {:error, {:redirect, %{to: "/"}}} =
+               live(conn, ~p"/service_users/#{su.id}/support_plans/new")
+    end
+
+    test "supporter can view support plan and record progress", %{conn: conn} do
+      plan = support_plan_fixture()
+      goal = goal_fixture(%{support_plan_id: plan.id, description: "目標テスト"})
+
+      {:ok, lv, html} = live(conn, ~p"/support_plans/#{plan.id}")
+      assert html =~ plan.long_term_goal
+
+      html =
+        lv
+        |> form("#goal-progress-form-#{goal.id}",
+          goal_progress: %{stage: "working", note: "支援者が記録"}
+        )
+        |> render_submit()
+
+      assert html =~ "取組中"
+      assert html =~ "支援者が記録"
+    end
   end
 end
