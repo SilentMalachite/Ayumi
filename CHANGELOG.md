@@ -5,6 +5,19 @@
 
 ## [未リリース]
 
+## [0.1.2] — 2026-06-20
+
+### 追加
+
+- Web Notifications によるモニタリング期限ナッジ: ダッシュボード表示時にブラウザの通知許可を
+  取得し、超過・近接の件数を OS デスクトップ通知で表示します（`DeadlineNotifier` JS hook）。
+  ブラウザごとの許可が前提のため、画面内リストが引き続き保証層です。
+- Windows ビルド済みバイナリの CI リリース: `v*` タグ push 時に GitHub Actions の Windows
+  ランナーで Mix release をビルドし、zip として GitHub Release に添付。利用者は Elixir/OTP
+  のインストールなしで起動できます。
+- `Ayumi.Release` モジュール: ビルド済みリリースから `bin/ayumi eval` 経由で
+  マイグレーション（`migrate/0`）と職員アカウント作成（`create_user/0`）を実行するヘルパー。
+
 ## [0.1.1] — 2026-06-20
 
 ### 追加
@@ -60,5 +73,6 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.1...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/SilentMalachite/Ayumi/releases/tag/v0.1.1
