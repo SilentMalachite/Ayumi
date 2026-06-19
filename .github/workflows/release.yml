@@ -9,13 +9,112 @@ permissions:
   contents: write
 
 jobs:
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-24.04
+  build-windows:
+    name: Build Windows release
+    runs-on: windows-latest
+
+    env:
+      MIX_ENV: prod
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Set up Erlang/OTP and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.20"
+
+      - name: Restore dependencies and build cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-prod-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-prod-
+
+      - name: Install dependencies
+        run: mix deps.get --only prod
+
+      - name: Deploy assets
+        run: mix assets.deploy
+
+      - name: Build release
+        run: mix release
+
+      - name: Package release
+        shell: pwsh
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          $tag = $env:TAG_NAME
+          $dest = "ayumi-${tag}-windows-x86_64"
+          New-Item -ItemType Directory -Path $dest
+
+          # Copy release
+          Copy-Item -Recurse -Path "_build\prod\rel\ayumi\*" -Destination $dest
+
+          # Create data directory placeholder
+          New-Item -ItemType Directory -Path "$dest\data" -Force
+
+          # Generate start.bat.example for binary distribution
+          # (paths differ from the source-build version)
+          @"
+@echo off
+chcp 65001 >nul
+echo.
+echo Ayumi を起動しています...
+echo.
+
+rem --- ここを編集してください ---
+rem SECRET_KEY_BASE は 64 文字以上のランダム文字列を設定してください
+set SECRET_KEY_BASE=CHANGE_ME_set_a_random_64_char_string
+
+if "%SECRET_KEY_BASE%"=="CHANGE_ME_set_a_random_64_char_string" (
+    echo [エラー] start.bat を編集して SECRET_KEY_BASE を設定してください。
+    pause
+    exit /b 1
+)
+
+set DATABASE_PATH=%~dp0data\ayumi.db
+set PHX_SERVER=true
+set PHX_HOST=localhost
+set PORT=4000
+
+echo サーバを起動します: http://localhost:%PORT%
+echo LAN 上の他の端末からは http://（このPCのIPアドレス）:%PORT% でアクセスできます。
+echo 停止するには Ctrl+C を押してください。
+echo.
+
+call "%~dp0bin\ayumi.bat" eval "Ayumi.Release.migrate()"
+call "%~dp0bin\ayumi.bat" start
+"@ | Out-File -Encoding ascii "$dest\start.bat.example"
+
+          # Create zip
+          Compress-Archive -Path $dest -DestinationPath "${dest}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: ayumi-v*-windows-x86_64.zip
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-24.04
+    needs: build-windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
 
       - name: Extract changelog and create release
         env:
@@ -28,10 +127,19 @@ jobs:
 
           ---
 
-          ## セットアップ手順
+          ## インストール方法（Windows）
 
-          事業所 PC (Windows) でのセットアップは [README の「本番デプロイ」セクション](https://github.com/SilentMalachite/Ayumi#本番デプロイwindows-事業所-pc) を参照してください。"
+          1. 下の **ayumi-${TAG_NAME}-windows-x86_64.zip** をダウンロードして展開します。
+          2. \`start.bat.example\` を \`start.bat\` にコピーし、テキストエディタで
+             \`SECRET_KEY_BASE\` を設定します（64文字以上のランダム文字列）。
+          3. \`start.bat\` を実行するとサーバが起動します。
+          4. ブラウザで \`http://localhost:4000\` を開きます。
+             LAN 上の他の端末からは \`http://（この PC の IP アドレス）:4000\` でアクセスできます。
+
+          > Elixir や Erlang のインストールは不要です。
+          > 詳しくは [README](https://github.com/SilentMalachite/Ayumi#本番デプロイ) を参照してください。"
 
           gh release create "$TAG_NAME" \
             --title "Ayumi $TAG_NAME" \
-            --notes "$notes"
+            --notes "$notes" \
+            ayumi-${TAG_NAME}-windows-x86_64.zip
