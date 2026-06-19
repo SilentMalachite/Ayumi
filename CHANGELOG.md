@@ -5,6 +5,8 @@
 
 ## [未リリース]
 
+## [0.1.1] — 2026-06-20
+
 ### 追加
 
 - 職員認証（`phx.gen.auth`）: メールアドレス＋パスワードでのログイン、
@@ -58,7 +60,5 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-本プロジェクトはまだ正式リリース（タグ付き）を行っていません。最初の安定版で `0.1.0` として
-本セクションを確定する予定です。
-
-[未リリース]: https://github.com/SilentMalachite/Ayumi/commits/main
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/SilentMalachite/Ayumi/releases/tag/v0.1.1
