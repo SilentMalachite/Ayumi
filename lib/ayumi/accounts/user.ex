@@ -5,6 +5,7 @@ defmodule Ayumi.Accounts.User do
   schema "users" do
     field :email, :string
     field :name, :string
+    field :role, :string, default: "supporter"
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
@@ -124,9 +125,10 @@ defmodule Ayumi.Accounts.User do
   """
   def staff_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :name, :password])
+    |> cast(attrs, [:email, :name, :password, :role])
     |> validate_required([:name])
     |> validate_length(:name, max: 160)
+    |> validate_inclusion(:role, ~w(manager supporter))
     |> validate_email(opts)
     |> validate_password(opts)
     |> maybe_confirm()

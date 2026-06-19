@@ -451,6 +451,45 @@ defmodule Ayumi.AccountsTest do
     end
   end
 
+  describe "staff_changeset/3 role validation" do
+    test "defaults to supporter when role is not provided" do
+      changeset =
+        User.staff_changeset(%User{}, %{
+          email: "test@example.com",
+          name: "テスト",
+          password: "a strong password"
+        })
+
+      assert Ecto.Changeset.get_field(changeset, :role) == "supporter"
+    end
+
+    test "accepts manager role" do
+      changeset =
+        User.staff_changeset(%User{}, %{
+          email: "test@example.com",
+          name: "テスト",
+          password: "a strong password",
+          role: "manager"
+        })
+
+      assert changeset.valid?
+      assert Ecto.Changeset.get_field(changeset, :role) == "manager"
+    end
+
+    test "rejects invalid role" do
+      changeset =
+        User.staff_changeset(%User{}, %{
+          email: "test@example.com",
+          name: "テスト",
+          password: "a strong password",
+          role: "admin"
+        })
+
+      refute changeset.valid?
+      assert {"is invalid", _} = changeset.errors[:role]
+    end
+  end
+
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
