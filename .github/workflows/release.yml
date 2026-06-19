@@ -53,47 +53,9 @@ jobs:
           $tag = $env:TAG_NAME
           $dest = "ayumi-${tag}-windows-x86_64"
           New-Item -ItemType Directory -Path $dest
-
-          # Copy release
           Copy-Item -Recurse -Path "_build\prod\rel\ayumi\*" -Destination $dest
-
-          # Create data directory placeholder
           New-Item -ItemType Directory -Path "$dest\data" -Force
-
-          # Generate start.bat.example for binary distribution
-          # (paths differ from the source-build version)
-          @"
-@echo off
-chcp 65001 >nul
-echo.
-echo Ayumi を起動しています...
-echo.
-
-rem --- ここを編集してください ---
-rem SECRET_KEY_BASE は 64 文字以上のランダム文字列を設定してください
-set SECRET_KEY_BASE=CHANGE_ME_set_a_random_64_char_string
-
-if "%SECRET_KEY_BASE%"=="CHANGE_ME_set_a_random_64_char_string" (
-    echo [エラー] start.bat を編集して SECRET_KEY_BASE を設定してください。
-    pause
-    exit /b 1
-)
-
-set DATABASE_PATH=%~dp0data\ayumi.db
-set PHX_SERVER=true
-set PHX_HOST=localhost
-set PORT=4000
-
-echo サーバを起動します: http://localhost:%PORT%
-echo LAN 上の他の端末からは http://（このPCのIPアドレス）:%PORT% でアクセスできます。
-echo 停止するには Ctrl+C を押してください。
-echo.
-
-call "%~dp0bin\ayumi.bat" eval "Ayumi.Release.migrate()"
-call "%~dp0bin\ayumi.bat" start
-"@ | Out-File -Encoding ascii "$dest\start.bat.example"
-
-          # Create zip
+          Copy-Item -Path "rel\start.bat.template" -Destination "$dest\start.bat.example"
           Compress-Archive -Path $dest -DestinationPath "${dest}.zip"
 
       - name: Upload artifact
