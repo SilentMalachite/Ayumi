@@ -24,7 +24,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
       <.header>
         {@service_user.name}
         <:subtitle>{@service_user.name_kana}</:subtitle>
-        <:actions>
+        <:actions :if={Ayumi.Accounts.Scope.manager?(@current_scope)}>
           <.button navigate={~p"/service_users/#{@service_user.id}/edit"}>{gettext("編集")}</.button>
           <.button navigate={~p"/service_users/#{@service_user.id}/support_plans/new"}>
             {gettext("支援計画を作成")}

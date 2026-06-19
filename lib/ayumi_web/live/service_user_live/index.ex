@@ -17,7 +17,7 @@ defmodule AyumiWeb.ServiceUserLive.Index do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <.header>
         {gettext("利用者一覧")}
-        <:actions>
+        <:actions :if={Ayumi.Accounts.Scope.manager?(@current_scope)}>
           <.button navigate={~p"/service_users/new"}>{gettext("新規登録")}</.button>
         </:actions>
       </.header>
