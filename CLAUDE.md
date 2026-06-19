@@ -102,12 +102,13 @@ free-text note (所見).
 Goal: make sure approaching and overdue monitoring deadlines are not missed, for a
 team where email is routinely ignored.
 
-- **Reliable baseline (build this):** the dashboard surfaces near and overdue
+- **Reliable baseline (done):** the dashboard surfaces near and overdue
   deadlines at the top, computed by an Ecto query on page load. Staff see it because
   they already open the app for their work. No email, no scheduled job needed for
   this layer.
-- **Optional nudge (later):** while the app is open, a LiveView hook may fire an OS
-  desktop notification via the browser Web Notifications API. Treat it as a bonus —
+- **Optional nudge (done):** while the app is open, a LiveView hook
+  (`DeadlineNotifier` in `assets/js/hooks/deadline_notifier.js`) fires an OS
+  desktop notification via the browser Web Notifications API. It is a bonus —
   it depends on a per-browser permission grant, so it is never the guarantee. The
   in-app list is the guarantee.
 - Out of scope: email, Apple push, mobile push. Do not add them.
@@ -175,4 +176,13 @@ Scaffold with `mix phx.new ayumi --database sqlite3`.
    support plan create/edit are manager-only; progress recording and viewing are for all
    authenticated staff.
 
-All four steps are complete and green. Each was `mix review`-clean before merging.
+Optional (done):
+- Web Notifications nudge via `DeadlineNotifier` JS hook + `push_event` from
+  `DashboardLive.Index`. Browser permission required; the in-app list remains
+  the guarantee layer.
+- Windows binary CI release via GitHub Actions (`release.yml`). `v*` tag push
+  builds a Mix release on a Windows runner and attaches the zip to a GitHub
+  Release. `Ayumi.Release` module provides `migrate/0` and `create_user/0`
+  for `bin/ayumi eval` in compiled releases.
+
+All steps are complete and green. Each was `mix review`-clean before merging.

@@ -168,7 +168,7 @@
   /* ════════════════════  ROADMAP spine  ════════════════════ */
   .road{ position:relative; margin-top:1.6em; }
   .road::before{ content:""; position:absolute; left:21px; top:8px; bottom:8px; width:2px;
-    background:linear-gradient(180deg,var(--matsuba),var(--shu) 18%,var(--shu) 62%,var(--ai)); border-radius:2px; }
+    background:var(--matsuba); border-radius:2px; }
   @media (max-width:640px){ .road::before{ left:15px; } }
 
   .stage{ position:relative; padding-left:62px; margin-bottom:34px; }
@@ -580,13 +580,13 @@
 
       <!-- OPTIONAL -->
       <div class="stage">
-        <div class="node opt" aria-hidden="true">後</div>
+        <div class="node done" aria-hidden="true">後</div>
         <div class="card" data-step>
           <div class="card-top">
-            <span class="badge b-opt">任意 · LATER</span>
-            <h3>ボーナス（保証はしない）</h3>
-            <div class="mini"><div class="mtrack"><div class="mfill" data-step-fill style="background:#7a7264"></div></div><span class="mnum" data-step-count>0/0</span></div>
-            <p class="obj">画面内リストが「保証」。これらは上乗せ。</p>
+            <span class="badge b-done">完了 · DONE</span>
+            <h3>ボーナス（実装済み）</h3>
+            <div class="mini"><div class="mtrack"><div class="mfill" data-step-fill style="background:var(--matsuba)"></div></div><span class="mnum" data-step-count>0/0</span></div>
+            <p class="obj">画面内リストが「保証」。これらは上乗せとして実装済み。</p>
           </div>
           <div class="card-body">
             <ul class="checklist">
