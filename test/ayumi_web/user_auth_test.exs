@@ -366,6 +366,55 @@ defmodule AyumiWeb.UserAuthTest do
     end
   end
 
+  describe "Scope.manager?/1" do
+    test "returns true for manager role" do
+      user = %Ayumi.Accounts.User{role: "manager"}
+      scope = Scope.for_user(user)
+      assert Scope.manager?(scope)
+    end
+
+    test "returns false for supporter role" do
+      user = %Ayumi.Accounts.User{role: "supporter"}
+      scope = Scope.for_user(user)
+      refute Scope.manager?(scope)
+    end
+
+    test "returns false for nil scope" do
+      refute Scope.manager?(nil)
+    end
+  end
+
+  describe "on_mount :require_manager" do
+    test "allows manager to continue", %{conn: conn} do
+      user = %{staff_fixture(%{role: "manager"}) | authenticated_at: DateTime.utc_now(:second)}
+      token = Accounts.generate_user_session_token(user)
+      session = conn |> put_session(:user_token, token) |> get_session()
+
+      socket =
+        %LiveView.Socket{
+          endpoint: AyumiWeb.Endpoint,
+          assigns: %{__changed__: %{}, flash: %{}}
+        }
+
+      {:cont, _socket} = UserAuth.on_mount(:require_manager, %{}, session, socket)
+    end
+
+    test "redirects supporter to home", %{conn: conn} do
+      user = %{staff_fixture(%{role: "supporter"}) | authenticated_at: DateTime.utc_now(:second)}
+      token = Accounts.generate_user_session_token(user)
+      session = conn |> put_session(:user_token, token) |> get_session()
+
+      socket =
+        %LiveView.Socket{
+          endpoint: AyumiWeb.Endpoint,
+          assigns: %{__changed__: %{}, flash: %{}}
+        }
+
+      {:halt, socket} = UserAuth.on_mount(:require_manager, %{}, session, socket)
+      assert socket.assigns.flash["error"] =~ "サービス管理責任者"
+    end
+  end
+
   describe "disconnect_sessions/1" do
     test "broadcasts disconnect messages for each token" do
       tokens = [%{token: "token1"}, %{token: "token2"}]

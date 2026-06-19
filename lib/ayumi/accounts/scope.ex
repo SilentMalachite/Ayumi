@@ -18,7 +18,7 @@ defmodule Ayumi.Accounts.Scope do
 
   alias Ayumi.Accounts.User
 
-  defstruct user: nil
+  defstruct user: nil, role: nil
 
   @doc """
   Creates a scope for the given user.
@@ -26,8 +26,12 @@ defmodule Ayumi.Accounts.Scope do
   Returns nil if no user is given.
   """
   def for_user(%User{} = user) do
-    %__MODULE__{user: user}
+    %__MODULE__{user: user, role: user.role}
   end
 
   def for_user(nil), do: nil
+
+  @doc "Returns true when the scope belongs to a manager."
+  def manager?(%__MODULE__{role: "manager"}), do: true
+  def manager?(_), do: false
 end

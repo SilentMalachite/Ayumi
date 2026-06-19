@@ -245,6 +245,21 @@ defmodule AyumiWeb.UserAuth do
     end
   end
 
+  def on_mount(:require_manager, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    if Scope.manager?(socket.assigns[:current_scope]) do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "この操作にはサービス管理責任者の権限が必要です")
+        |> Phoenix.LiveView.redirect(to: ~p"/")
+
+      {:halt, socket}
+    end
+  end
+
   defp mount_current_scope(socket, session) do
     Phoenix.Component.assign_new(socket, :current_scope, fn ->
       {user, _} =

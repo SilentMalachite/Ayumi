@@ -58,6 +58,11 @@ defmodule Ayumi.AccountsFixtures do
     user
   end
 
+  @doc "Creates a confirmed staff user with the manager role."
+  def manager_fixture(attrs \\ %{}) do
+    staff_fixture(Map.put_new(attrs, :role, "manager"))
+  end
+
   def user_scope_fixture do
     user = user_fixture()
     user_scope_fixture(user)
