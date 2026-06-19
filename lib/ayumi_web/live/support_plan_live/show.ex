@@ -14,18 +14,22 @@ defmodule AyumiWeb.SupportPlanLive.Show do
 
   @impl true
   def handle_event("add_goal", %{"goal" => params}, socket) do
-    plan = socket.assigns.support_plan
-    goal_params = Map.put(params, "support_plan_id", plan.id)
+    if Ayumi.Accounts.Scope.manager?(socket.assigns.current_scope) do
+      plan = socket.assigns.support_plan
+      goal_params = Map.put(params, "support_plan_id", plan.id)
 
-    case Plans.create_goal(goal_params) do
-      {:ok, _goal} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, gettext("短期目標を追加しました"))
-         |> load(plan.id)}
+      case Plans.create_goal(goal_params) do
+        {:ok, _goal} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, gettext("短期目標を追加しました"))
+           |> load(plan.id)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :goal_form, to_form(changeset))}
+        {:error, changeset} ->
+          {:noreply, assign(socket, :goal_form, to_form(changeset))}
+      end
+    else
+      {:noreply, put_flash(socket, :error, gettext("この操作にはサービス管理責任者の権限が必要です"))}
     end
   end
 
@@ -301,6 +305,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
       </div>
 
       <.form
+        :if={Ayumi.Accounts.Scope.manager?(@current_scope)}
         for={@goal_form}
         id="goal-form"
         phx-submit="add_goal"
