@@ -4,7 +4,7 @@ defmodule Ayumi.MixProject do
   def project do
     [
       app: :ayumi,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.15",
       name: "Ayumi",
       description: "就労継続支援B型事業所向けの個別支援計画 進捗トラッカー",
