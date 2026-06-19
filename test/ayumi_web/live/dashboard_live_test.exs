@@ -19,6 +19,32 @@ defmodule AyumiWeb.DashboardLiveTest do
       assert has_element?(lv, "#monitoring-alerts-empty")
     end
 
+    test "pushes notify-deadlines event with alert counts", %{conn: conn, user: staff} do
+      service_user = service_user_fixture(%{name: "通知 太郎", name_kana: "つうち たろう"})
+
+      support_plan_fixture(%{
+        service_user_id: service_user.id,
+        staff_id: staff.id,
+        next_monitoring_date: Date.add(Date.utc_today(), -3)
+      })
+
+      support_plan_fixture(%{
+        service_user_id: service_user_fixture(%{name: "通知 花子", name_kana: "つうち はなこ"}).id,
+        staff_id: staff.id,
+        next_monitoring_date: Date.add(Date.utc_today(), 10)
+      })
+
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      assert_push_event(lv, "notify-deadlines", %{overdue: 1, near: 1})
+    end
+
+    test "does not push notify-deadlines when no alerts", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/")
+
+      refute_push_event(lv, "notify-deadlines", %{})
+    end
+
     test "shows overdue and near monitoring deadlines", %{conn: conn, user: staff} do
       service_user = service_user_fixture(%{name: "山田 太郎", name_kana: "やまだ たろう"})
 

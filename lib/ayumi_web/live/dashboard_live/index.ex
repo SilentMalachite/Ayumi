@@ -8,18 +8,21 @@ defmodule AyumiWeb.DashboardLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:page_title, gettext("ダッシュボード"))
-     |> assign(:near_days, @near_days)
-     |> assign(
-       :monitoring_alerts,
-       Plans.list_monitoring_deadline_alerts(
-         socket.assigns.current_scope,
-         Date.utc_today(),
-         @near_days
-       )
-     )}
+    alerts =
+      Plans.list_monitoring_deadline_alerts(
+        socket.assigns.current_scope,
+        Date.utc_today(),
+        @near_days
+      )
+
+    socket =
+      socket
+      |> assign(:page_title, gettext("ダッシュボード"))
+      |> assign(:near_days, @near_days)
+      |> assign(:monitoring_alerts, alerts)
+      |> push_deadline_notification(alerts)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -31,7 +34,7 @@ defmodule AyumiWeb.DashboardLive.Index do
         <:subtitle>{gettext("モニタリング期限と担当状況を確認します")}</:subtitle>
       </.header>
 
-      <section id="monitoring-alerts" class="space-y-3">
+      <section id="monitoring-alerts" phx-hook="DeadlineNotifier" class="space-y-3">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 class="text-base font-semibold text-zinc-900">{gettext("モニタリング期限")}</h2>
@@ -116,6 +119,20 @@ defmodule AyumiWeb.DashboardLive.Index do
       </section>
     </Layouts.app>
     """
+  end
+
+  defp push_deadline_notification(socket, []), do: socket
+
+  defp push_deadline_notification(socket, alerts) do
+    {overdue, near} =
+      Enum.reduce(alerts, {0, 0}, fn alert, {o, n} ->
+        case alert.status do
+          :overdue -> {o + 1, n}
+          :near -> {o, n + 1}
+        end
+      end)
+
+    push_event(socket, "notify-deadlines", %{overdue: overdue, near: near})
   end
 
   defp deadline_status_label(:overdue), do: gettext("超過")

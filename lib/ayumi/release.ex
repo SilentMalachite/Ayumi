@@ -44,17 +44,20 @@ defmodule Ayumi.Release do
 
       {:error, changeset} ->
         IO.puts("作成に失敗しました:")
-
-        changeset
-        |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
-          Enum.reduce(opts, msg, fn {key, value}, acc ->
-            String.replace(acc, "%{#{key}}", to_string(value))
-          end)
-        end)
-        |> Enum.each(fn {field, messages} ->
-          IO.puts("  - #{field}: #{Enum.join(messages, ", ")}")
-        end)
+        print_errors(changeset)
     end
+  end
+
+  defp print_errors(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> Enum.each(fn {field, messages} ->
+      IO.puts("  - #{field}: #{Enum.join(messages, ", ")}")
+    end)
   end
 
   defp prompt(label) do
@@ -73,9 +76,15 @@ defmodule Ayumi.Release do
     IO.puts("  2) manager（サービス管理責任者）")
 
     case prompt("番号を入力 [1]: ") do
-      "" -> "supporter"
-      "1" -> "supporter"
-      "2" -> "manager"
+      "" ->
+        "supporter"
+
+      "1" ->
+        "supporter"
+
+      "2" ->
+        "manager"
+
       _ ->
         IO.puts("1 または 2 を入力してください。")
         prompt_role()
