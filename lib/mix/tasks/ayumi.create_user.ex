@@ -23,13 +23,14 @@ defmodule Mix.Tasks.Ayumi.CreateUser do
     * `--email`    メールアドレス（ログインID）
     * `--name`     氏名（担当者として表示されます）
     * `--password` パスワード（12文字以上）
+    * `--role`     ロール（manager / supporter、省略時 supporter）
   """
 
   use Mix.Task
 
   alias Ayumi.Accounts
 
-  @switches [email: :string, name: :string, password: :string]
+  @switches [email: :string, name: :string, password: :string, role: :string]
 
   @impl Mix.Task
   def run(args) do
@@ -40,10 +41,11 @@ defmodule Mix.Tasks.Ayumi.CreateUser do
     email = opts[:email] || prompt_required("メールアドレス: ")
     name = opts[:name] || prompt_required("氏名: ")
     password = opts[:password] || prompt_password("パスワード（12文字以上）: ")
+    role = opts[:role] || prompt_role()
 
-    case Accounts.register_staff_user(%{email: email, name: name, password: password}) do
+    case Accounts.register_staff_user(%{email: email, name: name, password: password, role: role}) do
       {:ok, user} ->
-        Mix.shell().info("職員アカウントを作成しました: #{user.email}")
+        Mix.shell().info("職員アカウントを作成しました: #{user.email}（#{user.role}）")
 
       {:error, changeset} ->
         Mix.shell().error("作成に失敗しました:")
@@ -77,6 +79,27 @@ defmodule Mix.Tasks.Ayumi.CreateUser do
       value
     else
       String.trim(Mix.shell().prompt(label))
+    end
+  end
+
+  defp prompt_role do
+    Mix.shell().info("ロールを選択してください:")
+    Mix.shell().info("  1) supporter（支援者）")
+    Mix.shell().info("  2) manager（サービス管理責任者）")
+
+    case String.trim(Mix.shell().prompt("番号を入力 [1]: ")) do
+      "" ->
+        "supporter"
+
+      "1" ->
+        "supporter"
+
+      "2" ->
+        "manager"
+
+      _ ->
+        Mix.shell().error("1 または 2 を入力してください。")
+        prompt_role()
     end
   end
 

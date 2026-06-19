@@ -16,13 +16,18 @@ alias Ayumi.Plans
 
 demo_password = "ayumi-dev-1234"
 
-ensure_staff = fn email, name ->
+ensure_staff = fn email, name, role ->
   case Accounts.get_user_by_email(email) do
     nil ->
       {:ok, user} =
-        Accounts.register_staff_user(%{email: email, name: name, password: demo_password})
+        Accounts.register_staff_user(%{
+          email: email,
+          name: name,
+          password: demo_password,
+          role: role
+        })
 
-      IO.puts("  職員を作成: #{user.email}")
+      IO.puts("  職員を作成: #{user.email}（#{user.role}）")
       user
 
     user ->
@@ -34,8 +39,8 @@ end
 if Mix.env() == :dev do
   IO.puts("デモデータを投入します (MIX_ENV=dev)")
 
-  admin = ensure_staff.("admin@ayumi.local", "管理 太郎")
-  _staff = ensure_staff.("staff@ayumi.local", "支援 花子")
+  admin = ensure_staff.("admin@ayumi.local", "管理 太郎", "manager")
+  _staff = ensure_staff.("staff@ayumi.local", "支援 花子", "supporter")
 
   if Plans.list_service_users() == [] do
     today = Date.utc_today()
@@ -99,8 +104,8 @@ if Mix.env() == :dev do
   IO.puts("""
 
   開発用ログイン:
-    admin@ayumi.local / #{demo_password}
-    staff@ayumi.local / #{demo_password}
+    admin@ayumi.local / #{demo_password} (manager)
+    staff@ayumi.local / #{demo_password} (supporter)
   """)
 else
   IO.puts("""
