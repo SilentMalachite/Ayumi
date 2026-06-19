@@ -52,8 +52,9 @@ custom classes must fully style the input
   - A plug `:fetch_current_scope_for_user` that is included in the default browser pipeline
   - A plug `:require_authenticated_user` that redirects to the log in page when the user is not authenticated
   - A `live_session :current_user` scope - for routes that need the current user but don't require authentication, similar to `:fetch_current_scope_for_user`
-  - A `live_session :require_authenticated_user` scope - for routes that require authentication, similar to the plug with the same name
-  - In both cases, a `@current_scope` is assigned to the Plug connection and LiveView socket
+  - A `live_session :require_manager` scope - for routes that require manager role (create/edit of service users and support plans). Uses `on_mount: [{AyumiWeb.UserAuth, :require_authenticated}, {AyumiWeb.UserAuth, :require_manager}]`. **This session is placed BEFORE `:require_authenticated_user` in the router** to avoid `/service_users/new` matching the `:id` parameter
+  - A `live_session :require_authenticated_user` scope - for routes that require authentication (dashboard, show/index pages, progress recording, settings), similar to the plug with the same name
+  - In both cases, a `@current_scope` is assigned to the Plug connection and LiveView socket (with `role` populated from the user)
   - A plug `redirect_if_user_is_authenticated` that redirects to a default path in case the user is authenticated - useful for a registration page that should only be shown to unauthenticated users
 - **Always let the user know in which router scopes, `live_session`, and pipeline you are placing the route, AND SAY WHY**
 - `phx.gen.auth` assigns the `current_scope` assign - it **does not assign a `current_user` assign**
@@ -64,20 +65,25 @@ custom classes must fully style the input
 
 ### Routes that require authentication
 
-LiveViews that require login should **always be placed inside the __existing__ `live_session :require_authenticated_user` block**:
+LiveViews that require login should be placed in the appropriate `live_session`:
 
-    scope "/", AppWeb do
-      pipe_through [:browser, :require_authenticated_user]
+- **Manager-only routes** (create/edit) go in `:require_manager`:
+
+      live_session :require_manager,
+        on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}, {AyumiWeb.UserAuth, :require_manager}] do
+        live "/service_users/new", ServiceUserLive.Form, :new
+        live "/service_users/:id/edit", ServiceUserLive.Form, :edit
+        live "/service_users/:service_user_id/support_plans/new", SupportPlanLive.Form, :new
+      end
+
+- **All other authenticated routes** go in `:require_authenticated_user`:
 
       live_session :require_authenticated_user,
-        on_mount: [{AyumiWeb.UserAuth, :require_authenticated}] do
-        # phx.gen.auth generated routes
+        on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}] do
+        live "/", DashboardLive.Index, :index
         live "/users/settings", UserLive.Settings, :edit
-        live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
-        # our own routes that require logged in user
-        live "/", MyLiveThatRequiresAuth, :index
+        # show/index routes
       end
-    end
 
 Controller routes must be placed in a scope that sets the `:require_authenticated_user` plug:
 

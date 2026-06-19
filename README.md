@@ -38,6 +38,8 @@
   （`AyumiWeb.Presence`）で「○○さんが編集中」を事前に警告します（外部依存なし・完全オフライン）。
 - **オフライン前提の職員アカウント初期化**: メール不要で確定済みアカウントを直接作成
   （`mix ayumi.create_user` と開発用シード）。
+- **ロール分離**（サービス管理責任者 / 支援者）: 利用者と支援計画の作成・編集はサービス管理責任者
+  （`manager`）のみ。進捗記録・ステージ遷移・閲覧は全職員が可能。
 
 > 設計の詳細・ドメインの考え方・実装順は [`CLAUDE.md`](CLAUDE.md) を参照してください。
 
@@ -123,18 +125,21 @@ mix ecto.reset   # drop → create → migrate → seed
 ```bash
 mix ayumi.create_user
 # 対話入力。引数指定も可能（パスワードはシェル履歴に残る点に注意）:
-mix ayumi.create_user --email staff@example.com --name "支援 太郎" --password "12文字以上のパスワード"
+mix ayumi.create_user --email staff@example.com --name "支援 太郎" --password "12文字以上のパスワード" --role manager
 ```
+
+`--role` には `manager`（サービス管理責任者）または `supporter`（支援者、デフォルト）を指定します。
+対話モードではメニューから選択できます。
 
 ### 開発用のシードアカウント
 
 開発環境（`MIX_ENV=dev`）でのみ、デモ用の職員アカウントとサンプル利用者・支援計画・目標が
 投入されます（`test`・`prod` では投入されず、`mix ayumi.create_user` の案内が表示されます）。
 
-| メールアドレス | パスワード |
-| --- | --- |
-| `admin@ayumi.local` | `ayumi-dev-1234` |
-| `staff@ayumi.local` | `ayumi-dev-1234` |
+| メールアドレス | パスワード | ロール |
+| --- | --- | --- |
+| `admin@ayumi.local` | `ayumi-dev-1234` | `manager`（サービス管理責任者） |
+| `staff@ayumi.local` | `ayumi-dev-1234` | `supporter`（支援者） |
 
 シードは冪等です（職員はメールで照合、サンプルデータは利用者が0件のときのみ投入）。
 

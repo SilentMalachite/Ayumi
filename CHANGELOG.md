@@ -29,6 +29,12 @@
   および `mix ayumi.create_user` タスク。
 - 初期化用の開発シード（デモ職員＋サンプル利用者・支援計画・目標、`MIX_ENV=dev` 限定・冪等）。
   `mix setup` / `mix ecto.reset` で実行。
+- ロール分離（サービス管理責任者 `manager` / 支援者 `supporter`）: `users` テーブルに `role`
+  カラムを追加（デフォルト `supporter`）。利用者・支援計画の作成・編集はサービス管理責任者のみに
+  制限し、進捗記録・閲覧は全職員が可能。`Ayumi.Accounts.Role` 列挙モジュール、
+  `Scope.manager?/1` による認可判定、`on_mount(:require_manager)` によるルート保護、
+  UI 上のボタン・フォームのロール表示制御を追加。`mix ayumi.create_user` に `--role` オプション
+  を追加。
 - プロジェクトドキュメント: README、LICENSE（Apache-2.0）、NOTICE、CONTRIBUTING、SECURITY、
   CODE_OF_CONDUCT、Issue／PR テンプレート、本 CHANGELOG。
 

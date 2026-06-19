@@ -158,8 +158,7 @@ viewer’s own assigned users first, and treat deadlines within 30 days as near.
 - No PostgreSQL, no cloud hosting, no multi-tenant design.
 - No internet-dependent features at runtime.
 - No email or push delivery.
-- Keep auth simple (local staff accounts). Role separation (サビ管 vs 支援者) can come
-  later, not now.
+- Keep auth simple (local staff accounts with two roles: manager / supporter).
 
 ## Build order (current status)
 
@@ -171,5 +170,9 @@ Scaffold with `mix phx.new ayumi --database sqlite3`.
    Derive current progress from the latest row.
 3. Done: `plan_phase_event` + the monitoring-deadline dashboard: stage transitions, and the
    "deadlines near / overdue" surfacing on the authenticated dashboard.
+4. Done: Role separation (manager / supporter). Route-level authorization via
+   `on_mount(:require_manager)`, UI gating via `Scope.manager?/1`. Service user and
+   support plan create/edit are manager-only; progress recording and viewing are for all
+   authenticated staff.
 
-All three steps are complete and green. Each was `mix review`-clean before merging.
+All four steps are complete and green. Each was `mix review`-clean before merging.
