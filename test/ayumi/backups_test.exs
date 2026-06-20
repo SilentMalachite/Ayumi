@@ -68,6 +68,29 @@ defmodule Ayumi.BackupsTest do
       assert {:error, reason} = Backups.create_backup(tmp_dir, timestamp: ts)
       assert reason =~ "衝突"
     end
+
+    @tag :tmp_dir
+    test "同じ秒に並列実行しても全件成功し、パスが衝突しない", %{tmp_dir: tmp_dir} do
+      ts = ~N[2026-06-20 12:00:00]
+      concurrency = 4
+
+      results =
+        1..concurrency
+        |> Task.async_stream(
+          fn _ -> Backups.create_backup(tmp_dir, timestamp: ts) end,
+          max_concurrency: concurrency,
+          timeout: 30_000
+        )
+        |> Enum.map(fn {:ok, res} -> res end)
+
+      assert Enum.all?(results, &match?({:ok, _}, &1)),
+             "一部のバックアップが失敗しました: #{inspect(results)}"
+
+      paths = for {:ok, info} <- results, do: info.path
+      assert length(paths) == concurrency
+      assert length(Enum.uniq(paths)) == concurrency
+      assert Enum.all?(paths, &File.exists?/1)
+    end
   end
 
   defp collect_rows(stmt, conn, acc \\ []) do
