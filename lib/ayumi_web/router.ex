@@ -68,6 +68,7 @@ defmodule AyumiWeb.Router do
       live "/service_users/:id", ServiceUserLive.Show, :show
       live "/support_plans/:id", SupportPlanLive.Show, :show
       live "/support_records", SupportRecordLive.Index, :index
+      live "/service_users/:service_user_id/attendance", AttendanceLive.Index, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password
