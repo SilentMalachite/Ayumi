@@ -62,5 +62,18 @@ defmodule AyumiWeb.BackupLiveTest do
       # インラインは「バックアップ完了」。フラッシュ固有の文言で判定する。
       assert html =~ "バックアップが完了しました"
     end
+
+    @tag :tmp_dir
+    test "成功時に保存時刻が表示される", %{conn: conn, tmp_dir: tmp_dir} do
+      {:ok, lv, _html} = live(conn, ~p"/admin/backup")
+
+      html =
+        lv
+        |> form("#backup-form", %{dest_dir: tmp_dir})
+        |> render_submit()
+
+      # 「YYYY-MM-DD HH:MM:SS」形式の時刻が出る（ファイル名の連結桁とは別物）
+      assert html =~ ~r/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/
+    end
   end
 end

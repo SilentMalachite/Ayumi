@@ -22,7 +22,8 @@ defmodule AyumiWeb.BackupLive.Index do
       {:ok, info} ->
         backup_info = %{
           path: info.path,
-          size_kb: div(info.size_bytes, 1024)
+          size_kb: div(info.size_bytes, 1024),
+          created_at: info.created_at
         }
 
         {:noreply,
@@ -89,6 +90,9 @@ defmodule AyumiWeb.BackupLive.Index do
             <p class="font-semibold">{gettext("バックアップ完了")}</p>
             <p class="text-sm">{@backup_info.path}</p>
             <p class="text-sm">{@backup_info.size_kb} KB</p>
+            <p class="text-sm">
+              {Calendar.strftime(@backup_info.created_at, "%Y-%m-%d %H:%M:%S UTC")}
+            </p>
           </div>
         </div>
 
