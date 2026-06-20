@@ -5,6 +5,19 @@
 
 ## [未リリース]
 
+## [0.1.4] — 2026-06-20
+
+### 修正
+
+- 退所済み利用者が支援記録の一覧・新規作成で選択可能だった問題を修正。
+- 退所済み利用者に対して支援計画を作成できた問題を修正。
+- 支援計画作成時の退所チェックに TOCTOU 競合が残っていた問題をガード追加で修正。
+- LiveView 経由の支援記録作成で `Ecto.CastError` が発生する問題を修正。
+
+### ドキュメント
+
+- README の書き出しをアプリの現在の機能範囲に合わせて更新。
+
 ## [0.1.3] — 2026-06-20
 
 ### 追加
@@ -88,7 +101,8 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.3...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/SilentMalachite/Ayumi/releases/tag/v0.1.1
