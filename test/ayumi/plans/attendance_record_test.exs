@@ -351,6 +351,21 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
     end
   end
 
+  describe "attendance_record_fixture/1" do
+    test "creates a default commute record on 2026-06-01" do
+      rec = attendance_record_fixture()
+      assert rec.service_date == ~D[2026-06-01]
+      assert rec.provision_type == :commute
+    end
+
+    test "accepts overrides for service_user_id and provision_type" do
+      su = service_user_fixture()
+      rec = attendance_record_fixture(%{service_user_id: su.id, provision_type: :absence})
+      assert rec.service_user_id == su.id
+      assert rec.provision_type == :absence
+    end
+  end
+
   defp get_change_or_field(cs, field) do
     Map.get(cs.changes, field, Map.get(cs.data, field))
   end

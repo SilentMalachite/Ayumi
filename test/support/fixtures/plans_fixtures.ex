@@ -93,6 +93,24 @@ defmodule Ayumi.PlansFixtures do
     record
   end
 
+  def attendance_record_fixture(attrs \\ %{}) do
+    attrs = Map.new(attrs)
+    service_user_id = Map.get(attrs, :service_user_id) || service_user_fixture().id
+    recorded_by = Map.get(attrs, :recorded_by) || user_fixture()
+    scope = Ayumi.Accounts.Scope.for_user(recorded_by)
+
+    defaults = %{
+      service_user_id: service_user_id,
+      service_date: ~D[2026-06-01],
+      provision_type: :commute
+    }
+
+    {:ok, record} =
+      Plans.create_attendance_record(scope, Map.merge(defaults, Map.drop(attrs, [:recorded_by])))
+
+    record
+  end
+
   def plan_phase_event_fixture(attrs \\ %{}) do
     support_plan_id = attrs[:support_plan_id] || support_plan_fixture().id
     recorded_by_id = attrs[:recorded_by_id] || user_fixture().id
