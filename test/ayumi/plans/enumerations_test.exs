@@ -1,7 +1,14 @@
 defmodule Ayumi.Plans.EnumerationsTest do
   use ExUnit.Case, async: true
 
-  alias Ayumi.Plans.{CertificateKind, Gender, GoalProgressStage, PlanPhaseStage, SupportCategory}
+  alias Ayumi.Plans.{
+    CertificateKind,
+    Gender,
+    GoalProgressStage,
+    PlanPhaseStage,
+    ProvisionType,
+    SupportCategory
+  }
 
   describe "Gender" do
     test "all/0 lists values in display order" do
@@ -137,6 +144,40 @@ defmodule Ayumi.Plans.EnumerationsTest do
     test "options/0 returns {label, value} pairs for selects" do
       assert {"アセスメント", :assessment} in PlanPhaseStage.options()
       assert length(PlanPhaseStage.options()) == 7
+    end
+  end
+
+  describe "ProvisionType" do
+    test "all/0 lists values in display order" do
+      assert ProvisionType.all() == [
+               :commute,
+               :offsite_work,
+               :offsite_support,
+               :absence,
+               :absence_support
+             ]
+    end
+
+    test "label/1 maps values to Japanese" do
+      assert ProvisionType.label(:commute) == "通所"
+      assert ProvisionType.label(:offsite_work) == "施設外就労"
+      assert ProvisionType.label(:offsite_support) == "施設外支援"
+      assert ProvisionType.label(:absence) == "欠席"
+      assert ProvisionType.label(:absence_support) == "欠席時対応"
+    end
+
+    test "label/1 returns nil for unknown or nil" do
+      assert ProvisionType.label(nil) == nil
+      assert ProvisionType.label(:bogus) == nil
+    end
+
+    test "options/0 returns {label, value} pairs for selects" do
+      assert {"通所", :commute} in ProvisionType.options()
+      assert length(ProvisionType.options()) == 5
+    end
+
+    test "billable/0 lists only commute / offsite_work / offsite_support" do
+      assert ProvisionType.billable() == [:commute, :offsite_work, :offsite_support]
     end
   end
 end

@@ -13,6 +13,9 @@ defmodule Ayumi.Plans do
   alias Ayumi.Plans.PlanPhaseEvent
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
+  alias Ayumi.Plans.AttendanceRecord
+  alias Ayumi.Plans.AttendanceSheet
+  alias Ayumi.Plans.ProvisionType
   alias Ayumi.Plans.SupportRecord
 
   ## Service users
@@ -450,6 +453,134 @@ defmodule Ayumi.Plans do
     |> add_missing_assoc_error(:service_user_id, ServiceUser)
     |> add_missing_assoc_error(:recorded_by_id, User)
   end
+
+  ## Attendance records
+
+  @doc "Returns a changeset for an attendance record (forms)."
+  def change_attendance_record(%AttendanceRecord{} = record, attrs \\ %{}) do
+    AttendanceRecord.changeset(record, attrs)
+  end
+
+  @doc """
+  Creates an attendance record.
+
+  `recorded_by_id` / `recorded_at` are set from `scope.user.id` and the wall clock.
+  Unlike `create_support_record/2`, this **does not** block withdrawn service users —
+  the monthly attendance sheet for the month of withdrawal must still be recordable.
+  """
+  def create_attendance_record(%Scope{} = scope, attrs) when is_map(attrs) do
+    %AttendanceRecord{}
+    |> AttendanceRecord.changeset(attrs)
+    |> AttendanceRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
+    |> insert_attendance_record()
+  end
+
+  defp insert_attendance_record(changeset) do
+    Repo.insert(changeset)
+  rescue
+    exception in Ecto.ConstraintError ->
+      if unnamed_foreign_key_constraint_error?(exception) do
+        changeset = add_attendance_record_foreign_key_errors(changeset)
+
+        if changeset.valid?, do: reraise(exception, __STACKTRACE__), else: {:error, changeset}
+      else
+        reraise exception, __STACKTRACE__
+      end
+  end
+
+  defp add_attendance_record_foreign_key_errors(changeset) do
+    changeset
+    |> add_missing_assoc_error(:service_user_id, ServiceUser)
+    |> add_missing_assoc_error(:recorded_by_id, User)
+  end
+
+  @doc """
+  Lists raw attendance rows for `service_user_id` within `year` / `month`,
+  oldest-first by `id`. The fold for `build_attendance_sheet/3` consumes this order.
+  """
+  def list_attendance_records(service_user_id, year, month)
+      when is_integer(service_user_id) and is_integer(year) and is_integer(month) do
+    {first, last} = month_bounds(year, month)
+
+    AttendanceRecord
+    |> where([r], r.service_user_id == ^service_user_id)
+    |> where([r], r.service_date >= ^first and r.service_date <= ^last)
+    |> order_by([r], asc: r.id)
+    |> Repo.all()
+  end
+
+  defp month_bounds(year, month) do
+    first = Date.new!(year, month, 1)
+    last = Date.end_of_month(first)
+    {first, last}
+  end
+
+  @doc """
+  Builds a monthly attendance sheet for a service user by folding the
+  append-only log. The sheet is derived, not stored.
+  """
+  def build_attendance_sheet(service_user_id, year, month)
+      when is_integer(service_user_id) and is_integer(year) and is_integer(month) do
+    rows = list_attendance_records(service_user_id, year, month)
+    fold_attendance_sheet(service_user_id, year, month, rows)
+  end
+
+  defp fold_attendance_sheet(service_user_id, year, month, rows) do
+    # rows arrive id-ascending from list_attendance_records/3; Map.new/2 overwrites
+    # earlier entries with later ones, so the largest-id row wins per date.
+    latest_by_date = Map.new(rows, &{&1.service_date, &1})
+
+    {first, _last} = month_bounds(year, month)
+    days = Date.days_in_month(first)
+
+    lines =
+      for day <- 1..days do
+        date = Date.new!(year, month, day)
+        %{date: date, record: Map.get(latest_by_date, date)}
+      end
+
+    %AttendanceSheet{
+      service_user_id: service_user_id,
+      year: year,
+      month: month,
+      lines: lines,
+      totals: totals_from(lines)
+    }
+  end
+
+  defp totals_from(lines) do
+    billable = ProvisionType.billable()
+    offsite = [:offsite_work, :offsite_support]
+
+    Enum.reduce(
+      lines,
+      %{
+        billable_days: 0,
+        offsite_days: 0,
+        pickup_count: 0,
+        dropoff_count: 0,
+        absence_support_count: 0
+      },
+      fn
+        %{record: nil}, acc ->
+          acc
+
+        %{record: rec}, acc ->
+          acc
+          |> Map.update!(:billable_days, &(&1 + bool_to_int(rec.provision_type in billable)))
+          |> Map.update!(:offsite_days, &(&1 + bool_to_int(rec.provision_type in offsite)))
+          |> Map.update!(:pickup_count, &(&1 + bool_to_int(rec.pickup)))
+          |> Map.update!(:dropoff_count, &(&1 + bool_to_int(rec.dropoff)))
+          |> Map.update!(
+            :absence_support_count,
+            &(&1 + bool_to_int(rec.provision_type == :absence_support))
+          )
+      end
+    )
+  end
+
+  defp bool_to_int(true), do: 1
+  defp bool_to_int(false), do: 0
 
   ## Certificate expiry
 
