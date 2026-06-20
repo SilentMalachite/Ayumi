@@ -75,6 +75,24 @@ defmodule Ayumi.PlansFixtures do
     goal_progress
   end
 
+  def support_record_fixture(attrs \\ %{}) do
+    service_user_id = attrs[:service_user_id] || service_user_fixture().id
+    recorded_by = attrs[:recorded_by] || user_fixture()
+    scope = Ayumi.Accounts.Scope.for_user(recorded_by)
+
+    {:ok, record} =
+      Plans.create_support_record(
+        scope,
+        Enum.into(attrs, %{
+          service_user_id: service_user_id,
+          content: "午前の作業に集中できた",
+          category: :work
+        })
+      )
+
+    record
+  end
+
   def plan_phase_event_fixture(attrs \\ %{}) do
     support_plan_id = attrs[:support_plan_id] || support_plan_fixture().id
     recorded_by_id = attrs[:recorded_by_id] || user_fixture().id

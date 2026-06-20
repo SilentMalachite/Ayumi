@@ -4,6 +4,7 @@ defmodule Ayumi.PlansTest do
   alias Ayumi.Plans
   alias Ayumi.Plans.GoalProgress
   alias Ayumi.Plans.PlanPhaseEvent
+  alias Ayumi.Plans.SupportRecord
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
   alias Ayumi.Plans.Goal
@@ -876,6 +877,171 @@ defmodule Ayumi.PlansTest do
         )
 
       assert alerts == []
+    end
+  end
+
+  describe "support records" do
+    test "create_support_record/2 inserts a record with scope-derived fields" do
+      service_user = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      assert {:ok, %SupportRecord{} = record} =
+               Plans.create_support_record(scope, %{
+                 service_user_id: service_user.id,
+                 content: "午前の作業に集中できた",
+                 category: :work
+               })
+
+      assert record.service_user_id == service_user.id
+      assert record.content == "午前の作業に集中できた"
+      assert record.category == :work
+      assert record.recorded_by_id == staff.id
+      assert %DateTime{} = record.recorded_at
+    end
+
+    test "create_support_record/2 rejects empty content" do
+      service_user = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      assert {:error, changeset} =
+               Plans.create_support_record(scope, %{
+                 service_user_id: service_user.id,
+                 content: "",
+                 category: :work
+               })
+
+      assert errors_on(changeset)[:content]
+    end
+
+    test "create_support_record/2 rejects invalid category" do
+      service_user = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      assert {:error, changeset} =
+               Plans.create_support_record(scope, %{
+                 service_user_id: service_user.id,
+                 content: "テスト",
+                 category: :invalid
+               })
+
+      assert errors_on(changeset)[:category]
+    end
+
+    test "create_support_record/2 rejects invalid service_user_id" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      assert {:error, changeset} =
+               Plans.create_support_record(scope, %{
+                 service_user_id: -1,
+                 content: "テスト",
+                 category: :work
+               })
+
+      assert errors_on(changeset)[:service_user_id]
+    end
+
+    test "list_support_records/2 filters by service_user_id" do
+      su1 = service_user_fixture()
+      su2 = service_user_fixture(%{name: "鈴木 花子"})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      {:ok, _} =
+        Plans.create_support_record(scope, %{
+          service_user_id: su1.id,
+          content: "記録1",
+          category: :work
+        })
+
+      {:ok, _} =
+        Plans.create_support_record(scope, %{
+          service_user_id: su2.id,
+          content: "記録2",
+          category: :health
+        })
+
+      records = Plans.list_support_records(scope, service_user_id: su1.id)
+      assert length(records) == 1
+      assert hd(records).content == "記録1"
+    end
+
+    test "list_support_records/2 filters by date range" do
+      su = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      {:ok, early} =
+        Plans.create_support_record(scope, %{
+          service_user_id: su.id,
+          content: "早い記録",
+          category: :work
+        })
+
+      # Manually update recorded_at to a known date for testing
+      Ayumi.Repo.update_all(
+        from(r in SupportRecord, where: r.id == ^early.id),
+        set: [recorded_at: ~U[2026-06-01 10:00:00Z]]
+      )
+
+      {:ok, late} =
+        Plans.create_support_record(scope, %{
+          service_user_id: su.id,
+          content: "遅い記録",
+          category: :health
+        })
+
+      Ayumi.Repo.update_all(
+        from(r in SupportRecord, where: r.id == ^late.id),
+        set: [recorded_at: ~U[2026-06-15 10:00:00Z]]
+      )
+
+      records =
+        Plans.list_support_records(scope, from: ~D[2026-06-10], to: ~D[2026-06-20])
+
+      assert length(records) == 1
+      assert hd(records).content == "遅い記録"
+    end
+
+    test "list_support_records/2 returns descending order with preloads" do
+      su = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      scope = Ayumi.Accounts.Scope.for_user(staff)
+
+      {:ok, first} =
+        Plans.create_support_record(scope, %{
+          service_user_id: su.id,
+          content: "最初の記録",
+          category: :work
+        })
+
+      Ayumi.Repo.update_all(
+        from(r in SupportRecord, where: r.id == ^first.id),
+        set: [recorded_at: ~U[2026-06-01 10:00:00Z]]
+      )
+
+      {:ok, second} =
+        Plans.create_support_record(scope, %{
+          service_user_id: su.id,
+          content: "二番目の記録",
+          category: :daily_living
+        })
+
+      Ayumi.Repo.update_all(
+        from(r in SupportRecord, where: r.id == ^second.id),
+        set: [recorded_at: ~U[2026-06-02 10:00:00Z]]
+      )
+
+      records = Plans.list_support_records(scope)
+
+      assert [r2, r1] = records
+      assert r2.content == "二番目の記録"
+      assert r1.content == "最初の記録"
+      assert %Ayumi.Plans.ServiceUser{} = r2.service_user
+      assert %Ayumi.Accounts.User{} = r2.recorded_by
     end
   end
 

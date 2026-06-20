@@ -13,6 +13,7 @@ defmodule Ayumi.Plans do
   alias Ayumi.Plans.PlanPhaseEvent
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
+  alias Ayumi.Plans.SupportRecord
 
   ## Service users
 
@@ -354,6 +355,77 @@ defmodule Ayumi.Plans do
       days_until: days_until,
       assigned_to_current_user?: plan.staff_id == current_staff_id
     }
+  end
+
+  ## Support records
+
+  @doc "Returns a changeset for a support record (forms)."
+  def change_support_record(%SupportRecord{} = support_record, attrs \\ %{}) do
+    SupportRecord.changeset(support_record, attrs)
+  end
+
+  @doc "Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock."
+  def create_support_record(%Scope{} = scope, attrs) when is_map(attrs) do
+    attrs =
+      attrs
+      |> Map.put(:recorded_by_id, scope.user.id)
+      |> Map.put(:recorded_at, DateTime.utc_now(:second))
+
+    %SupportRecord{}
+    |> SupportRecord.changeset(attrs)
+    |> insert_support_record()
+  end
+
+  @doc "Lists support records, newest first. Filters: service_user_id, from, to."
+  def list_support_records(%Scope{}, opts \\ []) do
+    service_user_id = Keyword.get(opts, :service_user_id)
+    from_date = Keyword.get(opts, :from)
+    to_date = Keyword.get(opts, :to)
+
+    SupportRecord
+    |> order_by([r], desc: r.recorded_at, desc: r.id)
+    |> preload([:service_user, :recorded_by])
+    |> then(fn q ->
+      if service_user_id,
+        do: where(q, [r], r.service_user_id == ^service_user_id),
+        else: q
+    end)
+    |> then(fn q ->
+      if from_date do
+        from_dt = DateTime.new!(from_date, ~T[00:00:00], "Etc/UTC")
+        where(q, [r], r.recorded_at >= ^from_dt)
+      else
+        q
+      end
+    end)
+    |> then(fn q ->
+      if to_date do
+        to_dt = DateTime.new!(Date.add(to_date, 1), ~T[00:00:00], "Etc/UTC")
+        where(q, [r], r.recorded_at < ^to_dt)
+      else
+        q
+      end
+    end)
+    |> Repo.all()
+  end
+
+  defp insert_support_record(changeset) do
+    Repo.insert(changeset)
+  rescue
+    exception in Ecto.ConstraintError ->
+      if unnamed_foreign_key_constraint_error?(exception) do
+        changeset = add_support_record_foreign_key_errors(changeset)
+
+        if changeset.valid?, do: reraise(exception, __STACKTRACE__), else: {:error, changeset}
+      else
+        reraise exception, __STACKTRACE__
+      end
+  end
+
+  defp add_support_record_foreign_key_errors(changeset) do
+    changeset
+    |> add_missing_assoc_error(:service_user_id, ServiceUser)
+    |> add_missing_assoc_error(:recorded_by_id, User)
   end
 
   ## Certificate expiry
