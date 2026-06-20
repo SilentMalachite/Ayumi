@@ -194,5 +194,11 @@ Optional (done):
   (cert expiry + monitoring), current plan goals with latest progress, recent
   goal progress / phase events (20), and recent support records (20). Read-only
   aggregation, no schema change.
+- DB backup: `Ayumi.Backups.create_backup/2` writes a consistent SQLite copy via
+  `VACUUM INTO`, validating dest dir, refusing the running DB's own directory,
+  and avoiding same-second filename collisions with `_1`, `_2`, … suffixes
+  (capped at 16 retries). Reachable via the manager-only LiveView at
+  `/admin/backup` and the `mix ayumi.backup [dest]` task. Flash + inline result
+  panel show path, size, and the UTC `created_at` timestamp.
 
 All steps are complete and green. Each was `mix review`-clean before merging.

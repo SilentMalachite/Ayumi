@@ -82,6 +82,12 @@
 
 - **オフライン前提の職員アカウント初期化**: メール不要で確定済みアカウントを直接作成
   （`mix ayumi.create_user` と開発用シード）。
+- **DB バックアップ**: サービス管理責任者専用。Web 画面（`/admin/backup`）と
+  Mix タスク（`mix ayumi.backup [出力先]`、ソースビルド向け）から、稼働中の
+  SQLite DB を SQLite の `VACUUM INTO` で整合的なファイルとして書き出します。
+  タイムスタンプ付きのファイル名（衝突時は `_1`, `_2` … と退避）で保存し、
+  保存先パス・サイズ・保存時刻（UTC）を表示します。ビルド済みリリースでも
+  Web 画面から実行できます。
 - **ビルド済みバイナリ**: GitHub Releases から Windows（zip）・macOS Apple Silicon（tar.gz）を
   ダウンロードするだけで、Elixir/OTP のインストールなしで起動できます。`v*` タグ push 時に
   GitHub Actions が自動ビルドします。
