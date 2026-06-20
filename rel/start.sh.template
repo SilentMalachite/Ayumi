@@ -1,0 +1,28 @@
+#!/bin/bash
+echo ""
+echo "Ayumi を起動しています..."
+echo ""
+
+# --- ここを編集してください ---
+# SECRET_KEY_BASE は 64 文字以上のランダム文字列を設定してください
+SECRET_KEY_BASE="CHANGE_ME_set_a_random_64_char_string"
+
+if [ "$SECRET_KEY_BASE" = "CHANGE_ME_set_a_random_64_char_string" ]; then
+    echo "[エラー] start.sh を編集して SECRET_KEY_BASE を設定してください。"
+    exit 1
+fi
+
+export SECRET_KEY_BASE
+export DATABASE_PATH="$(cd "$(dirname "$0")" && pwd)/data/ayumi.db"
+export PHX_SERVER=true
+export PHX_HOST=localhost
+export PORT=4000
+
+echo "サーバを起動します: http://localhost:${PORT}"
+echo "LAN 上の他の端末からは http://（このMacのIPアドレス）:${PORT} でアクセスできます。"
+echo "停止するには Ctrl+C を押してください。"
+echo ""
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+"${DIR}/bin/ayumi" eval "Ayumi.Release.migrate()"
+"${DIR}/bin/ayumi" start

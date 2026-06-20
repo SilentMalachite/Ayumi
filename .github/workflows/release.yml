@@ -64,10 +64,63 @@ jobs:
           name: windows-release
           path: ayumi-v*-windows-x86_64.zip
 
+  build-macos:
+    name: Build macOS release
+    runs-on: macos-14
+
+    env:
+      MIX_ENV: prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Erlang/OTP and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          elixir-version: "1.20"
+
+      - name: Restore dependencies and build cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-prod-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-prod-
+
+      - name: Install dependencies
+        run: mix deps.get --only prod
+
+      - name: Deploy assets
+        run: mix assets.deploy
+
+      - name: Build release
+        run: mix release
+
+      - name: Package release
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          dest="ayumi-${TAG_NAME}-macos-arm64"
+          mkdir -p "${dest}/data"
+          cp -R _build/prod/rel/ayumi/* "${dest}/"
+          cp rel/start.sh.template "${dest}/start.sh.example"
+          chmod +x "${dest}/bin/ayumi" "${dest}/bin/server"
+          tar -czf "${dest}.tar.gz" "${dest}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: ayumi-v*-macos-arm64.tar.gz
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-24.04
-    needs: build-windows
+    needs: [build-windows, build-macos]
 
     steps:
       - name: Checkout
@@ -77,6 +130,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-release
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-release
 
       - name: Extract changelog and create release
         env:
@@ -89,7 +147,9 @@ jobs:
 
           ---
 
-          ## インストール方法（Windows）
+          ## インストール方法
+
+          ### Windows
 
           1. 下の **ayumi-${TAG_NAME}-windows-x86_64.zip** をダウンロードして展開します。
           2. \`start.bat.example\` を \`start.bat\` にコピーし、テキストエディタで
@@ -98,10 +158,20 @@ jobs:
           4. ブラウザで \`http://localhost:4000\` を開きます。
              LAN 上の他の端末からは \`http://（この PC の IP アドレス）:4000\` でアクセスできます。
 
+          ### macOS (Apple Silicon)
+
+          1. 下の **ayumi-${TAG_NAME}-macos-arm64.tar.gz** をダウンロードして展開します。
+          2. \`start.sh.example\` を \`start.sh\` にコピーし、テキストエディタで
+             \`SECRET_KEY_BASE\` を設定します（64文字以上のランダム文字列）。
+          3. ターミナルで \`chmod +x start.sh\` を実行し、\`./start.sh\` で起動します。
+          4. ブラウザで \`http://localhost:4000\` を開きます。
+             LAN 上の他の端末からは \`http://（この Mac の IP アドレス）:4000\` でアクセスできます。
+
           > Elixir や Erlang のインストールは不要です。
           > 詳しくは [README](https://github.com/SilentMalachite/Ayumi#本番デプロイ) を参照してください。"
 
           gh release create "$TAG_NAME" \
             --title "Ayumi $TAG_NAME" \
             --notes "$notes" \
-            ayumi-${TAG_NAME}-windows-x86_64.zip
+            ayumi-${TAG_NAME}-windows-x86_64.zip \
+            ayumi-${TAG_NAME}-macos-arm64.tar.gz

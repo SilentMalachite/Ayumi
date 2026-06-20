@@ -182,8 +182,9 @@ Optional (done):
 - Web Notifications nudge via `DeadlineNotifier` JS hook + `push_event` from
   `DashboardLive.Index`. Browser permission required; the in-app list remains
   the guarantee layer.
-- Windows binary CI release via GitHub Actions (`release.yml`). `v*` tag push
-  builds a Mix release on a Windows runner and attaches the zip to a GitHub
+- Windows + macOS binary CI release via GitHub Actions (`release.yml`). `v*`
+  tag push builds Mix releases on Windows (`windows-2022`) and macOS
+  (`macos-14`, Apple Silicon) runners and attaches both archives to a GitHub
   Release. `Ayumi.Release` module provides `migrate/0` and `create_user/0`
   for `bin/ayumi eval` in compiled releases.
 - `support_record` (支援記録): daily support notes per service user, append-only
