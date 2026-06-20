@@ -152,6 +152,69 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
     end
   end
 
+  describe "list_attendance_records/3" do
+    test "returns only rows in the requested month, oldest-first by id" do
+      su = service_user_fixture()
+      scope = Scope.for_user(user_fixture())
+
+      {:ok, before_rec} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-05-31],
+          provision_type: :commute
+        })
+
+      {:ok, jun1} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-01],
+          provision_type: :commute
+        })
+
+      {:ok, jun30} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-30],
+          provision_type: :absence
+        })
+
+      {:ok, after_rec} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-07-01],
+          provision_type: :commute
+        })
+
+      ids = Plans.list_attendance_records(su.id, 2026, 6) |> Enum.map(& &1.id)
+      assert ids == [jun1.id, jun30.id]
+      refute before_rec.id in ids
+      refute after_rec.id in ids
+    end
+
+    test "scopes by service_user_id" do
+      su1 = service_user_fixture()
+      su2 = service_user_fixture(%{name: "別の人", name_kana: "べつのひと"})
+      scope = Scope.for_user(user_fixture())
+
+      {:ok, _} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su1.id,
+          service_date: ~D[2026-06-10],
+          provision_type: :commute
+        })
+
+      {:ok, _} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su2.id,
+          service_date: ~D[2026-06-10],
+          provision_type: :commute
+        })
+
+      assert length(Plans.list_attendance_records(su1.id, 2026, 6)) == 1
+      assert length(Plans.list_attendance_records(su2.id, 2026, 6)) == 1
+    end
+  end
+
   defp get_change_or_field(cs, field) do
     Map.get(cs.changes, field, Map.get(cs.data, field))
   end

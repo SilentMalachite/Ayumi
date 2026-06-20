@@ -492,6 +492,27 @@ defmodule Ayumi.Plans do
     |> add_missing_assoc_error(:recorded_by_id, User)
   end
 
+  @doc """
+  Lists raw attendance rows for `service_user_id` within `year` / `month`,
+  oldest-first by `id`. The fold for `build_attendance_sheet/3` consumes this order.
+  """
+  def list_attendance_records(service_user_id, year, month)
+      when is_integer(service_user_id) and is_integer(year) and is_integer(month) do
+    {first, last} = month_bounds(year, month)
+
+    AttendanceRecord
+    |> where([r], r.service_user_id == ^service_user_id)
+    |> where([r], r.service_date >= ^first and r.service_date <= ^last)
+    |> order_by([r], asc: r.id)
+    |> Repo.all()
+  end
+
+  defp month_bounds(year, month) do
+    first = Date.new!(year, month, 1)
+    last = Date.end_of_month(first)
+    {first, last}
+  end
+
   ## Certificate expiry
 
   @doc """
