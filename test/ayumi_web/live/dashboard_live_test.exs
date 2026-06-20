@@ -12,11 +12,13 @@ defmodule AyumiWeb.DashboardLiveTest do
   describe "authenticated dashboard" do
     setup :register_and_log_in_user
 
-    test "shows an empty state when there are no monitoring alerts", %{conn: conn} do
+    test "shows an empty state when there are no alerts", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/")
 
       assert has_element?(lv, "#monitoring-alerts")
       assert has_element?(lv, "#monitoring-alerts-empty")
+      assert has_element?(lv, "#certificate-alerts")
+      assert has_element?(lv, "#certificate-alerts-empty")
     end
 
     test "pushes notify-deadlines event with alert counts", %{conn: conn, user: staff} do
@@ -90,6 +92,22 @@ defmodule AyumiWeb.DashboardLiveTest do
 
       assert :binary.match(html, "monitoring-alert-#{own_plan.id}") <
                :binary.match(html, "monitoring-alert-#{other_plan.id}")
+    end
+
+    test "shows overdue certificate expiry alerts", %{conn: conn} do
+      service_user =
+        service_user_fixture(%{
+          name: "証期限 太郎",
+          name_kana: "しょうきげん たろう",
+          recipient_cert_expiry: Date.add(Date.utc_today(), -5)
+        })
+
+      {:ok, lv, html} = live(conn, ~p"/")
+
+      assert has_element?(lv, "#certificate-alert-#{service_user.id}")
+      assert html =~ "証期限 太郎"
+      assert html =~ "超過"
+      assert html =~ ~p"/service_users/#{service_user.id}"
     end
   end
 end

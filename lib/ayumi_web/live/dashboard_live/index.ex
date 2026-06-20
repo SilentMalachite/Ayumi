@@ -5,22 +5,27 @@ defmodule AyumiWeb.DashboardLive.Index do
   alias Ayumi.Plans
 
   @near_days 30
+  @cert_near_days 60
 
   @impl true
   def mount(_params, _session, socket) do
-    alerts =
-      Plans.list_monitoring_deadline_alerts(
-        socket.assigns.current_scope,
-        Date.utc_today(),
-        @near_days
-      )
+    scope = socket.assigns.current_scope
+    today = Date.utc_today()
+
+    monitoring_alerts =
+      Plans.list_monitoring_deadline_alerts(scope, today, @near_days)
+
+    certificate_alerts =
+      Plans.list_certificate_expiry_alerts(scope, today, @cert_near_days)
 
     socket =
       socket
       |> assign(:page_title, gettext("ダッシュボード"))
       |> assign(:near_days, @near_days)
-      |> assign(:monitoring_alerts, alerts)
-      |> push_deadline_notification(alerts)
+      |> assign(:cert_near_days, @cert_near_days)
+      |> assign(:monitoring_alerts, monitoring_alerts)
+      |> assign(:certificate_alerts, certificate_alerts)
+      |> push_deadline_notification(monitoring_alerts)
 
     {:ok, socket}
   end
@@ -110,6 +115,72 @@ defmodule AyumiWeb.DashboardLive.Index do
             </.link>
             <.link
               navigate={~p"/service_users/#{alert.support_plan.service_user.id}"}
+              class="text-zinc-600 hover:text-zinc-950"
+            >
+              {gettext("利用者詳細")}
+            </.link>
+          </div>
+        </div>
+      </section>
+
+      <section id="certificate-alerts" class="mt-8 space-y-3">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 class="text-base font-semibold text-zinc-900">{gettext("受給者証期限")}</h2>
+            <p class="text-sm text-zinc-600">
+              {gettext("超過と%{days}日以内の期限を表示しています", days: @cert_near_days)}
+            </p>
+          </div>
+          <.link
+            navigate={~p"/service_users"}
+            class="text-sm font-semibold text-zinc-700 hover:text-zinc-950"
+          >
+            {gettext("利用者一覧へ")}
+          </.link>
+        </div>
+
+        <div
+          :if={@certificate_alerts == []}
+          id="certificate-alerts-empty"
+          class="rounded-lg border border-dashed border-zinc-300 bg-white px-4 py-5 text-sm text-zinc-600"
+        >
+          {gettext("期限が近い受給者証はありません")}
+        </div>
+
+        <div
+          :for={alert <- @certificate_alerts}
+          id={"certificate-alert-#{alert.service_user.id}"}
+          class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+        >
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <span class={[
+                "rounded-full px-2 py-1 text-xs font-semibold",
+                alert.status == :overdue && "bg-red-100 text-red-800",
+                alert.status == :near && "bg-amber-100 text-amber-800"
+              ]}>
+                {deadline_status_label(alert.status)}
+              </span>
+
+              <h3 class="mt-2 text-base font-semibold text-zinc-900">
+                <.link navigate={~p"/service_users/#{alert.service_user.id}"}>
+                  {alert.service_user.name}
+                </.link>
+              </h3>
+            </div>
+
+            <div class="text-left sm:text-right">
+              <p class="text-sm text-zinc-600">{gettext("受給者証有効期限")}</p>
+              <p class="text-lg font-semibold text-zinc-900">
+                {alert.service_user.recipient_cert_expiry}
+              </p>
+              <p class="text-sm text-zinc-600">{days_until_label(alert.days_until)}</p>
+            </div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
+            <.link
+              navigate={~p"/service_users/#{alert.service_user.id}"}
               class="text-zinc-600 hover:text-zinc-950"
             >
               {gettext("利用者詳細")}

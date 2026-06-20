@@ -677,6 +677,115 @@ defmodule Ayumi.PlansTest do
     end
   end
 
+  describe "certificate expiry alerts" do
+    test "overdue when recipient_cert_expiry is in the past" do
+      today = ~D[2026-06-20]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      su =
+        service_user_fixture(%{
+          name: "期限切れ 太郎",
+          name_kana: "きげんぎれ たろう",
+          recipient_cert_expiry: ~D[2026-06-10]
+        })
+
+      alerts =
+        Plans.list_certificate_expiry_alerts(
+          Ayumi.Accounts.Scope.for_user(staff),
+          today,
+          60
+        )
+
+      assert [%{service_user: ^su, status: :overdue, days_until: -10}] = alerts
+    end
+
+    test "near when recipient_cert_expiry is within near_days" do
+      today = ~D[2026-06-20]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      su =
+        service_user_fixture(%{
+          name: "近接 花子",
+          name_kana: "きんせつ はなこ",
+          recipient_cert_expiry: ~D[2026-08-01]
+        })
+
+      alerts =
+        Plans.list_certificate_expiry_alerts(
+          Ayumi.Accounts.Scope.for_user(staff),
+          today,
+          60
+        )
+
+      assert [%{service_user: ^su, status: :near, days_until: 42}] = alerts
+    end
+
+    test "excludes ok status and nil recipient_cert_expiry" do
+      today = ~D[2026-06-20]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      _far_away =
+        service_user_fixture(%{
+          name: "遠い 太郎",
+          recipient_cert_expiry: ~D[2026-12-31]
+        })
+
+      _nil_expiry =
+        service_user_fixture(%{
+          name: "未設定 花子",
+          recipient_cert_expiry: nil
+        })
+
+      alerts =
+        Plans.list_certificate_expiry_alerts(
+          Ayumi.Accounts.Scope.for_user(staff),
+          today,
+          60
+        )
+
+      assert alerts == []
+    end
+
+    test "sorts by days_until ascending, then name_kana, name, id" do
+      today = ~D[2026-06-20]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      su_later =
+        service_user_fixture(%{
+          name: "後 太郎",
+          name_kana: "あと たろう",
+          recipient_cert_expiry: ~D[2026-07-10]
+        })
+
+      su_sooner =
+        service_user_fixture(%{
+          name: "先 花子",
+          name_kana: "さき はなこ",
+          recipient_cert_expiry: ~D[2026-06-15]
+        })
+
+      su_same_day =
+        service_user_fixture(%{
+          name: "同日 次郎",
+          name_kana: "あと じろう",
+          recipient_cert_expiry: ~D[2026-07-10]
+        })
+
+      alerts =
+        Plans.list_certificate_expiry_alerts(
+          Ayumi.Accounts.Scope.for_user(staff),
+          today,
+          60
+        )
+
+      assert Enum.map(alerts, & &1.service_user.id) == [
+               su_sooner.id,
+               su_same_day.id,
+               su_later.id
+             ]
+    end
+  end
+
   describe "referential integrity" do
     test "creating a goal for a non-existent plan returns an error changeset" do
       assert {:error, changeset} =

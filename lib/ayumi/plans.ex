@@ -349,6 +349,36 @@ defmodule Ayumi.Plans do
     }
   end
 
+  ## Certificate expiry
+
+  @doc """
+  Returns certificate-expiry alerts for service users whose `recipient_cert_expiry`
+  is overdue or within `near_days`.
+  """
+  def list_certificate_expiry_alerts(
+        _scope,
+        today \\ Date.utc_today(),
+        near_days \\ 60
+      ) do
+    ServiceUser
+    |> where([su], not is_nil(su.recipient_cert_expiry))
+    |> Repo.all()
+    |> Enum.map(fn su ->
+      days_until = Date.diff(su.recipient_cert_expiry, today)
+
+      %{
+        service_user: su,
+        status: monitoring_deadline_status(su.recipient_cert_expiry, today, near_days),
+        days_until: days_until
+      }
+    end)
+    |> Enum.reject(&(&1.status == :ok))
+    |> Enum.sort_by(fn alert ->
+      su = alert.service_user
+      {alert.days_until, su.name_kana || "", su.name || "", su.id}
+    end)
+  end
+
   defp parse_goal_progress_goal_id(attrs) do
     attrs
     |> goal_progress_attr(:goal_id)
