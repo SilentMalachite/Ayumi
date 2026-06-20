@@ -3,7 +3,7 @@ defmodule Ayumi.Plans.ServiceUser do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Ayumi.Plans.{Gender, SupportCategory}
+  alias Ayumi.Plans.{EnrollmentStatus, Gender, SupportCategory}
 
   @flat_fields [
     :name,
@@ -26,7 +26,9 @@ defmodule Ayumi.Plans.ServiceUser do
     :medication_notes,
     :consultation_office,
     :consultation_staff,
-    :notes
+    :notes,
+    :enrollment_status,
+    :enrollment_start_date
   ]
 
   schema "service_users" do
@@ -51,6 +53,9 @@ defmodule Ayumi.Plans.ServiceUser do
     field :consultation_office, :string
     field :consultation_staff, :string
     field :notes, :string
+
+    field :enrollment_status, Ecto.Enum, values: EnrollmentStatus.all(), default: :enrolled
+    field :enrollment_start_date, :date
 
     field :lock_version, :integer, default: 0
 

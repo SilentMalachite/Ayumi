@@ -143,6 +143,53 @@ defmodule Ayumi.PlansTest do
       assert {:ok, _} = Plans.update_service_user(su, params)
       assert Plans.get_service_user!(su.id).disability_certificates == []
     end
+
+    test "create_service_user/1 persists enrollment_status and enrollment_start_date" do
+      assert {:ok, su} =
+               Plans.create_service_user(%{
+                 name: "登録 太郎",
+                 enrollment_status: :trial,
+                 enrollment_start_date: ~D[2026-04-01]
+               })
+
+      assert su.enrollment_status == :trial
+      assert su.enrollment_start_date == ~D[2026-04-01]
+    end
+
+    test "create_service_user/1 defaults enrollment_status to :enrolled" do
+      assert {:ok, su} = Plans.create_service_user(%{name: "既定 太郎"})
+      assert su.enrollment_status == :enrolled
+    end
+
+    test "list_service_users/0 excludes withdrawn users by default" do
+      _active = service_user_fixture(%{name: "在籍 太郎", name_kana: "ざいせき たろう"})
+
+      _withdrawn =
+        service_user_fixture(%{
+          name: "退所 花子",
+          name_kana: "たいしょ はなこ",
+          enrollment_status: :withdrawn
+        })
+
+      names = Plans.list_service_users() |> Enum.map(& &1.name)
+      assert "在籍 太郎" in names
+      refute "退所 花子" in names
+    end
+
+    test "list_service_users(include_withdrawn: true) includes withdrawn users" do
+      _active = service_user_fixture(%{name: "在籍 太郎", name_kana: "ざいせき たろう"})
+
+      _withdrawn =
+        service_user_fixture(%{
+          name: "退所 花子",
+          name_kana: "たいしょ はなこ",
+          enrollment_status: :withdrawn
+        })
+
+      names = Plans.list_service_users(include_withdrawn: true) |> Enum.map(& &1.name)
+      assert "在籍 太郎" in names
+      assert "退所 花子" in names
+    end
   end
 
   describe "support plans" do
@@ -675,6 +722,30 @@ defmodule Ayumi.PlansTest do
       assert [%{status: :near, assigned_to_current_user?: true} | _] = alerts
       assert Enum.map(alerts, & &1.days_until) == [7, -17, 2]
     end
+
+    test "list_monitoring_deadline_alerts/3 excludes withdrawn service users" do
+      today = ~D[2026-06-18]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      withdrawn_user =
+        service_user_fixture(%{
+          name: "退所 太郎",
+          name_kana: "たいしょ たろう",
+          enrollment_status: :withdrawn
+        })
+
+      _overdue_plan =
+        support_plan_fixture(%{
+          service_user_id: withdrawn_user.id,
+          staff_id: staff.id,
+          next_monitoring_date: ~D[2026-06-01]
+        })
+
+      alerts =
+        Plans.list_monitoring_deadline_alerts(Ayumi.Accounts.Scope.for_user(staff), today, 30)
+
+      refute Enum.any?(alerts, &(&1.support_plan.service_user.id == withdrawn_user.id))
+    end
   end
 
   describe "certificate expiry alerts" do
@@ -783,6 +854,28 @@ defmodule Ayumi.PlansTest do
                su_same_day.id,
                su_later.id
              ]
+    end
+
+    test "list_certificate_expiry_alerts/3 excludes withdrawn service users" do
+      today = ~D[2026-06-20]
+      staff = Ayumi.AccountsFixtures.staff_fixture()
+
+      _withdrawn =
+        service_user_fixture(%{
+          name: "退所 花子",
+          name_kana: "たいしょ はなこ",
+          enrollment_status: :withdrawn,
+          recipient_cert_expiry: ~D[2026-06-10]
+        })
+
+      alerts =
+        Plans.list_certificate_expiry_alerts(
+          Ayumi.Accounts.Scope.for_user(staff),
+          today,
+          60
+        )
+
+      assert alerts == []
     end
   end
 

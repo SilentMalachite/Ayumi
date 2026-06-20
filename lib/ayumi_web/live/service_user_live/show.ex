@@ -3,7 +3,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
 
   alias Ayumi.Accounts.User
   alias Ayumi.Plans
-  alias Ayumi.Plans.{CertificateKind, Gender, ServiceUser, SupportCategory}
+  alias Ayumi.Plans.{CertificateKind, EnrollmentStatus, Gender, ServiceUser, SupportCategory}
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -37,6 +37,10 @@ defmodule AyumiWeb.ServiceUserLive.Show do
         <dl>
           <.field_row label={gettext("生年月日")}>{format_birthdate(@service_user, @today)}</.field_row>
           <.field_row label={gettext("性別")}>{Gender.label(@service_user.gender)}</.field_row>
+          <.field_row label={gettext("在籍状態")}>
+            {EnrollmentStatus.label(@service_user.enrollment_status)}
+          </.field_row>
+          <.field_row label={gettext("利用開始日")}>{@service_user.enrollment_start_date}</.field_row>
         </dl>
       </section>
 

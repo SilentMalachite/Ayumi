@@ -3,7 +3,15 @@ defmodule AyumiWeb.ServiceUserLive.Form do
 
   alias Ayumi.Accounts.User
   alias Ayumi.Plans
-  alias Ayumi.Plans.{CertificateKind, DisabilityCertificate, Gender, ServiceUser, SupportCategory}
+
+  alias Ayumi.Plans.{
+    CertificateKind,
+    DisabilityCertificate,
+    EnrollmentStatus,
+    Gender,
+    ServiceUser,
+    SupportCategory
+  }
 
   @impl true
   def mount(params, _session, socket) do
@@ -167,6 +175,17 @@ defmodule AyumiWeb.ServiceUserLive.Form do
             label={gettext("性別")}
             options={Gender.options()}
             prompt={gettext("選択してください")}
+          />
+          <.input
+            field={@form[:enrollment_status]}
+            type="select"
+            label={gettext("在籍状態")}
+            options={EnrollmentStatus.options()}
+          />
+          <.input
+            field={@form[:enrollment_start_date]}
+            type="date"
+            label={gettext("利用開始日")}
           />
         </section>
 

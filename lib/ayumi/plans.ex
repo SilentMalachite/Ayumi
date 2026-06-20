@@ -16,9 +16,14 @@ defmodule Ayumi.Plans do
 
   ## Service users
 
-  @doc "Lists service users, ordered by kana then name."
-  def list_service_users do
+  @doc "Lists service users, ordered by kana then name. Excludes withdrawn by default."
+  def list_service_users(opts \\ []) do
+    include_withdrawn = Keyword.get(opts, :include_withdrawn, false)
+
     ServiceUser
+    |> then(fn q ->
+      if include_withdrawn, do: q, else: where(q, [su], su.enrollment_status != :withdrawn)
+    end)
     |> order_by([s], asc: s.name_kana, asc: s.name)
     |> Repo.all()
   end
@@ -332,6 +337,8 @@ defmodule Ayumi.Plans do
 
   defp current_support_plans do
     SupportPlan
+    |> join(:inner, [p], su in assoc(p, :service_user))
+    |> where([_p, su], su.enrollment_status != :withdrawn)
     |> order_by([p], asc: p.service_user_id, desc: p.period_start, desc: p.id)
     |> preload([:service_user, :staff])
     |> Repo.all()
@@ -362,6 +369,7 @@ defmodule Ayumi.Plans do
       ) do
     ServiceUser
     |> where([su], not is_nil(su.recipient_cert_expiry))
+    |> where([su], su.enrollment_status != :withdrawn)
     |> Repo.all()
     |> Enum.map(fn su ->
       days_until = Date.diff(su.recipient_cert_expiry, today)

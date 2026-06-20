@@ -2,6 +2,7 @@ defmodule AyumiWeb.ServiceUserLive.Index do
   use AyumiWeb, :live_view
 
   alias Ayumi.Plans
+  alias Ayumi.Plans.EnrollmentStatus
 
   @impl true
   def mount(_params, _session, socket) do
@@ -27,6 +28,7 @@ defmodule AyumiWeb.ServiceUserLive.Index do
           <.link navigate={~p"/service_users/#{su.id}"}>{su.name}</.link>
         </:col>
         <:col :let={su} label={gettext("ふりがな")}>{su.name_kana}</:col>
+        <:col :let={su} label={gettext("在籍状態")}>{EnrollmentStatus.label(su.enrollment_status)}</:col>
         <:col :let={su} label={gettext("受給者証番号")}>{su.recipient_cert_number}</:col>
       </.table>
     </Layouts.app>
