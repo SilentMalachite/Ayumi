@@ -51,6 +51,22 @@ defmodule Ayumi.BackupsTest do
       assert info1.path != info2.path
       assert File.exists?(info1.path)
       assert File.exists?(info2.path)
+      assert String.ends_with?(info2.path, "_1.sqlite3")
+    end
+
+    @tag :tmp_dir
+    test "衝突候補が上限を超えたらエラーで諦める", %{tmp_dir: tmp_dir} do
+      ts = ~N[2026-06-20 12:00:00]
+      base = "ayumi_backup_20260620_120000"
+
+      File.touch!(Path.join(tmp_dir, base <> ".sqlite3"))
+
+      for i <- 1..16 do
+        File.touch!(Path.join(tmp_dir, "#{base}_#{i}.sqlite3"))
+      end
+
+      assert {:error, reason} = Backups.create_backup(tmp_dir, timestamp: ts)
+      assert reason =~ "衝突"
     end
   end
 

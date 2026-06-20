@@ -56,10 +56,16 @@ defmodule Ayumi.Backups do
     end
   end
 
+  @max_collision_retries 16
+
   defp build_dest_path(dest_dir, opts) do
     now = Keyword.get(opts, :timestamp, NaiveDateTime.utc_now())
     base = "ayumi_backup_" <> Calendar.strftime(now, "%Y%m%d_%H%M%S")
-    {:ok, available_path(dest_dir, base, 0)}
+    available_path(dest_dir, base, 0)
+  end
+
+  defp available_path(_dir, base, count) when count > @max_collision_retries do
+    {:error, "バックアップファイル名の衝突回避に失敗しました: #{base}"}
   end
 
   defp available_path(dir, base, count) do
@@ -69,7 +75,7 @@ defmodule Ayumi.Backups do
     if File.exists?(path) do
       available_path(dir, base, count + 1)
     else
-      path
+      {:ok, path}
     end
   end
 
