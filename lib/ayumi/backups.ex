@@ -13,8 +13,8 @@ defmodule Ayumi.Backups do
     with :ok <- validate_directory(dest_dir),
          :ok <- validate_not_self(dest_dir),
          {:ok, dest_path} <- build_dest_path(dest_dir, opts),
-         :ok <- execute_vacuum_into(dest_path) do
-      stat = File.stat!(dest_path)
+         :ok <- execute_vacuum_into(dest_path),
+         {:ok, stat} <- stat_backup(dest_path) do
       {:ok, %{path: dest_path, size_bytes: stat.size, created_at: DateTime.utc_now()}}
     end
   end
@@ -87,6 +87,13 @@ defmodule Ayumi.Backups do
 
       {:error, err} ->
         {:error, "Failed to open database for backup: #{inspect(err)}"}
+    end
+  end
+
+  defp stat_backup(path) do
+    case File.stat(path) do
+      {:ok, stat} -> {:ok, stat}
+      {:error, reason} -> {:error, "バックアップファイルの確認に失敗しました: #{reason}"}
     end
   end
 end
