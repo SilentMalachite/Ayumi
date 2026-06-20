@@ -13,6 +13,7 @@ defmodule Ayumi.Plans do
   alias Ayumi.Plans.PlanPhaseEvent
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
+  alias Ayumi.Plans.AttendanceRecord
   alias Ayumi.Plans.SupportRecord
 
   ## Service users
@@ -446,6 +447,46 @@ defmodule Ayumi.Plans do
   end
 
   defp add_support_record_foreign_key_errors(changeset) do
+    changeset
+    |> add_missing_assoc_error(:service_user_id, ServiceUser)
+    |> add_missing_assoc_error(:recorded_by_id, User)
+  end
+
+  ## Attendance records
+
+  @doc "Returns a changeset for an attendance record (forms)."
+  def change_attendance_record(%AttendanceRecord{} = record, attrs \\ %{}) do
+    AttendanceRecord.changeset(record, attrs)
+  end
+
+  @doc """
+  Creates an attendance record.
+
+  `recorded_by_id` / `recorded_at` are set from `scope.user.id` and the wall clock.
+  Unlike `create_support_record/2`, this **does not** block withdrawn service users —
+  the monthly attendance sheet for the month of withdrawal must still be recordable.
+  """
+  def create_attendance_record(%Scope{} = scope, attrs) when is_map(attrs) do
+    %AttendanceRecord{}
+    |> AttendanceRecord.changeset(attrs)
+    |> AttendanceRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
+    |> insert_attendance_record()
+  end
+
+  defp insert_attendance_record(changeset) do
+    Repo.insert(changeset)
+  rescue
+    exception in Ecto.ConstraintError ->
+      if unnamed_foreign_key_constraint_error?(exception) do
+        changeset = add_attendance_record_foreign_key_errors(changeset)
+
+        if changeset.valid?, do: reraise(exception, __STACKTRACE__), else: {:error, changeset}
+      else
+        reraise exception, __STACKTRACE__
+      end
+  end
+
+  defp add_attendance_record_foreign_key_errors(changeset) do
     changeset
     |> add_missing_assoc_error(:service_user_id, ServiceUser)
     |> add_missing_assoc_error(:recorded_by_id, User)

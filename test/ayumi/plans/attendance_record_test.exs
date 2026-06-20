@@ -1,15 +1,12 @@
 defmodule Ayumi.Plans.AttendanceRecordTest do
-  use ExUnit.Case, async: true
+  use Ayumi.DataCase, async: false
 
+  import Ayumi.PlansFixtures
+  import Ayumi.AccountsFixtures
+
+  alias Ayumi.Accounts.Scope
+  alias Ayumi.Plans
   alias Ayumi.Plans.AttendanceRecord
-
-  defp errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
-      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
-    end)
-  end
 
   describe "changeset/2" do
     test "with valid minimum attrs is valid" do
@@ -100,6 +97,58 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
       assert cs.valid?
       assert Ecto.Changeset.get_field(cs, :recorded_by_id) == 42
       assert Ecto.Changeset.get_field(cs, :recorded_at) == ~U[2026-06-21 12:00:00Z]
+    end
+  end
+
+  describe "create_attendance_record/2" do
+    test "inserts a record with scope-derived audit fields" do
+      su = service_user_fixture()
+      staff = user_fixture()
+      scope = Scope.for_user(staff)
+
+      assert {:ok, %AttendanceRecord{} = rec} =
+               Plans.create_attendance_record(scope, %{
+                 service_user_id: su.id,
+                 service_date: ~D[2026-06-01],
+                 provision_type: :commute
+               })
+
+      assert rec.service_user_id == su.id
+      assert rec.provision_type == :commute
+      assert rec.recorded_by_id == staff.id
+      assert %DateTime{} = rec.recorded_at
+    end
+
+    test "allows recording for a withdrawn service user (intentional diff vs support_record)" do
+      su = service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
+      scope = Scope.for_user(user_fixture())
+
+      assert {:ok, _rec} =
+               Plans.create_attendance_record(scope, %{
+                 service_user_id: su.id,
+                 service_date: ~D[2026-06-01],
+                 provision_type: :commute
+               })
+    end
+
+    test "returns FK error changeset for an unknown service_user_id" do
+      scope = Scope.for_user(user_fixture())
+
+      assert {:error, cs} =
+               Plans.create_attendance_record(scope, %{
+                 service_user_id: -1,
+                 service_date: ~D[2026-06-01],
+                 provision_type: :commute
+               })
+
+      assert errors_on(cs)[:service_user_id]
+    end
+  end
+
+  describe "change_attendance_record/2" do
+    test "returns a changeset for empty attrs" do
+      cs = Plans.change_attendance_record(%AttendanceRecord{})
+      assert %Ecto.Changeset{} = cs
     end
   end
 
