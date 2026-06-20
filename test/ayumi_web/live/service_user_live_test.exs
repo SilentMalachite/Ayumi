@@ -200,4 +200,97 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       assert render(lv1) =~ "編集中"
     end
   end
+
+  describe "summary sections on show page" do
+    setup :register_and_log_in_user
+
+    test "displays deadline section with cert and monitoring status", %{conn: conn} do
+      su =
+        service_user_fixture(%{
+          name: "期限テスト",
+          recipient_cert_expiry: Date.add(Date.utc_today(), 10)
+        })
+
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      support_plan_fixture(%{
+        service_user_id: su.id,
+        staff_id: staff.id,
+        next_monitoring_date: Date.add(Date.utc_today(), -5)
+      })
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ "期限"
+      assert html =~ "超過"
+      assert html =~ "近接"
+    end
+
+    test "displays current plan goals with latest progress", %{conn: conn} do
+      su = service_user_fixture(%{name: "計画テスト"})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+      goal = goal_fixture(%{support_plan_id: plan.id, description: "毎日出席する"})
+      goal_progress_fixture(%{goal_id: goal.id, recorded_by_id: staff.id, stage: :working})
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ "毎日出席する"
+      assert html =~ "取組中"
+    end
+
+    test "displays recent goal progress history", %{conn: conn} do
+      su = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+      goal = goal_fixture(%{support_plan_id: plan.id})
+
+      goal_progress_fixture(%{
+        goal_id: goal.id,
+        recorded_by_id: staff.id,
+        stage: :met,
+        note: "達成所見"
+      })
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ "進捗・フェーズ履歴"
+      assert html =~ "達成"
+      assert html =~ "達成所見"
+    end
+
+    test "displays recent support records", %{conn: conn} do
+      su = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      support_record_fixture(%{service_user_id: su.id, recorded_by: staff, content: "テスト支援記録"})
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ "支援記録"
+      assert html =~ "テスト支援記録"
+    end
+
+    test "does not show other service user's data", %{conn: conn} do
+      su1 = service_user_fixture(%{name: "利用者A"})
+      su2 = service_user_fixture(%{name: "利用者B"})
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      support_record_fixture(%{service_user_id: su2.id, recorded_by: staff, content: "Bの記録"})
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su1.id}")
+      refute html =~ "Bの記録"
+    end
+
+    test "withdrawn user can still view show page", %{conn: conn} do
+      su = service_user_fixture(%{name: "退所テスト", enrollment_status: :withdrawn})
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ "退所テスト"
+    end
+
+    test "shows links to plan details and support records", %{conn: conn} do
+      su = service_user_fixture()
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ ~p"/support_plans/#{plan.id}"
+      assert html =~ ~p"/support_records"
+    end
+  end
 end

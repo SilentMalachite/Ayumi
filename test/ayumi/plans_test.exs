@@ -1045,6 +1045,150 @@ defmodule Ayumi.PlansTest do
     end
   end
 
+  describe "list_recent_support_records/2" do
+    test "returns records for the given service user, newest first, limited" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su = service_user_fixture()
+
+      _r1 = support_record_fixture(%{service_user_id: su.id, recorded_by: staff, content: "記録1"})
+      r2 = support_record_fixture(%{service_user_id: su.id, recorded_by: staff, content: "記録2"})
+      r3 = support_record_fixture(%{service_user_id: su.id, recorded_by: staff, content: "記録3"})
+
+      result = Plans.list_recent_support_records(su.id, 2)
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) == [r3.id, r2.id]
+    end
+
+    test "does not return records for other service users" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su1 = service_user_fixture()
+      su2 = service_user_fixture(%{name: "他利用者"})
+
+      support_record_fixture(%{service_user_id: su1.id, recorded_by: staff, content: "su1の記録"})
+      support_record_fixture(%{service_user_id: su2.id, recorded_by: staff, content: "su2の記録"})
+
+      result = Plans.list_recent_support_records(su1.id)
+      assert length(result) == 1
+      assert hd(result).content == "su1の記録"
+    end
+
+    test "preloads service_user and recorded_by" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su = service_user_fixture()
+      support_record_fixture(%{service_user_id: su.id, recorded_by: staff})
+
+      [record] = Plans.list_recent_support_records(su.id)
+      assert %Ayumi.Plans.ServiceUser{} = record.service_user
+      assert %Ayumi.Accounts.User{} = record.recorded_by
+    end
+  end
+
+  describe "list_recent_goal_progress_for_user/2" do
+    test "returns progress records for the given user, newest first, limited" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su = service_user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+      goal = goal_fixture(%{support_plan_id: plan.id})
+
+      _gp1 =
+        goal_progress_fixture(%{goal_id: goal.id, recorded_by_id: staff.id, stage: :not_started})
+
+      gp2 = goal_progress_fixture(%{goal_id: goal.id, recorded_by_id: staff.id, stage: :working})
+      gp3 = goal_progress_fixture(%{goal_id: goal.id, recorded_by_id: staff.id, stage: :met})
+
+      result = Plans.list_recent_goal_progress_for_user(su.id, 2)
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) == [gp3.id, gp2.id]
+    end
+
+    test "does not return progress for other service users" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su1 = service_user_fixture()
+      su2 = service_user_fixture(%{name: "他利用者"})
+      plan1 = support_plan_fixture(%{service_user_id: su1.id, staff_id: staff.id})
+      plan2 = support_plan_fixture(%{service_user_id: su2.id, staff_id: staff.id})
+      goal1 = goal_fixture(%{support_plan_id: plan1.id})
+      goal2 = goal_fixture(%{support_plan_id: plan2.id})
+
+      goal_progress_fixture(%{goal_id: goal1.id, recorded_by_id: staff.id})
+      goal_progress_fixture(%{goal_id: goal2.id, recorded_by_id: staff.id})
+
+      result = Plans.list_recent_goal_progress_for_user(su1.id)
+      assert length(result) == 1
+    end
+
+    test "preloads recorded_by and goal with support_plan" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su = service_user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+      goal = goal_fixture(%{support_plan_id: plan.id})
+      goal_progress_fixture(%{goal_id: goal.id, recorded_by_id: staff.id})
+
+      [gp] = Plans.list_recent_goal_progress_for_user(su.id)
+      assert %Ayumi.Accounts.User{} = gp.recorded_by
+      assert %Ayumi.Plans.Goal{} = gp.goal
+      assert %Ayumi.Plans.SupportPlan{} = gp.goal.support_plan
+    end
+  end
+
+  describe "list_recent_plan_phase_events_for_user/2" do
+    test "returns phase events for the given user, newest first, limited" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su = service_user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+
+      _pe1 =
+        plan_phase_event_fixture(%{
+          support_plan_id: plan.id,
+          recorded_by_id: staff.id,
+          stage: :assessment
+        })
+
+      pe2 =
+        plan_phase_event_fixture(%{
+          support_plan_id: plan.id,
+          recorded_by_id: staff.id,
+          stage: :draft
+        })
+
+      pe3 =
+        plan_phase_event_fixture(%{
+          support_plan_id: plan.id,
+          recorded_by_id: staff.id,
+          stage: :in_progress
+        })
+
+      result = Plans.list_recent_plan_phase_events_for_user(su.id, 2)
+      assert length(result) == 2
+      assert Enum.map(result, & &1.id) == [pe3.id, pe2.id]
+    end
+
+    test "does not return events for other service users" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su1 = service_user_fixture()
+      su2 = service_user_fixture(%{name: "他利用者"})
+      plan1 = support_plan_fixture(%{service_user_id: su1.id, staff_id: staff.id})
+      plan2 = support_plan_fixture(%{service_user_id: su2.id, staff_id: staff.id})
+
+      plan_phase_event_fixture(%{support_plan_id: plan1.id, recorded_by_id: staff.id})
+      plan_phase_event_fixture(%{support_plan_id: plan2.id, recorded_by_id: staff.id})
+
+      result = Plans.list_recent_plan_phase_events_for_user(su1.id)
+      assert length(result) == 1
+    end
+
+    test "preloads recorded_by and support_plan" do
+      staff = Ayumi.AccountsFixtures.user_fixture()
+      su = service_user_fixture()
+      plan = support_plan_fixture(%{service_user_id: su.id, staff_id: staff.id})
+      plan_phase_event_fixture(%{support_plan_id: plan.id, recorded_by_id: staff.id})
+
+      [pe] = Plans.list_recent_plan_phase_events_for_user(su.id)
+      assert %Ayumi.Accounts.User{} = pe.recorded_by
+      assert %Ayumi.Plans.SupportPlan{} = pe.support_plan
+    end
+  end
+
   describe "referential integrity" do
     test "creating a goal for a non-existent plan returns an error changeset" do
       assert {:error, changeset} =

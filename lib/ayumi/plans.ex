@@ -459,6 +459,36 @@ defmodule Ayumi.Plans do
     end)
   end
 
+  def list_recent_support_records(service_user_id, limit \\ 20) do
+    SupportRecord
+    |> where([r], r.service_user_id == ^service_user_id)
+    |> order_by([r], desc: r.recorded_at, desc: r.id)
+    |> limit(^limit)
+    |> preload([:service_user, :recorded_by])
+    |> Repo.all()
+  end
+
+  def list_recent_goal_progress_for_user(service_user_id, limit \\ 20) do
+    GoalProgress
+    |> join(:inner, [gp], g in Goal, on: gp.goal_id == g.id)
+    |> join(:inner, [gp, g], sp in SupportPlan, on: g.support_plan_id == sp.id)
+    |> where([gp, g, sp], sp.service_user_id == ^service_user_id)
+    |> order_by([gp], desc: gp.id)
+    |> limit(^limit)
+    |> preload([:recorded_by, goal: :support_plan])
+    |> Repo.all()
+  end
+
+  def list_recent_plan_phase_events_for_user(service_user_id, limit \\ 20) do
+    PlanPhaseEvent
+    |> join(:inner, [e], sp in SupportPlan, on: e.support_plan_id == sp.id)
+    |> where([e, sp], sp.service_user_id == ^service_user_id)
+    |> order_by([e], desc: e.id)
+    |> limit(^limit)
+    |> preload([:recorded_by, :support_plan])
+    |> Repo.all()
+  end
+
   defp parse_goal_progress_goal_id(attrs) do
     attrs
     |> goal_progress_attr(:goal_id)
