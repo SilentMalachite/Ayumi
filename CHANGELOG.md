@@ -88,6 +88,7 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.2...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/SilentMalachite/Ayumi/releases/tag/v0.1.1
