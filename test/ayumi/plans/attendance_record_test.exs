@@ -6,7 +6,7 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
 
   alias Ayumi.Accounts.Scope
   alias Ayumi.Plans
-  alias Ayumi.Plans.AttendanceRecord
+  alias Ayumi.Plans.{AttendanceRecord, AttendanceSheet}
 
   describe "changeset/2" do
     test "with valid minimum attrs is valid" do
@@ -212,6 +212,142 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
 
       assert length(Plans.list_attendance_records(su1.id, 2026, 6)) == 1
       assert length(Plans.list_attendance_records(su2.id, 2026, 6)) == 1
+    end
+  end
+
+  describe "build_attendance_sheet/3" do
+    setup do
+      su = service_user_fixture()
+      scope = Scope.for_user(user_fixture())
+      %{su: su, scope: scope}
+    end
+
+    test "lines cover every day of a 30-day month", %{su: su} do
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+      assert %AttendanceSheet{year: 2026, month: 6, service_user_id: su_id} = sheet
+      assert su_id == su.id
+      assert length(sheet.lines) == 30
+      assert hd(sheet.lines).date == ~D[2026-06-01]
+      assert List.last(sheet.lines).date == ~D[2026-06-30]
+    end
+
+    test "lines cover every day of a 31-day month", %{su: su} do
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 7)
+      assert length(sheet.lines) == 31
+    end
+
+    test "lines cover every day of February (non-leap 2026)", %{su: su} do
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 2)
+      assert length(sheet.lines) == 28
+    end
+
+    test "days without rows have record: nil and do not count toward totals", %{su: su} do
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+      assert Enum.all?(sheet.lines, &is_nil(&1.record))
+
+      assert sheet.totals == %{
+               billable_days: 0,
+               offsite_days: 0,
+               pickup_count: 0,
+               dropoff_count: 0,
+               absence_support_count: 0
+             }
+    end
+
+    test "later id wins for the same service_date (correction semantics)",
+         %{su: su, scope: scope} do
+      {:ok, _first} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-15],
+          provision_type: :absence
+        })
+
+      {:ok, correction} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-15],
+          provision_type: :commute
+        })
+
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+      jun15 = Enum.find(sheet.lines, &(&1.date == ~D[2026-06-15]))
+      assert jun15.record.id == correction.id
+      assert jun15.record.provision_type == :commute
+    end
+
+    test "billable_days counts only commute / offsite_work / offsite_support",
+         %{su: su, scope: scope} do
+      for {date, type} <- [
+            {~D[2026-06-01], :commute},
+            {~D[2026-06-02], :offsite_work},
+            {~D[2026-06-03], :offsite_support},
+            {~D[2026-06-04], :absence},
+            {~D[2026-06-05], :absence_support}
+          ] do
+        {:ok, _} =
+          Plans.create_attendance_record(scope, %{
+            service_user_id: su.id,
+            service_date: date,
+            provision_type: type
+          })
+      end
+
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+      assert sheet.totals.billable_days == 3
+      assert sheet.totals.offsite_days == 2
+      assert sheet.totals.absence_support_count == 1
+    end
+
+    test "pickup_count and dropoff_count count adopted rows only",
+         %{su: su, scope: scope} do
+      {:ok, _} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-01],
+          provision_type: :commute,
+          pickup: true,
+          dropoff: true
+        })
+
+      {:ok, _} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-02],
+          provision_type: :commute,
+          pickup: true,
+          dropoff: false
+        })
+
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+      assert sheet.totals.pickup_count == 2
+      assert sheet.totals.dropoff_count == 1
+    end
+
+    test "correction overwrites prior pickup/dropoff in counts",
+         %{su: su, scope: scope} do
+      {:ok, _} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-10],
+          provision_type: :commute,
+          pickup: true,
+          dropoff: true
+        })
+
+      {:ok, _} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-10],
+          provision_type: :absence,
+          pickup: false,
+          dropoff: false
+        })
+
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+      assert sheet.totals.pickup_count == 0
+      assert sheet.totals.dropoff_count == 0
+      assert sheet.totals.billable_days == 0
     end
   end
 

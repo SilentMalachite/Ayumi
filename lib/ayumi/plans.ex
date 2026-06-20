@@ -14,6 +14,8 @@ defmodule Ayumi.Plans do
   alias Ayumi.Plans.ServiceUser
   alias Ayumi.Plans.SupportPlan
   alias Ayumi.Plans.AttendanceRecord
+  alias Ayumi.Plans.AttendanceSheet
+  alias Ayumi.Plans.ProvisionType
   alias Ayumi.Plans.SupportRecord
 
   ## Service users
@@ -512,6 +514,74 @@ defmodule Ayumi.Plans do
     last = Date.end_of_month(first)
     {first, last}
   end
+
+  @doc """
+  Builds a monthly attendance sheet for a service user by folding the
+  append-only log. The sheet is derived, not stored.
+  """
+  def build_attendance_sheet(service_user_id, year, month)
+      when is_integer(service_user_id) and is_integer(year) and is_integer(month) do
+    rows = list_attendance_records(service_user_id, year, month)
+    fold_attendance_sheet(service_user_id, year, month, rows)
+  end
+
+  defp fold_attendance_sheet(service_user_id, year, month, rows) do
+    latest_by_date =
+      rows
+      |> Enum.group_by(& &1.service_date)
+      |> Map.new(fn {date, rs} -> {date, Enum.max_by(rs, & &1.id)} end)
+
+    {first, _last} = month_bounds(year, month)
+    days = Date.days_in_month(first)
+
+    lines =
+      for day <- 1..days do
+        date = Date.new!(year, month, day)
+        %{date: date, record: Map.get(latest_by_date, date)}
+      end
+
+    %AttendanceSheet{
+      service_user_id: service_user_id,
+      year: year,
+      month: month,
+      lines: lines,
+      totals: totals_from(lines)
+    }
+  end
+
+  defp totals_from(lines) do
+    billable = ProvisionType.billable()
+    offsite = [:offsite_work, :offsite_support]
+
+    Enum.reduce(
+      lines,
+      %{
+        billable_days: 0,
+        offsite_days: 0,
+        pickup_count: 0,
+        dropoff_count: 0,
+        absence_support_count: 0
+      },
+      fn
+        %{record: nil}, acc ->
+          acc
+
+        %{record: rec}, acc ->
+          acc
+          |> Map.update!(:billable_days, &(&1 + bool_to_int(rec.provision_type in billable)))
+          |> Map.update!(:offsite_days, &(&1 + bool_to_int(rec.provision_type in offsite)))
+          |> Map.update!(:pickup_count, &(&1 + bool_to_int(rec.pickup)))
+          |> Map.update!(:dropoff_count, &(&1 + bool_to_int(rec.dropoff)))
+          |> Map.update!(
+            :absence_support_count,
+            &(&1 + bool_to_int(rec.provision_type == :absence_support))
+          )
+      end
+    )
+  end
+
+  defp bool_to_int(true), do: 1
+  defp bool_to_int(false), do: 0
 
   ## Certificate expiry
 
