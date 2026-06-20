@@ -40,6 +40,18 @@ defmodule Ayumi.BackupsTest do
       assert {:error, reason} = Backups.create_backup(db_dir)
       assert reason =~ "同じディレクトリ"
     end
+
+    @tag :tmp_dir
+    test "同じ秒のタイムスタンプでも2回目はサフィックスで衝突を避ける", %{tmp_dir: tmp_dir} do
+      ts = ~N[2026-06-20 12:00:00]
+
+      assert {:ok, info1} = Backups.create_backup(tmp_dir, timestamp: ts)
+      assert {:ok, info2} = Backups.create_backup(tmp_dir, timestamp: ts)
+
+      assert info1.path != info2.path
+      assert File.exists?(info1.path)
+      assert File.exists?(info2.path)
+    end
   end
 
   defp collect_rows(stmt, conn, acc \\ []) do

@@ -58,13 +58,19 @@ defmodule Ayumi.Backups do
 
   defp build_dest_path(dest_dir, opts) do
     now = Keyword.get(opts, :timestamp, NaiveDateTime.utc_now())
+    base = "ayumi_backup_" <> Calendar.strftime(now, "%Y%m%d_%H%M%S")
+    {:ok, available_path(dest_dir, base, 0)}
+  end
 
-    filename =
-      "ayumi_backup_" <>
-        Calendar.strftime(now, "%Y%m%d_%H%M%S") <>
-        ".sqlite3"
+  defp available_path(dir, base, count) do
+    suffix = if count == 0, do: "", else: "_#{count}"
+    path = Path.join(dir, base <> suffix <> ".sqlite3")
 
-    {:ok, Path.join(dest_dir, filename)}
+    if File.exists?(path) do
+      available_path(dir, base, count + 1)
+    else
+      path
+    end
   end
 
   defp execute_vacuum_into(dest_path) do
