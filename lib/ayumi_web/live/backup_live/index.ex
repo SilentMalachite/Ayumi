@@ -54,50 +54,52 @@ defmodule AyumiWeb.BackupLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <.header>
-      {gettext("データベースバックアップ")}
-    </.header>
+    <Layouts.app flash={@flash} current_scope={@current_scope}>
+      <.header>
+        {gettext("データベースバックアップ")}
+      </.header>
 
-    <div class="mt-6">
-      <form id="backup-form" phx-submit="backup" class="space-y-4">
-        <div>
-          <label for="dest_dir" class="block text-sm font-medium">
-            {gettext("保存先ディレクトリ")}
-          </label>
-          <input
-            type="text"
-            name="dest_dir"
-            id="dest_dir"
-            value={@dest_dir}
-            class="input input-bordered w-full mt-1"
-            placeholder="/path/to/backup/directory"
-            required
-          />
-          <p class="mt-1 text-sm text-base-content/60">
-            {gettext("バックアップファイルの保存先を指定してください。タイムスタンプ付きのファイル名が自動生成されます。")}
-          </p>
+      <div class="mt-6">
+        <form id="backup-form" phx-submit="backup" class="space-y-4">
+          <div>
+            <label for="dest_dir" class="block text-sm font-medium">
+              {gettext("保存先ディレクトリ")}
+            </label>
+            <input
+              type="text"
+              name="dest_dir"
+              id="dest_dir"
+              value={@dest_dir}
+              class="input input-bordered w-full mt-1"
+              placeholder="/path/to/backup/directory"
+              required
+            />
+            <p class="mt-1 text-sm text-base-content/60">
+              {gettext("バックアップファイルの保存先を指定してください。タイムスタンプ付きのファイル名が自動生成されます。")}
+            </p>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            {gettext("バックアップ実行")}
+          </button>
+        </form>
+
+        <div :if={@result == :ok} class="mt-6 alert alert-success">
+          <div>
+            <p class="font-semibold">{gettext("バックアップ完了")}</p>
+            <p class="text-sm">{@backup_info.path}</p>
+            <p class="text-sm">{@backup_info.size_kb} KB</p>
+          </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">
-          {gettext("バックアップ実行")}
-        </button>
-      </form>
-
-      <div :if={@result == :ok} class="mt-6 alert alert-success">
-        <div>
-          <p class="font-semibold">{gettext("バックアップ完了")}</p>
-          <p class="text-sm">{@backup_info.path}</p>
-          <p class="text-sm">{@backup_info.size_kb} KB</p>
+        <div :if={@result == :error} class="mt-6 alert alert-error">
+          <div>
+            <p class="font-semibold">{gettext("バックアップに失敗しました")}</p>
+            <p class="text-sm">{@backup_error}</p>
+          </div>
         </div>
       </div>
-
-      <div :if={@result == :error} class="mt-6 alert alert-error">
-        <div>
-          <p class="font-semibold">{gettext("バックアップに失敗しました")}</p>
-          <p class="text-sm">{@backup_error}</p>
-        </div>
-      </div>
-    </div>
+    </Layouts.app>
     """
   end
 end
