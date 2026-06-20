@@ -7,7 +7,7 @@ defmodule Ayumi.MixProject do
       version: "0.1.2",
       elixir: "~> 1.15",
       name: "Ayumi",
-      description: "就労継続支援B型事業所向けの個別支援計画 進捗トラッカー",
+      description: "就労継続支援B型事業所向けの業務支援システム（個別支援計画・期限管理）",
       source_url: "https://github.com/SilentMalachite/Ayumi",
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
