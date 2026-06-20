@@ -75,17 +75,21 @@ defmodule Ayumi.Backups do
       # 既存名は VACUUM を試さず次へ（連続実行の高速パス）
       vacuum_attempt(dir, base, count + 1)
     else
-      case execute_vacuum_into(path) do
-        :ok ->
-          {:ok, path}
+      try_vacuum_into(dir, base, count, path)
+    end
+  end
 
-        {:error, reason} ->
-          # 出力先が存在する＝並行実行で他プロセスが先に作成 → 次サフィックスへ。
-          # ファイルが無い失敗（権限・ディスク等）はそのまま返す。
-          if File.exists?(path),
-            do: vacuum_attempt(dir, base, count + 1),
-            else: {:error, reason}
-      end
+  defp try_vacuum_into(dir, base, count, path) do
+    case execute_vacuum_into(path) do
+      :ok ->
+        {:ok, path}
+
+      {:error, reason} ->
+        # 出力先が存在する＝並行実行で他プロセスが先に作成 → 次サフィックスへ。
+        # ファイルが無い失敗（権限・ディスク等）はそのまま返す。
+        if File.exists?(path),
+          do: vacuum_attempt(dir, base, count + 1),
+          else: {:error, reason}
     end
   end
 
