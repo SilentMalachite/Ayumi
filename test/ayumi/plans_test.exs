@@ -227,6 +227,23 @@ defmodule Ayumi.PlansTest do
       assert %Ayumi.Accounts.User{} = loaded.staff
       assert is_list(loaded.goals)
     end
+
+    test "create_support_plan/1 は退所者への作成を拒否する" do
+      withdrawn = service_user_fixture(enrollment_status: :withdrawn)
+      staff = Ayumi.AccountsFixtures.user_fixture()
+
+      attrs = %{
+        "service_user_id" => withdrawn.id,
+        "staff_id" => staff.id,
+        "period_start" => "2026-04-01",
+        "period_end" => "2026-09-30",
+        "long_term_goal" => "長期目標",
+        "next_monitoring_date" => "2026-07-01"
+      }
+
+      assert {:error, changeset} = Plans.create_support_plan(attrs)
+      assert %{service_user_id: _} = errors_on(changeset)
+    end
   end
 
   describe "goals" do
@@ -728,24 +745,28 @@ defmodule Ayumi.PlansTest do
       today = ~D[2026-06-18]
       staff = Ayumi.AccountsFixtures.staff_fixture()
 
-      withdrawn_user =
+      # Create user as active first, so plan can be created
+      active_user =
         service_user_fixture(%{
           name: "退所 太郎",
-          name_kana: "たいしょ たろう",
-          enrollment_status: :withdrawn
+          name_kana: "たいしょ たろう"
         })
 
       _overdue_plan =
         support_plan_fixture(%{
-          service_user_id: withdrawn_user.id,
+          service_user_id: active_user.id,
           staff_id: staff.id,
           next_monitoring_date: ~D[2026-06-01]
         })
 
+      # Then mark user as withdrawn
+      {:ok, _withdrawn_user} =
+        Plans.update_service_user(active_user, %{enrollment_status: :withdrawn})
+
       alerts =
         Plans.list_monitoring_deadline_alerts(Ayumi.Accounts.Scope.for_user(staff), today, 30)
 
-      refute Enum.any?(alerts, &(&1.support_plan.service_user.id == withdrawn_user.id))
+      refute Enum.any?(alerts, &(&1.support_plan.service_user.id == active_user.id))
     end
   end
 

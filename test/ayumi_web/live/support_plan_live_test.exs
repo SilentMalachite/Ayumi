@@ -168,6 +168,31 @@ defmodule AyumiWeb.SupportPlanLiveTest do
     assert Ayumi.Plans.list_goal_progress(visible_goal) == []
   end
 
+  test "フォーム表示後に対象が退所しても支援計画は作成されない", %{conn: conn} do
+    su = service_user_fixture()
+    staff = Ayumi.AccountsFixtures.user_fixture()
+    {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}/support_plans/new")
+
+    # フォーム表示後に別経路で退所へ更新
+    {:ok, _} = Ayumi.Plans.update_service_user(su, %{enrollment_status: :withdrawn})
+
+    params = %{
+      staff_id: staff.id,
+      period_start: "2026-04-01",
+      period_end: "2026-09-30",
+      long_term_goal: "長期目標",
+      next_monitoring_date: "2026-07-01"
+    }
+
+    html =
+      lv
+      |> form("#support-plan-form", support_plan: params)
+      |> render_submit()
+
+    assert html =~ "支援計画の作成"
+    assert Ayumi.Plans.list_support_plans_for_user(su) == []
+  end
+
   describe "supporter access to support plans" do
     setup :register_and_log_in_user
 

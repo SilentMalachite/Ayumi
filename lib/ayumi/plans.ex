@@ -122,6 +122,7 @@ defmodule Ayumi.Plans do
   def create_support_plan(attrs) do
     %SupportPlan{}
     |> SupportPlan.changeset(attrs)
+    |> validate_active_service_user("退所者には支援計画を作成できません")
     |> Repo.insert()
   end
 
@@ -369,7 +370,7 @@ defmodule Ayumi.Plans do
     %SupportRecord{}
     |> SupportRecord.changeset(attrs)
     |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
-    |> validate_active_service_user()
+    |> validate_active_service_user("退所者には支援記録を作成できません")
     |> insert_support_record()
   end
 
@@ -421,20 +422,17 @@ defmodule Ayumi.Plans do
       end
   end
 
-  defp validate_active_service_user(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+  defp validate_active_service_user(%Ecto.Changeset{valid?: false} = changeset, _message),
+    do: changeset
 
-  defp validate_active_service_user(changeset) do
+  defp validate_active_service_user(changeset, message) do
     case Ecto.Changeset.get_field(changeset, :service_user_id) do
       nil ->
         changeset
 
       id ->
         if withdrawn_service_user?(id) do
-          Ecto.Changeset.add_error(
-            changeset,
-            :service_user_id,
-            "退所者には支援記録を作成できません"
-          )
+          Ecto.Changeset.add_error(changeset, :service_user_id, message)
         else
           changeset
         end
