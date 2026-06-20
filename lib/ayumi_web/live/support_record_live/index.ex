@@ -163,7 +163,7 @@ defmodule AyumiWeb.SupportRecordLive.Index do
 
       <div class="mt-10">
         <h2 class="text-lg font-semibold text-zinc-800">{gettext("新規記録")}</h2>
-        <.form for={@form} phx-submit="create" class="mt-4">
+        <.form for={@form} id="support-record-form" phx-submit="create" class="mt-4">
           <.input
             field={@form[:service_user_id]}
             type="select"

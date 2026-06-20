@@ -5,8 +5,8 @@ defmodule Ayumi.Plans.SupportRecord do
 
   alias Ayumi.Plans.SupportRecordCategory
 
-  @required [:service_user_id, :content, :category, :recorded_by_id, :recorded_at]
-  @optional []
+  @user_fields [:service_user_id, :content, :category]
+  @audit_fields [:recorded_by_id, :recorded_at]
 
   schema "support_records" do
     field :content, :string
@@ -22,10 +22,17 @@ defmodule Ayumi.Plans.SupportRecord do
   @doc false
   def changeset(support_record, attrs) do
     support_record
-    |> cast(attrs, @required ++ @optional)
-    |> validate_required(@required)
+    |> cast(attrs, @user_fields)
+    |> validate_required(@user_fields)
     |> validate_inclusion(:category, SupportRecordCategory.all())
     |> foreign_key_constraint(:service_user_id)
     |> foreign_key_constraint(:recorded_by_id)
+  end
+
+  def put_audit(changeset, recorded_by_id, recorded_at) do
+    changeset
+    |> put_change(:recorded_by_id, recorded_by_id)
+    |> put_change(:recorded_at, recorded_at)
+    |> validate_required(@audit_fields)
   end
 end

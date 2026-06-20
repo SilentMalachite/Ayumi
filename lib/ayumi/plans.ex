@@ -366,13 +366,9 @@ defmodule Ayumi.Plans do
 
   @doc "Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock."
   def create_support_record(%Scope{} = scope, attrs) when is_map(attrs) do
-    attrs =
-      attrs
-      |> Map.put(:recorded_by_id, scope.user.id)
-      |> Map.put(:recorded_at, DateTime.utc_now(:second))
-
     %SupportRecord{}
     |> SupportRecord.changeset(attrs)
+    |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
     |> insert_support_record()
   end
 
