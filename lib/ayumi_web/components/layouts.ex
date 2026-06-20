@@ -47,6 +47,9 @@ defmodule AyumiWeb.Layouts do
           <li>
             <.link navigate={~p"/service_users"} class="font-semibold">{gettext("利用者")}</.link>
           </li>
+          <li :if={Ayumi.Accounts.Scope.manager?(@current_scope)}>
+            <.link navigate={~p"/admin/backup"} class="font-semibold">{gettext("バックアップ")}</.link>
+          </li>
           <li>
             <.theme_toggle />
           </li>
