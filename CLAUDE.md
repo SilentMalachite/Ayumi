@@ -49,7 +49,7 @@ Hard rules that follow from this:
 
 ## Domain model
 
-Four tables. Two are "bodies" that are rarely edited; two are append-only logs.
+Two "bodies" (rarely edited) and three append-only logs.
 
 Bodies (rarely edited):
 
@@ -63,6 +63,8 @@ Append-only logs (the core idea):
 
 - `plan_phase_event` — one row per transition of a plan through its lifecycle stage.
 - `goal_progress` — one row per progress update of a `goal`.
+- `support_record` — one row per daily support note for a service user (category,
+  content, recorded_by, recorded_at).
 
 ### Append-only principle (do not violate)
 
@@ -184,5 +186,12 @@ Optional (done):
   builds a Mix release on a Windows runner and attaches the zip to a GitHub
   Release. `Ayumi.Release` module provides `migrate/0` and `create_user/0`
   for `bin/ayumi eval` in compiled releases.
+- `support_record` (支援記録): daily support notes per service user, append-only
+  with category (work / daily_living / health / interview / other), content,
+  recorded_by, recorded_at. `/support_records` for listing, filtering, creating.
+- Service user summary page: `ServiceUserLive.Show` extended with deadline badges
+  (cert expiry + monitoring), current plan goals with latest progress, recent
+  goal progress / phase events (20), and recent support records (20). Read-only
+  aggregation, no schema change.
 
 All steps are complete and green. Each was `mix review`-clean before merging.
