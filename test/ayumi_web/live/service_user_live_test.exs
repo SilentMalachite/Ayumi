@@ -73,6 +73,18 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       assert {:error, {:redirect, %{to: "/users/log-in"}}} = live(conn, ~p"/service_users")
     end
 
+    test "退所者のまとめ画面には支援計画作成ボタンを出さない", %{conn: conn} do
+      su = service_user_fixture(enrollment_status: :withdrawn)
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      refute html =~ "支援計画を作成"
+    end
+
+    test "在籍者のまとめ画面には支援計画作成ボタンを出す", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
+      assert html =~ "支援計画を作成"
+    end
+
     test "shows a service user with their support plans", %{conn: conn} do
       su = service_user_fixture(%{name: "表示 利用者"})
       support_plan_fixture(%{service_user_id: su.id, long_term_goal: "長期目標テキスト"})

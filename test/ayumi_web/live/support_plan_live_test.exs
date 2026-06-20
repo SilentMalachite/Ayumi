@@ -6,6 +6,19 @@ defmodule AyumiWeb.SupportPlanLiveTest do
 
   setup :register_and_log_in_manager
 
+  test "退所者の支援計画作成フォームはまとめ画面へリダイレクトする", %{conn: conn} do
+    su = service_user_fixture(enrollment_status: :withdrawn)
+
+    {:error, redirect} = live(conn, ~p"/service_users/#{su.id}/support_plans/new")
+    assert {_kind, %{to: path}} = redirect
+    assert path == ~p"/service_users/#{su.id}"
+  end
+
+  test "在籍者の支援計画作成フォームは開ける", %{conn: conn} do
+    su = service_user_fixture()
+    {:ok, _lv, _html} = live(conn, ~p"/service_users/#{su.id}/support_plans/new")
+  end
+
   test "creates a support plan for a service user", %{conn: conn, user: staff} do
     su = service_user_fixture()
 

@@ -10,12 +10,16 @@ defmodule AyumiWeb.SupportPlanLive.Form do
   def mount(%{"service_user_id" => service_user_id}, _session, socket) do
     service_user = Plans.get_service_user!(service_user_id)
 
-    {:ok,
-     socket
-     |> assign(:page_title, gettext("支援計画の作成"))
-     |> assign(:service_user, service_user)
-     |> assign(:staff_options, staff_options())
-     |> assign_form(Plans.change_support_plan(%SupportPlan{}))}
+    if service_user.enrollment_status == :withdrawn do
+      {:ok, redirect_withdrawn(socket, service_user)}
+    else
+      {:ok,
+       socket
+       |> assign(:page_title, gettext("支援計画の作成"))
+       |> assign(:service_user, service_user)
+       |> assign(:staff_options, staff_options())
+       |> assign_form(Plans.change_support_plan(%SupportPlan{}))}
+    end
   end
 
   @impl true
@@ -30,16 +34,28 @@ defmodule AyumiWeb.SupportPlanLive.Form do
 
   @impl true
   def handle_event("save", %{"support_plan" => params}, socket) do
-    case Plans.create_support_plan(with_service_user(params, socket)) do
-      {:ok, _plan} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, gettext("支援計画を作成しました"))
-         |> push_navigate(to: ~p"/service_users/#{socket.assigns.service_user.id}")}
+    service_user = socket.assigns.service_user
 
-      {:error, changeset} ->
-        {:noreply, assign_form(socket, changeset)}
+    if service_user.enrollment_status == :withdrawn do
+      {:noreply, redirect_withdrawn(socket, service_user)}
+    else
+      case Plans.create_support_plan(with_service_user(params, socket)) do
+        {:ok, _plan} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, gettext("支援計画を作成しました"))
+           |> push_navigate(to: ~p"/service_users/#{service_user.id}")}
+
+        {:error, changeset} ->
+          {:noreply, assign_form(socket, changeset)}
+      end
     end
+  end
+
+  defp redirect_withdrawn(socket, service_user) do
+    socket
+    |> put_flash(:error, gettext("退所者には支援計画を作成できません"))
+    |> push_navigate(to: ~p"/service_users/#{service_user.id}")
   end
 
   defp with_service_user(params, socket),
