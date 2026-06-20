@@ -185,8 +185,19 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
           provision_type: :commute
         })
 
+      # Insert a late correction for 2026-06-01 *after* jun30 so its id > jun30.id.
+      # If the query ordered by service_date instead of id, this row would appear
+      # before jun30 in the result (service_date 06-01 < 06-30). Asserting it comes
+      # LAST proves the contract is id-ascending, not date-ascending.
+      {:ok, jun1_correction} =
+        Plans.create_attendance_record(scope, %{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-01],
+          provision_type: :absence
+        })
+
       ids = Plans.list_attendance_records(su.id, 2026, 6) |> Enum.map(& &1.id)
-      assert ids == [jun1.id, jun30.id]
+      assert ids == [jun1.id, jun30.id, jun1_correction.id]
       refute before_rec.id in ids
       refute after_rec.id in ids
     end

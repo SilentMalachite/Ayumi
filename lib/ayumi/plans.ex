@@ -526,10 +526,9 @@ defmodule Ayumi.Plans do
   end
 
   defp fold_attendance_sheet(service_user_id, year, month, rows) do
-    latest_by_date =
-      rows
-      |> Enum.group_by(& &1.service_date)
-      |> Map.new(fn {date, rs} -> {date, Enum.max_by(rs, & &1.id)} end)
+    # rows arrive id-ascending from list_attendance_records/3; Map.new/2 overwrites
+    # earlier entries with later ones, so the largest-id row wins per date.
+    latest_by_date = Map.new(rows, &{&1.service_date, &1})
 
     {first, _last} = month_bounds(year, month)
     days = Date.days_in_month(first)
