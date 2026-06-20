@@ -1043,6 +1043,45 @@ defmodule Ayumi.PlansTest do
       assert %Ayumi.Plans.ServiceUser{} = r2.service_user
       assert %Ayumi.Accounts.User{} = r2.recorded_by
     end
+
+    test "list_support_records/2 は退所者の記録を一覧から除外する" do
+      active = service_user_fixture()
+      withdrawn = service_user_fixture(%{name: "退所者テスト"})
+
+      _a = support_record_fixture(service_user_id: active.id)
+      _w = support_record_fixture(service_user_id: withdrawn.id)
+
+      {:ok, _} = Plans.update_service_user(withdrawn, %{enrollment_status: :withdrawn})
+
+      scope = Ayumi.Accounts.Scope.for_user(Ayumi.AccountsFixtures.user_fixture())
+      ids = scope |> Plans.list_support_records() |> Enum.map(& &1.service_user_id)
+
+      assert active.id in ids
+      refute withdrawn.id in ids
+    end
+
+    test "create_support_record/2 は退所者への記録作成を拒否する" do
+      withdrawn = service_user_fixture(%{name: "退所者テスト2", enrollment_status: :withdrawn})
+      scope = Ayumi.Accounts.Scope.for_user(Ayumi.AccountsFixtures.user_fixture())
+
+      assert {:error, changeset} =
+               Plans.create_support_record(scope, %{
+                 service_user_id: withdrawn.id,
+                 content: "記録テスト",
+                 category: :work
+               })
+
+      assert %{service_user_id: _} = errors_on(changeset)
+    end
+
+    test "list_recent_support_records/2 は退所者の履歴を引き続き返す" do
+      su = service_user_fixture(%{name: "退所者テスト3"})
+      rec = support_record_fixture(service_user_id: su.id)
+      {:ok, _} = Plans.update_service_user(su, %{enrollment_status: :withdrawn})
+
+      assert [%{id: id}] = Plans.list_recent_support_records(su.id)
+      assert id == rec.id
+    end
   end
 
   describe "list_recent_support_records/2" do

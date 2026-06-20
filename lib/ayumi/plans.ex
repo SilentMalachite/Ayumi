@@ -369,6 +369,7 @@ defmodule Ayumi.Plans do
     %SupportRecord{}
     |> SupportRecord.changeset(attrs)
     |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
+    |> validate_active_service_user()
     |> insert_support_record()
   end
 
@@ -379,6 +380,8 @@ defmodule Ayumi.Plans do
     to_date = Keyword.get(opts, :to)
 
     SupportRecord
+    |> join(:inner, [r], su in assoc(r, :service_user))
+    |> where([_r, su], su.enrollment_status != :withdrawn)
     |> order_by([r], desc: r.recorded_at, desc: r.id)
     |> preload([:service_user, :recorded_by])
     |> then(fn q ->
@@ -416,6 +419,32 @@ defmodule Ayumi.Plans do
       else
         reraise exception, __STACKTRACE__
       end
+  end
+
+  defp validate_active_service_user(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  defp validate_active_service_user(changeset) do
+    case Ecto.Changeset.get_field(changeset, :service_user_id) do
+      nil ->
+        changeset
+
+      id ->
+        if withdrawn_service_user?(id) do
+          Ecto.Changeset.add_error(
+            changeset,
+            :service_user_id,
+            "退所者には支援記録を作成できません"
+          )
+        else
+          changeset
+        end
+    end
+  end
+
+  defp withdrawn_service_user?(id) do
+    ServiceUser
+    |> where([su], su.id == ^id and su.enrollment_status == :withdrawn)
+    |> Repo.exists?()
   end
 
   defp add_support_record_foreign_key_errors(changeset) do
