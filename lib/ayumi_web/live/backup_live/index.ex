@@ -11,30 +11,39 @@ defmodule AyumiWeb.BackupLive.Index do
      socket
      |> assign(:page_title, gettext("データベースバックアップ"))
      |> assign(:dest_dir, default_dir)
-     |> assign(:result, nil)}
+     |> assign(:result, nil)
+     |> assign(:backup_info, nil)
+     |> assign(:backup_error, nil)}
   end
 
   @impl true
   def handle_event("backup", %{"dest_dir" => dest_dir}, socket) do
     case Backups.create_backup(dest_dir) do
       {:ok, info} ->
-        size_kb = div(info.size_bytes, 1024)
+        backup_info = %{
+          path: info.path,
+          size_kb: div(info.size_bytes, 1024)
+        }
 
         {:noreply,
          socket
-         |> assign(:result, {:ok, info})
+         |> assign(:dest_dir, dest_dir)
+         |> assign(:result, :ok)
+         |> assign(:backup_info, backup_info)
          |> put_flash(
            :info,
            gettext("バックアップが完了しました: %{path} (%{size} KB)",
              path: info.path,
-             size: size_kb
+             size: backup_info.size_kb
            )
          )}
 
       {:error, reason} ->
         {:noreply,
          socket
-         |> assign(:result, {:error, reason})
+         |> assign(:dest_dir, dest_dir)
+         |> assign(:result, :error)
+         |> assign(:backup_error, to_string(reason))
          |> put_flash(
            :error,
            gettext("バックアップに失敗しました: %{reason}", reason: reason)
@@ -74,18 +83,18 @@ defmodule AyumiWeb.BackupLive.Index do
         </button>
       </form>
 
-      <div :if={match?({:ok, _}, @result)} class="mt-6 alert alert-success">
+      <div :if={@result == :ok} class="mt-6 alert alert-success">
         <div>
           <p class="font-semibold">{gettext("バックアップ完了")}</p>
-          <p class="text-sm">{elem(@result, 1).path}</p>
-          <p class="text-sm">{div(elem(@result, 1).size_bytes, 1024)} KB</p>
+          <p class="text-sm">{@backup_info.path}</p>
+          <p class="text-sm">{@backup_info.size_kb} KB</p>
         </div>
       </div>
 
-      <div :if={match?({:error, _}, @result)} class="mt-6 alert alert-error">
+      <div :if={@result == :error} class="mt-6 alert alert-error">
         <div>
           <p class="font-semibold">{gettext("バックアップに失敗しました")}</p>
-          <p class="text-sm">{elem(@result, 1)}</p>
+          <p class="text-sm">{@backup_error}</p>
         </div>
       </div>
     </div>
