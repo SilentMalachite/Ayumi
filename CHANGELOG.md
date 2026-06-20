@@ -5,6 +5,8 @@
 
 ## [未リリース]
 
+## [0.1.5] — 2026-06-20
+
 ### 追加
 
 - **DB バックアップ機能**: サービス管理責任者専用の DB バックアップツールを追加。
@@ -14,7 +16,7 @@
   （存在・書込権限・稼働中 DB と別ディレクトリ）、タイムスタンプ付きファイル名の
   生成、同一秒で再実行されたときの `_1`, `_2` … サフィックスによる衝突回避を
   担います。
-- バックアップ画面の成功表示に、保存先パス・サイズ・保存時刻（UTC 表記）を
+- バックアップ画面の成功表示に、保存先パス・サイズ・保存時刻(UTC 表記)を
   表示し、画面上部に成功/失敗のフラッシュ通知も出るようにしました。
 
 ### 修正
@@ -124,7 +126,8 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.4...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.1...v0.1.2
