@@ -252,6 +252,13 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
       assert length(sheet.lines) == 28
     end
 
+    test "lines cover every day of February (leap 2028)", %{su: su} do
+      sheet = Plans.build_attendance_sheet(su.id, 2028, 2)
+
+      assert length(sheet.lines) == 29
+      assert List.last(sheet.lines).date == ~D[2028-02-29]
+    end
+
     test "days without rows have record: nil and do not count toward totals", %{su: su} do
       sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
       assert Enum.all?(sheet.lines, &is_nil(&1.record))
