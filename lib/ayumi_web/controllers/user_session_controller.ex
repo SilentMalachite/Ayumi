@@ -5,7 +5,7 @@ defmodule AyumiWeb.UserSessionController do
   alias AyumiWeb.UserAuth
 
   def create(conn, params) do
-    create(conn, params, "Welcome back!")
+    create(conn, params, "ログインしました")
   end
 
   # email + password login
@@ -19,7 +19,7 @@ defmodule AyumiWeb.UserSessionController do
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
       conn
-      |> put_flash(:error, "Invalid email or password")
+      |> put_flash(:error, "メールアドレスまたはパスワードが正しくありません")
       |> put_flash(:email, String.slice(email, 0, 160))
       |> redirect(to: ~p"/users/log-in")
     end
@@ -35,12 +35,12 @@ defmodule AyumiWeb.UserSessionController do
 
     conn
     |> put_session(:user_return_to, ~p"/users/settings")
-    |> create(params, "Password updated successfully!")
+    |> create(params, "パスワードを変更しました")
   end
 
   def delete(conn, _params) do
     conn
-    |> put_flash(:info, "Logged out successfully.")
+    |> put_flash(:info, "ログアウトしました")
     |> UserAuth.log_out_user()
   end
 end

@@ -8,9 +8,9 @@ defmodule AyumiWeb.UserLive.Login do
       <div class="mx-auto max-w-sm space-y-4">
         <div class="text-center">
           <.header>
-            <p>Log in</p>
+            <p>ログイン</p>
             <:subtitle :if={@current_scope}>
-              You need to reauthenticate to perform sensitive actions on your account.
+              重要な操作を行うため、再認証が必要です。
             </:subtitle>
           </.header>
         </div>
@@ -27,7 +27,7 @@ defmodule AyumiWeb.UserLive.Login do
             readonly={!!@current_scope}
             field={f[:email]}
             type="email"
-            label="Email"
+            label="メールアドレス"
             autocomplete="username"
             spellcheck="false"
             required
@@ -36,16 +36,16 @@ defmodule AyumiWeb.UserLive.Login do
           <.input
             field={@form[:password]}
             type="password"
-            label="Password"
+            label="パスワード"
             autocomplete="current-password"
             spellcheck="false"
             required
           />
           <.button class="btn btn-primary w-full" name={@form[:remember_me].name} value="true">
-            Log in and stay logged in <span aria-hidden="true">→</span>
+            ログインしてこの端末を記憶 <span aria-hidden="true">→</span>
           </.button>
           <.button class="btn btn-primary btn-soft w-full mt-2">
-            Log in only this time
+            今回だけログイン
           </.button>
         </.form>
       </div>
