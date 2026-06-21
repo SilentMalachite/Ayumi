@@ -3,6 +3,8 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
   import Phoenix.LiveViewTest
   import Ayumi.PlansFixtures
+  alias Ayumi.Plans.AttendanceRecord
+  alias Ayumi.Repo
 
   setup :register_and_log_in_user
 
@@ -146,6 +148,27 @@ defmodule AyumiWeb.AttendanceLiveTest do
       html = render(view)
       assert html =~ "欠席時対応: <strong>1</strong>"
       assert html =~ "利用日数: <strong>0</strong>"
+    end
+
+    test "end_time <= start_time shows error flash and does not append a row", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      before_count = Repo.aggregate(AttendanceRecord, :count, :id)
+
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-07'])", %{
+        "date" => "2026-06-07",
+        "attendance_record" => %{
+          "provision_type" => "commute",
+          "start_time" => "10:00",
+          "end_time" => "10:00"
+        }
+      })
+      |> render_submit()
+
+      assert render(view) =~ "終了時刻は開始時刻より後にしてください"
+      assert Repo.aggregate(AttendanceRecord, :count, :id) == before_count
     end
   end
 end
