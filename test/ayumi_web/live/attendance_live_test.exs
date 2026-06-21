@@ -170,5 +170,29 @@ defmodule AyumiWeb.AttendanceLiveTest do
       assert render(view) =~ "終了時刻は開始時刻より後にしてください"
       assert Repo.aggregate(AttendanceRecord, :count, :id) == before_count
     end
+
+    test "audit fields submitted by the client are ignored", %{conn: conn, user: user} do
+      su = service_user_fixture()
+      other = Ayumi.AccountsFixtures.user_fixture()
+      injected_at = ~U[2000-01-01 00:00:00Z]
+
+      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      # Fire the event directly, simulating a crafted client payload that includes
+      # audit fields the server should ignore.
+      render_submit(view, "save_day", %{
+        "date" => "2026-06-09",
+        "attendance_record" => %{
+          "provision_type" => "commute",
+          "recorded_by_id" => Integer.to_string(other.id),
+          "recorded_at" => DateTime.to_iso8601(injected_at)
+        }
+      })
+
+      [row] = Ayumi.Plans.list_attendance_records(su.id, 2026, 6)
+      assert row.recorded_by_id == user.id
+      refute row.recorded_at == injected_at
+      assert DateTime.diff(DateTime.utc_now(), row.recorded_at, :second) < 30
+    end
   end
 end
