@@ -1249,6 +1249,39 @@ defmodule Ayumi.PlansTest do
     end
   end
 
+  describe "attendance sheet" do
+    test "totals.offsite_days counts offsite_work + offsite_support via ProvisionType.offsite/0" do
+      su = service_user_fixture()
+
+      _ =
+        attendance_record_fixture(%{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-02],
+          provision_type: :offsite_work
+        })
+
+      _ =
+        attendance_record_fixture(%{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-03],
+          provision_type: :offsite_support
+        })
+
+      _ =
+        attendance_record_fixture(%{
+          service_user_id: su.id,
+          service_date: ~D[2026-06-04],
+          provision_type: :commute
+        })
+
+      sheet = Plans.build_attendance_sheet(su.id, 2026, 6)
+
+      assert sheet.totals.offsite_days == 2
+      # commute は施設外には数えないが billable には数える
+      assert sheet.totals.billable_days == 3
+    end
+  end
+
   describe "referential integrity" do
     test "creating a goal for a non-existent plan returns an error changeset" do
       assert {:error, changeset} =

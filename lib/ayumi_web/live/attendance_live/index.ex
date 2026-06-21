@@ -4,6 +4,7 @@ defmodule AyumiWeb.AttendanceLive.Index do
 
   alias Ayumi.Plans
   alias Ayumi.Plans.ProvisionType
+  alias AyumiWeb.AttendanceLive.MonthParams
 
   @impl true
   def mount(%{"service_user_id" => id}, _session, socket) do
@@ -17,7 +18,7 @@ defmodule AyumiWeb.AttendanceLive.Index do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    {year, month} = parse_year_month(params)
+    {year, month} = MonthParams.parse(params)
     sheet = Plans.build_attendance_sheet(socket.assigns.service_user.id, year, month)
 
     {:noreply,
@@ -49,6 +50,14 @@ defmodule AyumiWeb.AttendanceLive.Index do
             class="btn btn-ghost btn-sm"
           >
             {gettext("翌月 →")}
+          </.link>
+          <.link
+            navigate={
+              ~p"/service_users/#{@service_user.id}/attendance/sheet?#{[year: @year, month: @month]}"
+            }
+            class="btn btn-ghost btn-sm"
+          >
+            {gettext("印刷")}
           </.link>
           <.link navigate={~p"/service_users/#{@service_user.id}"} class="btn btn-ghost btn-sm">
             {gettext("利用者詳細へ戻る")}
@@ -168,24 +177,6 @@ defmodule AyumiWeb.AttendanceLive.Index do
   end
 
   # --- helpers ---
-
-  defp parse_year_month(params) do
-    today = Date.utc_today()
-    year = parse_int(params["year"], today.year)
-    month = parse_int(params["month"], today.month)
-    if month in 1..12, do: {year, month}, else: {today.year, today.month}
-  end
-
-  defp parse_int(nil, default), do: default
-
-  defp parse_int(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {n, ""} -> n
-      _ -> default
-    end
-  end
-
-  defp parse_int(_, default), do: default
 
   defp prev_month(year, 1), do: {year - 1, 12}
   defp prev_month(year, month), do: {year, month - 1}
