@@ -54,3 +54,7 @@ npm-debug.log
 # macOS
 .DS_Store
 
+# Editor / agent scratch dirs
+/.playwright-mcp/
+/.serena/
+

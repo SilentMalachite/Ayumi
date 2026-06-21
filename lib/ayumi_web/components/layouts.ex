@@ -38,8 +38,11 @@ defmodule AyumiWeb.Layouts do
     <header class="navbar px-4 sm:px-6 lg:px-8">
       <div class="flex-1">
         <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
+          <img src={~p"/images/logo.svg"} width="36" height="36" alt="" />
+          <span class="flex items-baseline gap-1.5 leading-none">
+            <span class="text-base font-semibold tracking-tight">歩み</span>
+            <span class="text-xs uppercase tracking-[0.2em] text-base-content/60">Ayumi</span>
+          </span>
         </a>
       </div>
       <div class="flex-none">
@@ -86,24 +89,24 @@ defmodule AyumiWeb.Layouts do
       <.flash
         id="client-error"
         kind={:error}
-        title={gettext("We can't find the internet")}
+        title={gettext("オフラインです")}
         phx-disconnected={show(".phx-client-error #client-error") |> JS.remove_attribute("hidden")}
         phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
         hidden
       >
-        {gettext("Attempting to reconnect")}
+        {gettext("再接続しています")}
         <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
       </.flash>
 
       <.flash
         id="server-error"
         kind={:error}
-        title={gettext("Something went wrong!")}
+        title={gettext("通信エラーが発生しました")}
         phx-disconnected={show(".phx-server-error #server-error") |> JS.remove_attribute("hidden")}
         phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
         hidden
       >
-        {gettext("Attempting to reconnect")}
+        {gettext("再接続しています")}
         <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
       </.flash>
     </div>

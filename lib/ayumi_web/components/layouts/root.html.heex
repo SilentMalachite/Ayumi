@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="Ayumi" suffix=" · Phoenix Framework">
+    <link rel="icon" type="image/svg+xml" href={~p"/favicon.svg"} />
+    <link rel="alternate icon" type="image/x-icon" href={~p"/favicon.ico"} />
+    <.live_title default="歩み Ayumi">
       {assigns[:page_title]}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
@@ -33,18 +35,18 @@
   <body>
     <ul class="menu menu-horizontal w-full relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
       <%= if @current_scope do %>
-        <li>
+        <li class="text-sm text-base-content/60">
           {@current_scope.user.email}
         </li>
         <li>
-          <.link href={~p"/users/settings"}>Settings</.link>
+          <.link href={~p"/users/settings"}>アカウント設定</.link>
         </li>
         <li>
-          <.link href={~p"/users/log-out"} method="delete">Log out</.link>
+          <.link href={~p"/users/log-out"} method="delete">ログアウト</.link>
         </li>
       <% else %>
         <li>
-          <.link href={~p"/users/log-in"}>Log in</.link>
+          <.link href={~p"/users/log-in"}>ログイン</.link>
         </li>
       <% end %>
     </ul>

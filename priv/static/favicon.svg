@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-  <title>Ayumi</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <rect width="48" height="48" rx="10" fill="#E9DDC7" />
   <g transform="rotate(-20 24 24)">
     <ellipse cx="18" cy="32" rx="5" ry="9" fill="#1F3A2E" />
     <ellipse cx="30" cy="16" rx="5" ry="9" stroke="#1F3A2E" stroke-width="2.5" />
