@@ -76,5 +76,32 @@ defmodule AyumiWeb.AttendanceLiveTest do
       assert html =~ "保存しました"
       assert html =~ "利用日数: <strong>1</strong>"
     end
+
+    test "second save on the same day supersedes the first (no double count)", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-10'])", %{
+        "date" => "2026-06-10",
+        "attendance_record" => %{"provision_type" => "commute"}
+      })
+      |> render_submit()
+
+      assert render(view) =~ "利用日数: <strong>1</strong>"
+
+      # correction: same day, absence
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-10'])", %{
+        "date" => "2026-06-10",
+        "attendance_record" => %{"provision_type" => "absence"}
+      })
+      |> render_submit()
+
+      html = render(view)
+      assert html =~ "利用日数: <strong>0</strong>"
+      # the row's select reflects the latest record
+      assert html =~ ~s|<option value="absence" selected|
+    end
   end
 end
