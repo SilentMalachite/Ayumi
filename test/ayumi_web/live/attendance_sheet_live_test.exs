@@ -93,5 +93,30 @@ defmodule AyumiWeb.AttendanceSheetLiveTest do
       # 送迎マーク (○) が描画される
       assert html =~ "○"
     end
+
+    test "totals row matches Plans.build_attendance_sheet/3 (no recount in view)", %{conn: conn} do
+      su = service_user_fixture()
+
+      _ = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-01], provision_type: :commute, pickup: true})
+      _ = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-02], provision_type: :offsite_work, dropoff: true})
+      _ = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-03], provision_type: :absence_support})
+      _ = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-04], provision_type: :commute, pickup: true, dropoff: true})
+
+      sheet = Ayumi.Plans.build_attendance_sheet(su.id, 2026, 6)
+
+      {:ok, _view, html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance/sheet?#{[year: 2026, month: 6]}")
+
+      assert html =~ "利用日数: <strong>#{sheet.totals.billable_days}</strong>"
+      assert html =~ "うち施設外: <strong>#{sheet.totals.offsite_days}</strong>"
+      assert html =~ "送迎 往: <strong>#{sheet.totals.pickup_count}</strong>"
+      assert html =~ "送迎 復: <strong>#{sheet.totals.dropoff_count}</strong>"
+      assert html =~ "欠席時対応: <strong>#{sheet.totals.absence_support_count}</strong>"
+
+      # absence_support は欠席時対応にだけ入り、利用日数には入らない
+      assert sheet.totals.billable_days == 3
+      assert sheet.totals.offsite_days == 1
+      assert sheet.totals.absence_support_count == 1
+    end
   end
 end
