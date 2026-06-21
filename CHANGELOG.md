@@ -3,7 +3,7 @@
 本ファイルの記法は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠し、
 バージョニングは [セマンティック バージョニング](https://semver.org/lang/ja/) に従います。
 
-## [未リリース]
+## [0.2.1] — 2026-06-21
 
 ### 変更
 
@@ -192,7 +192,8 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.0...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.6...v0.2.0
 [0.1.6]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.4...v0.1.5
