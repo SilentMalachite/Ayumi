@@ -75,6 +75,12 @@ config :phoenix, :json_library, Jason
 
 config :ayumi, :backup_dir, Path.expand("../backups", __DIR__)
 
+# 実績記録票ヘッダ用の事業所情報。未設定なら印刷時は空欄 (= 手書き欄)。
+# 本番値は config/runtime.exs で System.get_env/1 経由にしてもよい (運用方針による)。
+# config :ayumi, :facility,
+#   name: "（事業所名）",
+#   number: "（事業所番号）"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
