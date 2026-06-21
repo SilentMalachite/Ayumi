@@ -60,5 +60,38 @@ defmodule AyumiWeb.AttendanceSheetLiveTest do
       assert html =~ "歩みワークス"
       assert html =~ "1311234567"
     end
+
+    test "renders provision label and pickup/dropoff marks for recorded days", %{conn: conn} do
+      su = service_user_fixture()
+
+      _ = attendance_record_fixture(%{
+        service_user_id: su.id,
+        service_date: ~D[2026-06-03],
+        provision_type: :commute,
+        pickup: true,
+        dropoff: false,
+        start_time: ~T[09:00:00],
+        end_time: ~T[15:00:00],
+        note: "通所"
+      })
+
+      _ = attendance_record_fixture(%{
+        service_user_id: su.id,
+        service_date: ~D[2026-06-04],
+        provision_type: :offsite_work,
+        pickup: false,
+        dropoff: true
+      })
+
+      {:ok, _view, html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance/sheet?#{[year: 2026, month: 6]}")
+
+      # 提供形態ラベルが出ている
+      assert html =~ "通所"
+      assert html =~ "施設外就労"
+
+      # 送迎マーク (○) が描画される
+      assert html =~ "○"
+    end
   end
 end
