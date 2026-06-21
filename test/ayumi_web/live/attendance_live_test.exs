@@ -103,5 +103,49 @@ defmodule AyumiWeb.AttendanceLiveTest do
       # the row's select reflects the latest record
       assert html =~ ~s|<option value="absence" selected|
     end
+
+    test "pickup checked is counted; unchecked day stays false", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-03'])", %{
+        "date" => "2026-06-03",
+        "attendance_record" => %{
+          "provision_type" => "commute",
+          "pickup" => "true"
+        }
+      })
+      |> render_submit()
+
+      assert render(view) =~ "送迎 往: <strong>1</strong>"
+
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-04'])", %{
+        "date" => "2026-06-04",
+        "attendance_record" => %{"provision_type" => "commute"}
+      })
+      |> render_submit()
+
+      html = render(view)
+      assert html =~ "送迎 往: <strong>1</strong>"
+      assert html =~ "送迎 復: <strong>0</strong>"
+    end
+
+    test "absence_support increments its own counter, not billable_days", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-05'])", %{
+        "date" => "2026-06-05",
+        "attendance_record" => %{"provision_type" => "absence_support"}
+      })
+      |> render_submit()
+
+      html = render(view)
+      assert html =~ "欠席時対応: <strong>1</strong>"
+      assert html =~ "利用日数: <strong>0</strong>"
+    end
   end
 end
