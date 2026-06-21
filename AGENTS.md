@@ -52,7 +52,7 @@ custom classes must fully style the input
   - A plug `:fetch_current_scope_for_user` that is included in the default browser pipeline
   - A plug `:require_authenticated_user` that redirects to the log in page when the user is not authenticated
   - A `live_session :current_user` scope - for routes that need the current user but don't require authentication, similar to `:fetch_current_scope_for_user`
-  - A `live_session :require_manager` scope - for routes that require manager role (create/edit of service users and support plans). Uses `on_mount: [{AyumiWeb.UserAuth, :require_authenticated}, {AyumiWeb.UserAuth, :require_manager}]`. **This session is placed BEFORE `:require_authenticated_user` in the router** to avoid `/service_users/new` matching the `:id` parameter
+  - A `live_session :require_manager` scope - for routes that require manager role (create/edit of service users and support plans, plus `/admin/backup`). Uses `on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}, {AyumiWeb.UserAuth, :require_manager}]`. **This session is placed BEFORE `:require_authenticated_user` in the router** to avoid `/service_users/new` matching the `:id` parameter
   - A `live_session :require_authenticated_user` scope - for routes that require authentication (dashboard, show/index pages, progress recording, settings), similar to the plug with the same name
   - In both cases, a `@current_scope` is assigned to the Plug connection and LiveView socket (with `role` populated from the user)
   - A plug `redirect_if_user_is_authenticated` that redirects to a default path in case the user is authenticated - useful for a registration page that should only be shown to unauthenticated users

@@ -49,7 +49,7 @@ Hard rules that follow from this:
 
 ## Domain model
 
-Two "bodies" (rarely edited) and three append-only logs.
+Two "bodies" (rarely edited) and four append-only logs.
 
 Bodies (rarely edited):
 
@@ -65,6 +65,11 @@ Append-only logs (the core idea):
 - `goal_progress` — one row per progress update of a `goal`.
 - `support_record` — one row per daily support note for a service user (category,
   content, recorded_by, recorded_at).
+- `attendance_record` — one row per daily attendance / service-provision entry for
+  a service user (service_date, provision_type, pickup, dropoff, start_time,
+  end_time, note, recorded_by, recorded_at). Corrections are also new rows; the
+  monthly 実績記録票 (`Ayumi.Plans.AttendanceSheet`) is derived by folding the log
+  per date (the latest row for a date wins).
 
 ### Append-only principle (do not violate)
 
@@ -95,6 +100,15 @@ enum module, tests, and UI together:
 `not_started` / `working` / `partially_met` / `mostly_met` / `met`
 
 (JP: 未着手 / 取組中 / 一部達成 / 概ね達成 / 達成)
+
+Provision types for attendance (`attendance_record.provision_type`). Labels and
+the helper sets live in `Ayumi.Plans.ProvisionType`. `billable/0` returns the
+types counted toward 利用日数, `offsite/0` returns the 施設外 set used for the
+別掲集計 on the printed sheet:
+
+`commute` / `offsite_work` / `offsite_support` / `absence` / `absence_support`
+
+(JP: 通所 / 施設外就労 / 施設外支援 / 欠席 / 欠席時対応)
 
 Every append-only row carries: who recorded it, when, the new stage/value, and a
 free-text note (所見).
@@ -190,6 +204,18 @@ Optional (done):
 - `support_record` (支援記録): daily support notes per service user, append-only
   with category (work / daily_living / health / interview / other), content,
   recorded_by, recorded_at. `/support_records` for listing, filtering, creating.
+- `attendance_record` (出欠・実績記録票): daily attendance / service-provision
+  rows per service user, append-only with `provision_type` (`ProvisionType`),
+  `pickup` / `dropoff`, `start_time` / `end_time`, `note`, `recorded_by`,
+  `recorded_at`. The monthly sheet (`Ayumi.Plans.AttendanceSheet`) is derived
+  by `build_attendance_sheet/3` — never stored. Two LiveViews:
+  `AyumiWeb.AttendanceLive.Index` (`/service_users/:id/attendance`, monthly
+  grid input — append on save) and `AyumiWeb.AttendanceLive.Sheet`
+  (`/service_users/:id/attendance/sheet`, A4 print view with `@page` size /
+  `print:hidden` toolbar). Both routes are for all authenticated staff.
+  Year/month parameter parsing is shared via `AttendanceLive.MonthParams`.
+  Facility header on the printed sheet reads `:ayumi, :facility` config
+  (template commented in `config/config.exs`; empty when unset).
 - Service user summary page: `ServiceUserLive.Show` extended with deadline badges
   (cert expiry + monitoring), current plan goals with latest progress, recent
   goal progress / phase events (20), and recent support records (20). Read-only

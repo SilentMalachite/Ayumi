@@ -5,6 +5,39 @@
 
 ## [未リリース]
 
+### 追加
+
+- **出欠・実績記録票（attendance_record）**: 利用者ごとの日々の出欠・サービス提供を
+  追記専用ログとして記録。`Ayumi.Plans.AttendanceRecord` スキーマ（`service_user_id` /
+  `service_date` / `provision_type` / `pickup` / `dropoff` / `start_time` / `end_time` /
+  `note` / `recorded_by_id` / `recorded_at`、`updated_at` なし）と
+  `(service_user_id, service_date)` 複合インデックスを追加。訂正も新しい行として
+  追記し、月次集計は同じ日付で最新行を採用します。
+- **`Ayumi.Plans.ProvisionType` 列挙体**: `commute / offsite_work / offsite_support /
+  absence / absence_support`（通所 / 施設外就労 / 施設外支援 / 欠席 / 欠席時対応）。
+  `all/0` `label/1` `options/0` に加え、利用日数算定対象の `billable/0`、施設外集計
+  対象の `offsite/0` を提供（記録票での別掲・集計の定義を一元化）。
+- **Plans コンテキスト**: `change_attendance_record/2`・`create_attendance_record/2`
+  （append-only。記録者・記録時刻はサーバ側で付与）・`list_attendance_records/3`
+  （月境界での絞り込み、`month_bounds` ヘルパ）・`build_attendance_sheet/3`
+  （ログを畳み込んで `AttendanceSheet` を返す純関数的導出）を追加。
+- **`Ayumi.Plans.AttendanceSheet` 構造体**: 1利用者・1か月の実績記録票を表す導出
+  データ（`lines: [%{date, record}]` と `totals: %{billable_days, offsite_days,
+  pickup_count, dropoff_count, absence_support_count}`）。保存はしない。
+- **出欠入力 LiveView**（`AyumiWeb.AttendanceLive.Index`、`/service_users/:service_user_id/attendance`）:
+  1利用者・1か月分を1日1行の月次グリッドで入力。年月の前後ナビゲーション、開始時刻 ≤
+  終了時刻のバリデーション、保存時の append（更新はしない）。全認証スタッフが利用可能。
+- **実績記録票の印刷ビュー**（`AyumiWeb.AttendanceLive.Sheet`、`/service_users/:service_user_id/attendance/sheet`）:
+  A4 印刷向けレイアウト（`@page { size: A4; margin: 12mm }`、ツールバーは `print:hidden`）。
+  合計行は `AttendanceSheet.totals` をそのまま表示し、画面側で再計算しません。
+  事業所名・事業所番号は `:ayumi, :facility` 設定（未設定なら空欄）から読み出し。
+- **年月パラメータ解釈の共通化**（`AyumiWeb.AttendanceLive.MonthParams`）: Index と
+  Sheet で重複していた `year` / `month` の解釈・既定値補完を1モジュールに集約。
+- **利用者詳細ページからの導線**: `ServiceUserLive.Show` に「出欠・実績記録票」へのリンクを
+  追加（集約表示の他項目には変更なし）。
+- **設定ひな型**: `config/config.exs` に `:ayumi, :facility`（事業所名・事業所番号）の
+  コメントテンプレートを追加。印刷ビューのヘッダで参照され、未設定なら空欄になります。
+
 ## [0.1.6] — 2026-06-20
 
 ### 修正
@@ -139,7 +172,8 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.5...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.2...v0.1.3
