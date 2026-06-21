@@ -185,8 +185,4 @@ defmodule AyumiWeb.AttendanceLive.Sheet do
 
   defp note_text(%{record: nil}), do: ""
   defp note_text(%{record: rec}), do: rec.note || ""
-
-  # 将来 billable?/offsite? を行装飾に使うときのために残しておく (本タスクでは未使用)
-  defp _billable?(type), do: type in ProvisionType.billable()
-  defp _offsite?(type), do: type in ProvisionType.offsite()
 end
