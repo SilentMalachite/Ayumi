@@ -57,4 +57,24 @@ defmodule AyumiWeb.AttendanceLiveTest do
       assert render(view) =~ "1月"
     end
   end
+
+  describe "saving a day's record" do
+    test "saving as :commute appends a row and increments billable_days", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      assert render(view) =~ "利用日数: <strong>0</strong>"
+
+      view
+      |> form("form[phx-submit='save_day']:has(input[value='2026-06-10'])", %{
+        "date" => "2026-06-10",
+        "attendance_record" => %{"provision_type" => "commute"}
+      })
+      |> render_submit()
+
+      html = render(view)
+      assert html =~ "保存しました"
+      assert html =~ "利用日数: <strong>1</strong>"
+    end
+  end
 end

@@ -108,9 +108,26 @@ defmodule AyumiWeb.AttendanceLive.Index do
   end
 
   @impl true
-  def handle_event("save_day", _params, socket) do
-    # Implemented in Task 3; for now, simply ignore the event so the page renders.
-    {:noreply, socket}
+  def handle_event("save_day", %{"date" => date_str, "attendance_record" => attrs}, socket) do
+    su = socket.assigns.service_user
+
+    attrs =
+      attrs
+      |> Map.put("service_user_id", su.id)
+      |> Map.put("service_date", date_str)
+
+    case Plans.create_attendance_record(socket.assigns.current_scope, attrs) do
+      {:ok, _record} ->
+        sheet = Plans.build_attendance_sheet(su.id, socket.assigns.year, socket.assigns.month)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("%{d} の記録を保存しました", d: date_str))
+         |> assign(:sheet, sheet)}
+
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, first_error_message(changeset))}
+    end
   end
 
   # --- helpers ---
@@ -171,4 +188,12 @@ defmodule AyumiWeb.AttendanceLive.Index do
 
   defp note_value(%{record: nil}), do: ""
   defp note_value(%{record: rec}), do: rec.note || ""
+
+  defp first_error_message(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, _opts} -> msg end)
+    |> Enum.flat_map(fn {field, msgs} -> Enum.map(msgs, &"#{field} #{&1}") end)
+    |> List.first()
+    |> Kernel.||(gettext("保存できませんでした"))
+  end
 end
