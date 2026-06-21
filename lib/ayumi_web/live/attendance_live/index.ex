@@ -38,10 +38,16 @@ defmodule AyumiWeb.AttendanceLive.Index do
           {@service_user.name} — {gettext("%{y}年%{m}月", y: @year, m: @month)}
         </:subtitle>
         <:actions>
-          <.link patch={month_path(@service_user, prev_month(@year, @month))} class="btn btn-ghost btn-sm">
+          <.link
+            patch={month_path(@service_user, prev_month(@year, @month))}
+            class="btn btn-ghost btn-sm"
+          >
             {gettext("← 前月")}
           </.link>
-          <.link patch={month_path(@service_user, next_month(@year, @month))} class="btn btn-ghost btn-sm">
+          <.link
+            patch={month_path(@service_user, next_month(@year, @month))}
+            class="btn btn-ghost btn-sm"
+          >
             {gettext("翌月 →")}
           </.link>
           <.link navigate={~p"/service_users/#{@service_user.id}"} class="btn btn-ghost btn-sm">
@@ -79,24 +85,55 @@ defmodule AyumiWeb.AttendanceLive.Index do
             <td colspan="7">
               <form phx-submit="save_day" class="flex flex-wrap gap-2 items-center">
                 <input type="hidden" name="date" value={Date.to_iso8601(line.date)} />
-                <select name="attendance_record[provision_type]" class="select select-bordered select-sm">
+                <select
+                  name="attendance_record[provision_type]"
+                  class="select select-bordered select-sm"
+                >
                   <%= for {label, value} <- @provision_options do %>
                     <option value={value} selected={selected_provision?(line, value)}>{label}</option>
                   <% end %>
                 </select>
                 <label class="label cursor-pointer gap-1">
                   <input type="hidden" name="attendance_record[pickup]" value="false" />
-                  <input type="checkbox" name="attendance_record[pickup]" value="true" checked={checked?(line, :pickup)} class="checkbox checkbox-sm" />
+                  <input
+                    type="checkbox"
+                    name="attendance_record[pickup]"
+                    value="true"
+                    checked={checked?(line, :pickup)}
+                    class="checkbox checkbox-sm"
+                  />
                   <span class="label-text">{gettext("往")}</span>
                 </label>
                 <label class="label cursor-pointer gap-1">
                   <input type="hidden" name="attendance_record[dropoff]" value="false" />
-                  <input type="checkbox" name="attendance_record[dropoff]" value="true" checked={checked?(line, :dropoff)} class="checkbox checkbox-sm" />
+                  <input
+                    type="checkbox"
+                    name="attendance_record[dropoff]"
+                    value="true"
+                    checked={checked?(line, :dropoff)}
+                    class="checkbox checkbox-sm"
+                  />
                   <span class="label-text">{gettext("復")}</span>
                 </label>
-                <input type="time" name="attendance_record[start_time]" value={time_value(line, :start_time)} class="input input-bordered input-sm w-28" />
-                <input type="time" name="attendance_record[end_time]" value={time_value(line, :end_time)} class="input input-bordered input-sm w-28" />
-                <input type="text" name="attendance_record[note]" value={note_value(line)} placeholder={gettext("備考")} class="input input-bordered input-sm flex-1 min-w-32" />
+                <input
+                  type="time"
+                  name="attendance_record[start_time]"
+                  value={time_value(line, :start_time)}
+                  class="input input-bordered input-sm w-28"
+                />
+                <input
+                  type="time"
+                  name="attendance_record[end_time]"
+                  value={time_value(line, :end_time)}
+                  class="input input-bordered input-sm w-28"
+                />
+                <input
+                  type="text"
+                  name="attendance_record[note]"
+                  value={note_value(line)}
+                  placeholder={gettext("備考")}
+                  class="input input-bordered input-sm flex-1 min-w-32"
+                />
                 <button type="submit" class="btn btn-primary btn-sm">{gettext("保存")}</button>
               </form>
             </td>
@@ -173,12 +210,15 @@ defmodule AyumiWeb.AttendanceLive.Index do
   end
 
   defp selected_provision?(%{record: nil}, value), do: value == ""
-  defp selected_provision?(%{record: rec}, value), do: to_string(rec.provision_type) == to_string(value)
+
+  defp selected_provision?(%{record: rec}, value),
+    do: to_string(rec.provision_type) == to_string(value)
 
   defp checked?(%{record: nil}, _field), do: false
   defp checked?(%{record: rec}, field), do: Map.get(rec, field) == true
 
   defp time_value(%{record: nil}, _field), do: ""
+
   defp time_value(%{record: rec}, field) do
     case Map.get(rec, field) do
       %Time{} = t -> Time.to_iso8601(t)

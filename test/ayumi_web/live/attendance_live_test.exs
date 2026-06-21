@@ -22,6 +22,7 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
       # one form per day, identified by `phx-submit="save_day"`
       rendered = render(view)
+
       submit_form_count =
         rendered
         |> String.split(~s|phx-submit="save_day"|)
@@ -33,10 +34,13 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
     test "renders 28 rows for February 2026 when year/month is given", %{conn: conn} do
       su = service_user_fixture()
-      {:ok, _view, html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 2]}")
+
+      {:ok, _view, html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 2]}")
 
       assert html =~ "2026"
       assert html =~ "2月"
+
       form_count =
         html |> String.split(~s|phx-submit="save_day"|) |> length() |> Kernel.-(1)
 
@@ -47,13 +51,17 @@ defmodule AyumiWeb.AttendanceLiveTest do
       su = service_user_fixture()
 
       # 2026-01 → prev → 2025-12
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 1]}")
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 1]}")
+
       view |> element("a", "← 前月") |> render_click()
       assert render(view) =~ "2025"
       assert render(view) =~ "12月"
 
       # 2026-12 → next → 2027-01
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 12]}")
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 12]}")
+
       view |> element("a", "翌月 →") |> render_click()
       assert render(view) =~ "2027"
       assert render(view) =~ "1月"
@@ -63,7 +71,9 @@ defmodule AyumiWeb.AttendanceLiveTest do
   describe "saving a day's record" do
     test "saving as :commute appends a row and increments billable_days", %{conn: conn} do
       su = service_user_fixture()
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
 
       assert render(view) =~ "利用日数: <strong>0</strong>"
 
@@ -81,7 +91,9 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
     test "second save on the same day supersedes the first (no double count)", %{conn: conn} do
       su = service_user_fixture()
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
 
       view
       |> form("form[phx-submit='save_day']:has(input[value='2026-06-10'])", %{
@@ -108,7 +120,9 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
     test "pickup checked is counted; unchecked day stays false", %{conn: conn} do
       su = service_user_fixture()
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
 
       view
       |> form("form[phx-submit='save_day']:has(input[value='2026-06-03'])", %{
@@ -136,7 +150,9 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
     test "absence_support increments its own counter, not billable_days", %{conn: conn} do
       su = service_user_fixture()
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
 
       view
       |> form("form[phx-submit='save_day']:has(input[value='2026-06-05'])", %{
@@ -152,7 +168,9 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
     test "end_time <= start_time shows error flash and does not append a row", %{conn: conn} do
       su = service_user_fixture()
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
 
       before_count = Repo.aggregate(AttendanceRecord, :count, :id)
 
@@ -176,7 +194,8 @@ defmodule AyumiWeb.AttendanceLiveTest do
       other = Ayumi.AccountsFixtures.user_fixture()
       injected_at = ~U[2000-01-01 00:00:00Z]
 
-      {:ok, view, _html} = live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
 
       # Fire the event directly, simulating a crafted client payload that includes
       # audit fields the server should ignore.
