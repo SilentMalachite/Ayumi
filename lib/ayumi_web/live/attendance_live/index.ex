@@ -157,22 +157,37 @@ defmodule AyumiWeb.AttendanceLive.Index do
   def handle_event("save_day", %{"date" => date_str, "attendance_record" => attrs}, socket) do
     su = socket.assigns.service_user
 
-    attrs =
-      attrs
-      |> Map.put("service_user_id", su.id)
-      |> Map.put("service_date", date_str)
+    case parse_sheet_date(socket.assigns.sheet, date_str) do
+      {:ok, date} ->
+        attrs =
+          attrs
+          |> Map.put("service_user_id", su.id)
+          |> Map.put("service_date", date)
 
-    case Plans.create_attendance_record(socket.assigns.current_scope, attrs) do
-      {:ok, _record} ->
-        sheet = Plans.build_attendance_sheet(su.id, socket.assigns.year, socket.assigns.month)
+        case Plans.create_attendance_record(socket.assigns.current_scope, attrs) do
+          {:ok, _record} ->
+            sheet = Plans.build_attendance_sheet(su.id, socket.assigns.year, socket.assigns.month)
 
-        {:noreply,
-         socket
-         |> put_flash(:info, gettext("%{d} の記録を保存しました", d: date_str))
-         |> assign(:sheet, sheet)}
+            {:noreply,
+             socket
+             |> put_flash(:info, gettext("%{d} の記録を保存しました", d: Date.to_iso8601(date)))
+             |> assign(:sheet, sheet)}
 
-      {:error, changeset} ->
-        {:noreply, put_flash(socket, :error, first_error_message(changeset))}
+          {:error, changeset} ->
+            {:noreply, put_flash(socket, :error, first_error_message(changeset))}
+        end
+
+      :error ->
+        {:noreply, put_flash(socket, :error, gettext("表示中の月の日付のみ保存できます"))}
+    end
+  end
+
+  defp parse_sheet_date(sheet, date_str) do
+    with {:ok, date} <- Date.from_iso8601(date_str),
+         true <- Enum.any?(sheet.lines, &(&1.date == date)) do
+      {:ok, date}
+    else
+      _ -> :error
     end
   end
 

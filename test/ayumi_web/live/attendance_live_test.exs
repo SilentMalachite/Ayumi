@@ -212,6 +212,24 @@ defmodule AyumiWeb.AttendanceLiveTest do
       assert Repo.aggregate(AttendanceRecord, :count, :id) == before_count
     end
 
+    test "表示月外の日付は crafted でも保存できない", %{conn: conn} do
+      su = service_user_fixture()
+
+      {:ok, view, _html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      before_count = Repo.aggregate(AttendanceRecord, :count, :id)
+
+      # crafted payload: 6月のシートを開いたまま、表示月外の日付を直接送る
+      render_submit(view, "save_day", %{
+        "date" => "2026-07-15",
+        "attendance_record" => %{"provision_type" => "commute"}
+      })
+
+      assert Repo.aggregate(AttendanceRecord, :count, :id) == before_count
+      assert render(view) =~ "表示中の月の日付のみ"
+    end
+
     test "audit fields submitted by the client are ignored", %{conn: conn, user: user} do
       su = service_user_fixture()
       other = Ayumi.AccountsFixtures.user_fixture()
