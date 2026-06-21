@@ -39,13 +39,17 @@ defmodule AyumiWeb.AttendanceLive.Sheet do
           {gettext("印刷")}
         </button>
         <.link
-          patch={~p"/service_users/#{@service_user.id}/attendance/sheet?#{[year: prev_year(@year, @month), month: prev_month(@year, @month)]}"}
+          patch={
+            ~p"/service_users/#{@service_user.id}/attendance/sheet?#{[year: prev_year(@year, @month), month: prev_month(@year, @month)]}"
+          }
           class="btn btn-ghost btn-sm"
         >
           {gettext("← 前月")}
         </.link>
         <.link
-          patch={~p"/service_users/#{@service_user.id}/attendance/sheet?#{[year: next_year(@year, @month), month: next_month(@year, @month)]}"}
+          patch={
+            ~p"/service_users/#{@service_user.id}/attendance/sheet?#{[year: next_year(@year, @month), month: next_month(@year, @month)]}"
+          }
           class="btn btn-ghost btn-sm"
         >
           {gettext("翌月 →")}
@@ -73,11 +77,15 @@ defmodule AyumiWeb.AttendanceLive.Sheet do
           </div>
           <div>
             {gettext("受給者証番号")}:
-            <span class="inline-block min-w-32 border-b border-black px-1">{@service_user.recipient_cert_number}</span>
+            <span class="inline-block min-w-32 border-b border-black px-1">
+              {@service_user.recipient_cert_number}
+            </span>
           </div>
           <div>
             {gettext("市町村")}:
-            <span class="inline-block min-w-32 border-b border-black px-1">{@service_user.recipient_cert_municipality}</span>
+            <span class="inline-block min-w-32 border-b border-black px-1">
+              {@service_user.recipient_cert_municipality}
+            </span>
           </div>
           <div class="col-span-2">
             {gettext("利用者氏名")}:
@@ -122,11 +130,21 @@ defmodule AyumiWeb.AttendanceLive.Sheet do
       </table>
 
       <section class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-        <div class="border border-black px-2 py-1">{gettext("利用日数")}: <strong>{@sheet.totals.billable_days}</strong></div>
-        <div class="border border-black px-2 py-1">{gettext("うち施設外")}: <strong>{@sheet.totals.offsite_days}</strong></div>
-        <div class="border border-black px-2 py-1">{gettext("送迎 往")}: <strong>{@sheet.totals.pickup_count}</strong></div>
-        <div class="border border-black px-2 py-1">{gettext("送迎 復")}: <strong>{@sheet.totals.dropoff_count}</strong></div>
-        <div class="border border-black px-2 py-1">{gettext("欠席時対応")}: <strong>{@sheet.totals.absence_support_count}</strong></div>
+        <div class="border border-black px-2 py-1">
+          {gettext("利用日数")}: <strong>{@sheet.totals.billable_days}</strong>
+        </div>
+        <div class="border border-black px-2 py-1">
+          {gettext("うち施設外")}: <strong>{@sheet.totals.offsite_days}</strong>
+        </div>
+        <div class="border border-black px-2 py-1">
+          {gettext("送迎 往")}: <strong>{@sheet.totals.pickup_count}</strong>
+        </div>
+        <div class="border border-black px-2 py-1">
+          {gettext("送迎 復")}: <strong>{@sheet.totals.dropoff_count}</strong>
+        </div>
+        <div class="border border-black px-2 py-1">
+          {gettext("欠席時対応")}: <strong>{@sheet.totals.absence_support_count}</strong>
+        </div>
       </section>
     </Layouts.app>
     """
