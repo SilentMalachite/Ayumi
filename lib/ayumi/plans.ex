@@ -550,7 +550,7 @@ defmodule Ayumi.Plans do
 
   defp totals_from(lines) do
     billable = ProvisionType.billable()
-    offsite = [:offsite_work, :offsite_support]
+    offsite = ProvisionType.offsite()
 
     Enum.reduce(
       lines,
