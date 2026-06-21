@@ -118,5 +118,28 @@ defmodule AyumiWeb.AttendanceSheetLiveTest do
       assert sheet.totals.offsite_days == 1
       assert sheet.totals.absence_support_count == 1
     end
+
+    test "the latest correction wins for the same day", %{conn: conn} do
+      su = service_user_fixture()
+
+      _ = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-05], provision_type: :commute})
+      # correction
+      _ = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-05], provision_type: :absence})
+
+      {:ok, _view, html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance/sheet?#{[year: 2026, month: 6]}")
+
+      # その日の行に「欠席」が出ていて「通所」は出ていないこと
+      # data-day="5" の <tr> の内側を取り出して限定検査する
+      row =
+        html
+        |> String.split(~s|data-day="5"|)
+        |> Enum.at(1)
+        |> String.split("</tr>")
+        |> List.first()
+
+      assert row =~ "欠席"
+      refute row =~ "通所"
+    end
   end
 end
