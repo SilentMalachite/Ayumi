@@ -82,6 +82,8 @@ LiveViews that require login should be placed in the appropriate `live_session`:
         on_mount: [AyumiWeb.LanOnly, {AyumiWeb.UserAuth, :require_authenticated}] do
         live "/", DashboardLive.Index, :index
         live "/users/settings", UserLive.Settings, :edit
+        live "/service_users/:service_user_id/attendance", AttendanceLive.Index, :index
+        live "/service_users/:service_user_id/attendance/sheet", AttendanceLive.Sheet, :index
         # show/index routes
       end
 
