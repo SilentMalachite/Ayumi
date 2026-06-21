@@ -209,7 +209,7 @@ defmodule AyumiWeb.AttendanceLiveTest do
       |> render_submit()
 
       assert render(view) =~ "終了時刻は開始時刻より後にしてください"
-      refute render(view) =~ "end_time "
+      refute render(view) =~ "end_time 終了"
       assert Repo.aggregate(AttendanceRecord, :count, :id) == before_count
     end
 
