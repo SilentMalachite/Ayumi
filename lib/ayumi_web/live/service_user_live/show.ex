@@ -74,7 +74,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
           </.button>
         </:actions>
         <:actions>
-          <.link navigate={~p"/service_users/#{@service_user.id}/attendance"}>
+          <.link navigate={~p"/service_users/#{@service_user.id}/attendance"} class="btn btn-ghost btn-sm">
             {gettext("出欠・実績記録票")}
           </.link>
         </:actions>

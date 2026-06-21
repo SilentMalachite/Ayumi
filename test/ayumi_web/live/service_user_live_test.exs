@@ -309,6 +309,7 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       su = service_user_fixture()
       {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
       assert html =~ ~p"/service_users/#{su.id}/attendance"
+      assert html =~ "出欠・実績記録票"
     end
   end
 end
