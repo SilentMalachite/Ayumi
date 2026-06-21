@@ -67,6 +67,16 @@ defmodule AyumiWeb.AttendanceLiveTest do
       assert render(view) =~ "1月"
     end
 
+    test "不正な year/month は当月にフォールバックする", %{conn: conn} do
+      su = service_user_fixture()
+      today = Date.utc_today()
+
+      {:ok, _view, html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: "bad", month: "13"]}")
+
+      assert html =~ "#{today.year}年#{today.month}月"
+    end
+
     test "renders a print sheet link that preserves year/month", %{conn: conn} do
       su = service_user_fixture()
 
