@@ -3,6 +3,26 @@
 本ファイルの記法は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠し、
 バージョニングは [セマンティック バージョニング](https://semver.org/lang/ja/) に従います。
 
+## [未リリース]
+
+### 変更
+
+- ブランディング刷新: Phoenix Framework のデフォルト UI（Flame ロゴ、ナビバーの
+  バージョンバッジ、`· Phoenix Framework` タイトル接尾辞、未参照のウェルカム画面）を
+  Ayumi 用に差し替え。新ロゴは「歩」字の止2つを抽象化した2つの斜めピル（深緑＋柿渋
+  差し色）。ナビバーは「歩み AYUMI」のワードマーク化。SVG favicon を追加し、
+  `<html lang="ja">` に変更。ネットワーク切断時のフラッシュ文言（gettext キー）も
+  日本語化しました。
+- 認証 UI の日本語化: `phx.gen.auth` ジェネレータが残した英語 UI（ログイン画面、
+  アカウント設定画面、ログイン／ログアウト／パスワード変更／認証必須・再認証必須の
+  フラッシュメッセージ）を CLAUDE.md の方針（User-facing strings are in Japanese）に
+  揃えて日本語化しました。関連テストのアサーションも追従。
+
+### 削除
+
+- 未参照の Phoenix ウェルカム画面の死コード（`PageController` / `PageHTML` /
+  `home.html.heex`）を削除。
+
 ## [0.2.0] — 2026-06-21
 
 ### 追加
@@ -172,7 +192,8 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.6...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.6...v0.2.0
 [0.1.6]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.3...v0.1.4
