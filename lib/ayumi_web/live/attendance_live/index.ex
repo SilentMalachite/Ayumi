@@ -236,10 +236,9 @@ defmodule AyumiWeb.AttendanceLive.Index do
   defp note_value(%{record: rec}), do: rec.note || ""
 
   defp first_error_message(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(fn {msg, _opts} -> msg end)
-    |> Enum.flat_map(fn {field, msgs} -> Enum.map(msgs, &"#{field} #{&1}") end)
-    |> List.first()
-    |> Kernel.||(gettext("保存できませんでした"))
+    case changeset.errors do
+      [{_field, error} | _] -> AyumiWeb.CoreComponents.translate_error(error)
+      [] -> gettext("保存できませんでした")
+    end
   end
 end
