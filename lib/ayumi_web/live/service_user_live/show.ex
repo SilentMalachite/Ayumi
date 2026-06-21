@@ -73,6 +73,14 @@ defmodule AyumiWeb.ServiceUserLive.Show do
             {gettext("支援計画を作成")}
           </.button>
         </:actions>
+        <:actions>
+          <.link
+            navigate={~p"/service_users/#{@service_user.id}/attendance"}
+            class="btn btn-ghost btn-sm"
+          >
+            {gettext("出欠・実績記録票")}
+          </.link>
+        </:actions>
       </.header>
 
       <%!-- 1. 基本情報 --%>
