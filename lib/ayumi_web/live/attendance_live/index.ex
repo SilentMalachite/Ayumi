@@ -51,6 +51,14 @@ defmodule AyumiWeb.AttendanceLive.Index do
           >
             {gettext("翌月 →")}
           </.link>
+          <.link
+            navigate={
+              ~p"/service_users/#{@service_user.id}/attendance/sheet?#{[year: @year, month: @month]}"
+            }
+            class="btn btn-ghost btn-sm"
+          >
+            {gettext("印刷")}
+          </.link>
           <.link navigate={~p"/service_users/#{@service_user.id}"} class="btn btn-ghost btn-sm">
             {gettext("利用者詳細へ戻る")}
           </.link>

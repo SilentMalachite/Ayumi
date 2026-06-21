@@ -66,6 +66,19 @@ defmodule AyumiWeb.AttendanceLiveTest do
       assert render(view) =~ "2027"
       assert render(view) =~ "1月"
     end
+
+    test "renders a print sheet link that preserves year/month", %{conn: conn} do
+      su = service_user_fixture()
+
+      {:ok, _view, html} =
+        live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: 2026, month: 6]}")
+
+      # current 年月を引き継いだ印刷ページへの遷移リンク
+      assert html =~ "/attendance/sheet?"
+      assert html =~ "year=2026"
+      assert html =~ "month=6"
+      assert html =~ "印刷"
+    end
   end
 
   describe "saving a day's record" do
