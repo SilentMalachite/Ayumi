@@ -179,5 +179,9 @@ defmodule Ayumi.Plans.EnumerationsTest do
     test "billable/0 lists only commute / offsite_work / offsite_support" do
       assert ProvisionType.billable() == [:commute, :offsite_work, :offsite_support]
     end
+
+    test "offsite/0 lists only offsite_work / offsite_support" do
+      assert ProvisionType.offsite() == [:offsite_work, :offsite_support]
+    end
   end
 end

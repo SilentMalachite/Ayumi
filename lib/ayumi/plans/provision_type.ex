@@ -20,4 +20,7 @@ defmodule Ayumi.Plans.ProvisionType do
 
   @doc "利用日数の算定対象となる提供形態。"
   def billable, do: [:commute, :offsite_work, :offsite_support]
+
+  @doc "施設外 (就労・支援) の提供形態。記録票で別掲・集計の定義を一元化する。"
+  def offsite, do: [:offsite_work, :offsite_support]
 end
