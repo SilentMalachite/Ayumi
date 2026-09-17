@@ -17,7 +17,7 @@ defmodule Ayumi.CSV.LogDatasetsTest do
   describe "SupportRecords" do
     test "headers/0" do
       assert CSV.SupportRecords.headers() ==
-               ~w[利用者ID 氏名 在籍状態 区分 内容 記録者 記録日時(日本時間) 記録ID]
+               ~w[利用者ID 氏名 在籍状態 支援日 区分 内容 記録者 記録日時(日本時間) 記録ID]
     end
 
     test "dump/1 keeps multi-line content as one cell" do
@@ -25,6 +25,7 @@ defmodule Ayumi.CSV.LogDatasetsTest do
         id: 21,
         service_user_id: 3,
         service_user: @service_user,
+        support_date: ~D[2026-09-16],
         category: :interview,
         content: "面談を実施。\n次回は来週。",
         recorded_by: @recorder,
@@ -36,6 +37,7 @@ defmodule Ayumi.CSV.LogDatasetsTest do
                  "3",
                  "山田 太郎",
                  "退所",
+                 "2026-09-16",
                  "面談",
                  "面談を実施。\n次回は来週。",
                  "支援 花子",

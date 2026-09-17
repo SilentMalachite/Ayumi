@@ -211,7 +211,7 @@ defmodule Ayumi.ExportsTest do
     end
   end
 
-  describe "build/2 for the recorded_at-based logs" do
+  describe "build/2 for the logs" do
     setup do
       %{scope: user_scope_fixture()}
     end
@@ -223,47 +223,47 @@ defmodule Ayumi.ExportsTest do
       )
     end
 
-    defp backdate(%Ayumi.Plans.SupportRecord{id: id}, recorded_at) do
-      Repo.update_all(from(r in Ayumi.Plans.SupportRecord, where: r.id == ^id),
-        set: [recorded_at: recorded_at]
-      )
-    end
-
-    test "support records use JST month boundaries and JST datetimes", %{scope: scope} do
+    test "support records are selected by support date, not by when they were typed in", %{
+      scope: scope
+    } do
       su = service_user_fixture(%{name: "山田 太郎"})
 
-      # 2026-09-01 00:00:00 JST — the first second of September in Japan.
-      first = support_record_fixture(%{service_user_id: su.id, content: "九月の最初"})
-      backdate(first, ~U[2026-08-31 15:00:00Z])
-
-      # 2026-08-31 23:59:59 JST — still August in Japan.
-      august = support_record_fixture(%{service_user_id: su.id, content: "八月の最後"})
-      backdate(august, ~U[2026-08-31 14:59:59Z])
-
-      # 2026-10-01 00:00:00 JST — already October in Japan.
-      october = support_record_fixture(%{service_user_id: su.id, content: "十月の最初"})
-      backdate(october, ~U[2026-09-30 15:00:00Z])
+      for {date, content} <- [
+            {~D[2026-05-31], "五月の最後"},
+            {~D[2026-06-01], "六月の最初"},
+            {~D[2026-06-30], "六月の最後"},
+            {~D[2026-07-01], "七月の最初"}
+          ] do
+        support_record_fixture(%{service_user_id: su.id, support_date: date, content: content})
+      end
 
       assert {:ok, %{filename: filename, content: content}} =
-               Exports.build(scope, log_params("support_records"))
+               Exports.build(
+                 scope,
+                 log_params("support_records", %{"anchor_date" => "2026-06-15"})
+               )
 
-      assert filename == "支援記録_2026年09月.csv"
-      assert [line] = data_lines(content)
-      assert line =~ "山田 太郎,在籍,作業,九月の最初"
-      assert line =~ "2026-09-01 00:00:00"
+      assert filename == "支援記録_2026年06月.csv"
+      assert [first, last] = data_lines(content)
+      assert first =~ "山田 太郎,在籍,2026-06-01,作業,六月の最初"
+      assert last =~ "2026-06-30,作業,六月の最後"
     end
 
     test "support records of withdrawn service users are included", %{scope: scope} do
       su = service_user_fixture(%{name: "のちに退所"})
-      record = support_record_fixture(%{service_user_id: su.id})
-      backdate(record, ~U[2026-09-10 00:00:00Z])
+      _ = support_record_fixture(%{service_user_id: su.id, support_date: ~D[2026-06-10]})
 
       {:ok, _} =
         su.id
         |> Ayumi.Plans.get_service_user!()
         |> Ayumi.Plans.update_service_user(%{enrollment_status: :withdrawn})
 
-      assert {:ok, %{content: content}} = Exports.build(scope, log_params("support_records"))
+      assert {:ok, %{content: content}} =
+               Exports.build(
+                 scope,
+                 log_params("support_records", %{"anchor_date" => "2026-06-15"})
+               )
+
       assert [line] = data_lines(content)
       assert line =~ "のちに退所,退所"
     end
@@ -280,7 +280,18 @@ defmodule Ayumi.ExportsTest do
           recorded_at: ~U[2026-09-10 00:00:00Z]
         })
 
-      _ = goal_progress_fixture(%{goal_id: goal.id, recorded_at: ~U[2026-08-10 00:00:00Z]})
+      # 2026-08-31 23:59:59 JST is still August in Japan; one second later is September.
+      _ = goal_progress_fixture(%{goal_id: goal.id, recorded_at: ~U[2026-08-31 14:59:59Z]})
+
+      _ =
+        goal_progress_fixture(%{
+          goal_id: goal.id,
+          stage: :working,
+          recorded_at: ~U[2026-08-31 15:00:00Z]
+        })
+
+      # 2026-10-01 00:00:00 JST is already October.
+      _ = goal_progress_fixture(%{goal_id: goal.id, recorded_at: ~U[2026-09-30 15:00:00Z]})
       _ = goal_progress_fixture(%{recorded_at: ~U[2026-09-10 00:00:00Z]})
 
       assert {:ok, %{filename: filename, content: content}} =
@@ -291,7 +302,8 @@ defmodule Ayumi.ExportsTest do
 
       assert filename == "目標進捗_2026年09月_利用者#{su.id}.csv"
       assert content =~ Enum.join(Ayumi.CSV.GoalProgress.headers(), ",")
-      assert [line] = data_lines(content)
+      assert [first_second, line] = data_lines(content)
+      assert first_second =~ "2026-09-01 00:00:00"
       assert line =~ "週3日通所する,達成"
       assert line =~ "2026-09-10 09:00:00"
     end

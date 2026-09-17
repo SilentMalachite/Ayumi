@@ -1,13 +1,15 @@
 defmodule AyumiWeb.SupportRecordLive.Index do
   use AyumiWeb, :live_view
 
+  alias Ayumi.JST
   alias Ayumi.Plans
   alias Ayumi.Plans.SupportRecord
   alias Ayumi.Plans.SupportRecordCategory
 
   @impl true
   def mount(_params, _session, socket) do
-    today = Date.utc_today()
+    # The filter and the form both work on the support date, a Japanese calendar date.
+    today = JST.today()
     service_users = Plans.list_service_users()
 
     socket =
@@ -18,7 +20,7 @@ defmodule AyumiWeb.SupportRecordLive.Index do
       |> assign(:filter_from, today)
       |> assign(:filter_to, today)
       |> assign(:category_options, SupportRecordCategory.options())
-      |> assign(:form, to_form(Plans.change_support_record(%SupportRecord{})))
+      |> assign_new_form()
       |> load_records()
 
     {:ok, socket}
@@ -48,12 +50,22 @@ defmodule AyumiWeb.SupportRecordLive.Index do
         {:noreply,
          socket
          |> put_flash(:info, gettext("支援記録を保存しました"))
-         |> assign(:form, to_form(Plans.change_support_record(%SupportRecord{})))
+         |> assign_new_form()
          |> load_records()}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
     end
+  end
+
+  # A blank form for today. `:today` also caps the date picker; the changeset is
+  # what actually rejects a future support date.
+  defp assign_new_form(socket) do
+    today = JST.today()
+
+    socket
+    |> assign(:today, today)
+    |> assign(:form, to_form(Plans.change_support_record(%SupportRecord{support_date: today})))
   end
 
   defp load_records(socket) do
@@ -106,7 +118,11 @@ defmodule AyumiWeb.SupportRecordLive.Index do
         {gettext("支援記録")}
       </.header>
 
-      <form phx-change="filter" class="mt-6 flex flex-wrap gap-4 items-end">
+      <form
+        id="support-record-filter"
+        phx-change="filter"
+        class="mt-6 flex flex-wrap gap-4 items-end"
+      >
         <div>
           <label class="block text-sm font-semibold text-zinc-800">{gettext("利用者")}</label>
           <select
@@ -124,7 +140,7 @@ defmodule AyumiWeb.SupportRecordLive.Index do
           </select>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-zinc-800">{gettext("開始日")}</label>
+          <label class="block text-sm font-semibold text-zinc-800">{gettext("支援日（開始）")}</label>
           <input
             type="date"
             name="from"
@@ -133,7 +149,7 @@ defmodule AyumiWeb.SupportRecordLive.Index do
           />
         </div>
         <div>
-          <label class="block text-sm font-semibold text-zinc-800">{gettext("終了日")}</label>
+          <label class="block text-sm font-semibold text-zinc-800">{gettext("支援日（終了）")}</label>
           <input
             type="date"
             name="to"
@@ -144,7 +160,10 @@ defmodule AyumiWeb.SupportRecordLive.Index do
       </form>
 
       <.table id="support-records" rows={@records}>
-        <:col :let={record} label={gettext("日時")}>
+        <:col :let={record} label={gettext("支援日")}>
+          {Date.to_iso8601(record.support_date)}
+        </:col>
+        <:col :let={record} label={gettext("記録日時")}>
           {Calendar.strftime(record.recorded_at, "%Y-%m-%d %H:%M")}
         </:col>
         <:col :let={record} label={gettext("利用者")}>
@@ -170,6 +189,12 @@ defmodule AyumiWeb.SupportRecordLive.Index do
             label={gettext("利用者")}
             options={Enum.map(@service_users, &{&1.name, &1.id})}
             prompt={gettext("選択してください")}
+          />
+          <.input
+            field={@form[:support_date]}
+            type="date"
+            label={gettext("支援日")}
+            max={Date.to_iso8601(@today)}
           />
           <.input
             field={@form[:category]}

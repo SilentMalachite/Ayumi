@@ -1002,35 +1002,26 @@ defmodule Ayumi.PlansTest do
       assert hd(records).content == "記録1"
     end
 
-    test "list_support_records/2 filters by date range" do
+    test "list_support_records/2 filters by support date range" do
       su = service_user_fixture()
       staff = Ayumi.AccountsFixtures.user_fixture()
       scope = Ayumi.Accounts.Scope.for_user(staff)
 
-      {:ok, early} =
+      {:ok, _early} =
         Plans.create_support_record(scope, %{
           service_user_id: su.id,
           content: "早い記録",
-          category: :work
+          category: :work,
+          support_date: ~D[2026-06-01]
         })
 
-      # Manually update recorded_at to a known date for testing
-      Ayumi.Repo.update_all(
-        from(r in SupportRecord, where: r.id == ^early.id),
-        set: [recorded_at: ~U[2026-06-01 10:00:00Z]]
-      )
-
-      {:ok, late} =
+      {:ok, _late} =
         Plans.create_support_record(scope, %{
           service_user_id: su.id,
           content: "遅い記録",
-          category: :health
+          category: :health,
+          support_date: ~D[2026-06-15]
         })
-
-      Ayumi.Repo.update_all(
-        from(r in SupportRecord, where: r.id == ^late.id),
-        set: [recorded_at: ~U[2026-06-15 10:00:00Z]]
-      )
 
       records =
         Plans.list_support_records(scope, from: ~D[2026-06-10], to: ~D[2026-06-20])

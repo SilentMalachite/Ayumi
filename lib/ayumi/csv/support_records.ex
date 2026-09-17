@@ -21,6 +21,7 @@ defmodule Ayumi.CSV.SupportRecords do
       {"利用者ID", &Cell.format_id(&1.service_user_id)},
       {"氏名", &Cell.format_text(&1.service_user.name)},
       {"在籍状態", &Cell.format_enum(&1.service_user.enrollment_status, EnrollmentStatus)},
+      {"支援日", &Cell.format_date(&1.support_date)},
       {"区分", &Cell.format_enum(&1.category, SupportRecordCategory)},
       {"内容", &Cell.format_text(&1.content)},
       {"記録者", &User.display_name(&1.recorded_by)},

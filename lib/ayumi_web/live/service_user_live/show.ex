@@ -286,7 +286,8 @@ defmodule AyumiWeb.ServiceUserLive.Show do
           id="recent-support-records"
           rows={@recent_support_records}
         >
-          <:col :let={r} label={gettext("日時")}>
+          <:col :let={r} label={gettext("支援日")}>{Date.to_iso8601(r.support_date)}</:col>
+          <:col :let={r} label={gettext("記録日時")}>
             {Calendar.strftime(r.recorded_at, "%Y-%m-%d %H:%M")}
           </:col>
           <:col :let={r} label={gettext("カテゴリ")}>{SupportRecordCategory.label(r.category)}</:col>

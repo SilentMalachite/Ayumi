@@ -90,7 +90,9 @@ lib/ayumi_web/live/import_live/index.ex          /admin/import(manager)。allow_
 | **4a** | `from_label`、`Cell` パーサ、`CSV.decode`、`Attendance.parse`、`Imports`、`Preview` | **往復**: `Exports.build` → `preview_attendance` が全件「変更なし」/ 1 セル編集 → 訂正 1 件 / Excel 変形(`2026/9/1`, `9:00`, BOM なし, LF, 末尾 `,,,,`)/ Shift_JIS 拒否 / 重複 / stale / rollback / supporter 拒否 |
 | **4b** | `ImportLive`、`:require_manager` ルート、ナビ | `file_input` + `render_upload` フロー、supporter は `{:error, {:redirect, %{to: "/"}}}` |
 | **5** | 利用者台帳インポート | 新規のみ、既存スキップ、ファイル内重複、空セル省略 |
-| **6** | 支援記録インポート — **設計のみ**。未決事項: `support_date :date` 列の追加(推奨)。スキーマ変更のため別途合意 | — |
+| **6a** | `support_records.support_date`(支援日)を追加(2026-09-17 合意)。既存行は `date(recorded_at, '+9 hours')` で初期化。未指定は記録日(JST)、未来日は不可。一覧・フィルタ・まとめ画面・CSV出力を支援日基準に | `support_record_test`(既定値・未来日・並び・フィルタ)、`log_range_queries_test`、`exports_test`、LiveView。マイグレーションの up/down は開発DBのコピーで確認 |
+| **6b** | 支援記録インポート。読む列は `利用者ID, 氏名, 支援日, 区分, 内容`。自然キーがないため、利用者・支援日・区分・内容が既存と完全一致する行は「変更なし」、それ以外は新規(訂正の概念なし)。`記録ID` つきで内容が変わっている行は注意。退所者は現行ルールどおり行エラー | 往復(出力→取込で全件変更なし)、編集行は新規+注意、ファイル内重複、退所者エラー、LiveView |
+| **6c** | 別件: 退所者の過去の支援記録を、取込に限って許可(2026-09-17 合意)。画面入力の拒否は維持 | — |
 
 各 Inc で更新: `CHANGELOG.md`(### 追加)、`README.md`(### 運用ツール、Excel 取り扱い注意・個人情報の持ち出し注意)、`CLAUDE.md`(Optional (done))。Inc 1 で `TODO.md` L199 を消化、計画書を `docs/superpowers/plans/2026-09-17-csv-export-import.md` に保存。
 

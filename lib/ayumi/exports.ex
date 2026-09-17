@@ -99,8 +99,14 @@ defmodule Ayumi.Exports do
     CSV.encode(CSV.Attendance.headers(), CSV.Attendance.dump(records))
   end
 
+  # Support records carry the day the support happened, so the period applies to
+  # that date directly — no time zone conversion.
   defp content(%Request{dataset: :support_records} = request) do
-    records = list_log(request, &Plans.list_support_records_between/3)
+    {from, to} = Period.range(request.unit, request.anchor_date)
+
+    records =
+      Plans.list_support_records_between(from, to, service_user_id: request.service_user_id)
+
     CSV.encode(CSV.SupportRecords.headers(), CSV.SupportRecords.dump(records))
   end
 
@@ -121,8 +127,8 @@ defmodule Ayumi.Exports do
     CSV.encode(CSV.ServiceUsers.headers(), CSV.ServiceUsers.dump(service_users))
   end
 
-  # The logs are stamped in UTC, but a "month" on the form means a month on the
-  # Japanese calendar, so the period is converted to a UTC range here. Plans
+  # These logs have only a UTC `recorded_at`, but a "month" on the form means a
+  # month on the Japanese calendar, so the period is converted to a UTC range here. Plans
   # stays time zone agnostic.
   defp list_log(%Request{} = request, list_between) do
     {from_date, to_date} = Period.range(request.unit, request.anchor_date)

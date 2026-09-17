@@ -63,8 +63,10 @@ Append-only logs (the core idea):
 
 - `plan_phase_event` — one row per transition of a plan through its lifecycle stage.
 - `goal_progress` — one row per progress update of a `goal`.
-- `support_record` — one row per daily support note for a service user (category,
-  content, recorded_by, recorded_at).
+- `support_record` — one row per daily support note for a service user
+  (support_date, category, content, recorded_by, recorded_at). `support_date` is the
+  day the support happened, as `service_date` is for attendance; `recorded_at` is
+  the moment the row was written.
 - `attendance_record` — one row per daily attendance / service-provision entry for
   a service user (service_date, provision_type, pickup, dropoff, start_time,
   end_time, note, recorded_by, recorded_at). Corrections are also new rows; the
@@ -202,8 +204,13 @@ Optional (done):
   Release. `Ayumi.Release` module provides `migrate/0` and `create_user/0`
   for `bin/ayumi eval` in compiled releases.
 - `support_record` (支援記録): daily support notes per service user, append-only
-  with category (work / daily_living / health / interview / other), content,
-  recorded_by, recorded_at. `/support_records` for listing, filtering, creating.
+  with support_date, category (work / daily_living / health / interview / other),
+  content, recorded_by, recorded_at. `/support_records` for listing, filtering,
+  creating. Lists and the `:from` / `:to` filter work on `support_date`. When no
+  support date is given, `SupportRecord.put_audit/3` sets it to the JST date of
+  `recorded_at` (the clock is passed in, so the changeset stays pure) and rejects a
+  date after that day. SQLite cannot make the column NOT NULL after the fact, so
+  presence is enforced by the changeset.
 - `attendance_record` (出欠・実績記録票): daily attendance / service-provision
   rows per service user, append-only with `provision_type` (`ProvisionType`),
   `pickup` / `dropoff`, `start_time` / `end_time`, `note`, `recorded_by`,
@@ -238,10 +245,12 @@ Optional (done):
   (`Ayumi.CSV.Attendance` / `SupportRecords` / `GoalProgress` / `PlanPhaseEvents` /
   `ServiceUsers`, all deriving header and rows from one list via `Ayumi.CSV.Columns`). Attendance is folded by
   `Plans.latest_attendance_by_user_date/1` (latest row per user and date wins) and
-  includes withdrawn users. The three `recorded_at` logs come from
-  `Plans.list_*_between/3`, which take a half-open UTC range and also include
-  withdrawn users; `Ayumi.Exports` converts the JST period with
-  `Ayumi.JST.utc_range/2`, so `Plans` stays time zone agnostic. Exported datetimes
+  includes withdrawn users. Support records are selected by `support_date`
+  (`Plans.list_support_records_between/3` takes dates). Goal progress and plan
+  phase events have only `recorded_at`, so their `Plans.list_*_between/3` take a
+  half-open UTC range and `Ayumi.Exports` converts the JST period with
+  `Ayumi.JST.utc_range/2`; `Plans` stays time zone agnostic. All three include
+  withdrawn users. Exported datetimes
   are JST via `Ayumi.JST` (fixed +9h; the screens still show UTC). The service user
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form

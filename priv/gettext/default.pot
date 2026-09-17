@@ -11,7 +11,7 @@
 msgid ""
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:325
+#: lib/ayumi_web/live/service_user_live/show.ex:326
 #, elixir-autogen, elixir-format
 msgid "%{birthdate}（%{age}歳）"
 msgstr ""
@@ -89,9 +89,9 @@ msgstr ""
 
 #: lib/ayumi_web/components/layouts.ex:51
 #: lib/ayumi_web/live/export_live/index.ex:65
-#: lib/ayumi_web/live/support_record_live/index.ex:111
-#: lib/ayumi_web/live/support_record_live/index.ex:150
-#: lib/ayumi_web/live/support_record_live/index.ex:170
+#: lib/ayumi_web/live/support_record_live/index.ex:127
+#: lib/ayumi_web/live/support_record_live/index.ex:169
+#: lib/ayumi_web/live/support_record_live/index.ex:189
 #, elixir-autogen, elixir-format
 msgid "利用者"
 msgstr ""
@@ -364,8 +364,8 @@ msgstr ""
 #: lib/ayumi_web/live/support_plan_live/form.ex:85
 #: lib/ayumi_web/live/support_plan_live/show.ex:192
 #: lib/ayumi_web/live/support_plan_live/show.ex:262
-#: lib/ayumi_web/live/support_record_live/index.ex:172
-#: lib/ayumi_web/live/support_record_live/index.ex:179
+#: lib/ayumi_web/live/support_record_live/index.ex:191
+#: lib/ayumi_web/live/support_record_live/index.ex:204
 #, elixir-autogen, elixir-format
 msgid "選択してください"
 msgstr ""
@@ -567,13 +567,13 @@ msgid "説明・同意・交付"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:213
-#: lib/ayumi_web/live/service_user_live/show.ex:348
+#: lib/ayumi_web/live/service_user_live/show.ex:349
 #, elixir-autogen, elixir-format
 msgid "%{days}日超過"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:217
-#: lib/ayumi_web/live/service_user_live/show.ex:350
+#: lib/ayumi_web/live/service_user_live/show.ex:351
 #, elixir-autogen, elixir-format
 msgid "あと%{days}日"
 msgstr ""
@@ -617,7 +617,7 @@ msgid "期限が近いモニタリング予定はありません"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:216
-#: lib/ayumi_web/live/service_user_live/show.ex:349
+#: lib/ayumi_web/live/service_user_live/show.ex:350
 #, elixir-autogen, elixir-format
 msgid "本日期限"
 msgstr ""
@@ -633,7 +633,7 @@ msgid "計画を開く"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:209
-#: lib/ayumi_web/live/service_user_live/show.ex:345
+#: lib/ayumi_web/live/service_user_live/show.ex:346
 #, elixir-autogen, elixir-format
 msgid "超過"
 msgstr ""
@@ -644,7 +644,7 @@ msgid "超過と%{days}日以内の予定を表示しています"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:210
-#: lib/ayumi_web/live/service_user_live/show.ex:346
+#: lib/ayumi_web/live/service_user_live/show.ex:347
 #, elixir-autogen, elixir-format
 msgid "近接"
 msgstr ""
@@ -677,7 +677,7 @@ msgstr ""
 msgid "この操作にはサービス管理責任者の権限が必要です"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:292
+#: lib/ayumi_web/live/service_user_live/show.ex:293
 #, elixir-autogen, elixir-format
 msgid "カテゴリ"
 msgstr ""
@@ -734,15 +734,15 @@ msgid "保存先ディレクトリ"
 msgstr ""
 
 #: lib/ayumi_web/live/export_live/index.ex:67
-#: lib/ayumi_web/live/support_record_live/index.ex:116
+#: lib/ayumi_web/live/support_record_live/index.ex:132
 #, elixir-autogen, elixir-format
 msgid "全員"
 msgstr ""
 
 #: lib/ayumi_web/live/import_live/index.ex:226
-#: lib/ayumi_web/live/service_user_live/show.ex:293
-#: lib/ayumi_web/live/support_record_live/index.ex:159
-#: lib/ayumi_web/live/support_record_live/index.ex:184
+#: lib/ayumi_web/live/service_user_live/show.ex:294
+#: lib/ayumi_web/live/support_record_live/index.ex:178
+#: lib/ayumi_web/live/support_record_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "内容"
 msgstr ""
@@ -769,8 +769,8 @@ msgstr ""
 msgid "利用開始日"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:153
-#: lib/ayumi_web/live/support_record_live/index.ex:177
+#: lib/ayumi_web/live/support_record_live/index.ex:172
+#: lib/ayumi_web/live/support_record_live/index.ex:202
 #, elixir-autogen, elixir-format
 msgid "区分"
 msgstr ""
@@ -831,28 +831,28 @@ msgid "支援計画なし"
 msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:283
-#: lib/ayumi_web/live/support_record_live/index.ex:15
-#: lib/ayumi_web/live/support_record_live/index.ex:106
+#: lib/ayumi_web/live/support_record_live/index.ex:17
+#: lib/ayumi_web/live/support_record_live/index.ex:118
 #, elixir-autogen, elixir-format
 msgid "支援記録"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:297
+#: lib/ayumi_web/live/service_user_live/show.ex:298
 #, elixir-autogen, elixir-format
 msgid "支援記録なし"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:50
+#: lib/ayumi_web/live/support_record_live/index.ex:52
 #, elixir-autogen, elixir-format
 msgid "支援記録を保存しました"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:301
+#: lib/ayumi_web/live/service_user_live/show.ex:302
 #, elixir-autogen, elixir-format
 msgid "支援記録表を見る →"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:165
+#: lib/ayumi_web/live/support_record_live/index.ex:184
 #, elixir-autogen, elixir-format
 msgid "新規記録"
 msgstr ""
@@ -861,12 +861,6 @@ msgstr ""
 #: lib/ayumi_web/live/attendance_live/sheet.ex:104
 #, elixir-autogen, elixir-format
 msgid "日"
-msgstr ""
-
-#: lib/ayumi_web/live/service_user_live/show.ex:289
-#: lib/ayumi_web/live/support_record_live/index.ex:147
-#, elixir-autogen, elixir-format
-msgid "日時"
 msgstr ""
 
 #: lib/ayumi_web/live/attendance_live/index.ex:80
@@ -914,11 +908,6 @@ msgstr ""
 msgid "終了"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:136
-#, elixir-autogen, elixir-format
-msgid "終了日"
-msgstr ""
-
 #: lib/ayumi_web/live/attendance_live/index.ex:52
 #: lib/ayumi_web/live/attendance_live/sheet.ex:55
 #, elixir-autogen, elixir-format
@@ -935,19 +924,19 @@ msgstr ""
 msgid "計画詳細を見る →"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:156
+#: lib/ayumi_web/live/support_record_live/index.ex:175
 #, elixir-autogen, elixir-format
 msgid "記入者"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:187
+#: lib/ayumi_web/live/support_record_live/index.ex:212
 #, elixir-autogen, elixir-format
 msgid "記録する"
 msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:257
 #: lib/ayumi_web/live/service_user_live/show.ex:268
-#: lib/ayumi_web/live/service_user_live/show.ex:294
+#: lib/ayumi_web/live/service_user_live/show.ex:295
 #, elixir-autogen, elixir-format
 msgid "記録者"
 msgstr ""
@@ -992,11 +981,6 @@ msgstr ""
 #: lib/ayumi_web/live/attendance_live/sheet.ex:107
 #, elixir-autogen, elixir-format
 msgid "開始"
-msgstr ""
-
-#: lib/ayumi_web/live/support_record_live/index.ex:127
-#, elixir-autogen, elixir-format
-msgid "開始日"
 msgstr ""
 
 #: lib/ayumi_web/live/attendance_live/index.ex:16
@@ -1294,4 +1278,27 @@ msgstr ""
 #: lib/ayumi_web/live/import_live/index.ex:179
 #, elixir-autogen, elixir-format
 msgid "追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:289
+#: lib/ayumi_web/live/support_record_live/index.ex:163
+#: lib/ayumi_web/live/support_record_live/index.ex:196
+#, elixir-autogen, elixir-format
+msgid "支援日"
+msgstr ""
+
+#: lib/ayumi_web/live/support_record_live/index.ex:152
+#, elixir-autogen, elixir-format
+msgid "支援日（終了）"
+msgstr ""
+
+#: lib/ayumi_web/live/support_record_live/index.ex:143
+#, elixir-autogen, elixir-format
+msgid "支援日（開始）"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:290
+#: lib/ayumi_web/live/support_record_live/index.ex:166
+#, elixir-autogen, elixir-format
+msgid "記録日時"
 msgstr ""

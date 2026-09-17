@@ -382,7 +382,10 @@ defmodule Ayumi.Plans do
     |> insert_support_record()
   end
 
-  @doc "Lists support records, newest first. Filters: service_user_id, from, to."
+  @doc """
+  Lists support records, newest support date first. Filters: `:service_user_id`,
+  and `:from` / `:to` on the support date (inclusive).
+  """
   def list_support_records(%Scope{}, opts \\ []) do
     service_user_id = Keyword.get(opts, :service_user_id)
     from_date = Keyword.get(opts, :from)
@@ -391,29 +394,15 @@ defmodule Ayumi.Plans do
     SupportRecord
     |> join(:inner, [r], su in assoc(r, :service_user))
     |> where([_r, su], su.enrollment_status != :withdrawn)
-    |> order_by([r], desc: r.recorded_at, desc: r.id)
+    |> order_by([r], desc: r.support_date, desc: r.recorded_at, desc: r.id)
     |> preload([:service_user, :recorded_by])
     |> then(fn q ->
       if service_user_id,
         do: where(q, [r], r.service_user_id == ^service_user_id),
         else: q
     end)
-    |> then(fn q ->
-      if from_date do
-        from_dt = DateTime.new!(from_date, ~T[00:00:00], "Etc/UTC")
-        where(q, [r], r.recorded_at >= ^from_dt)
-      else
-        q
-      end
-    end)
-    |> then(fn q ->
-      if to_date do
-        to_dt = DateTime.new!(Date.add(to_date, 1), ~T[00:00:00], "Etc/UTC")
-        where(q, [r], r.recorded_at < ^to_dt)
-      else
-        q
-      end
-    end)
+    |> then(fn q -> if from_date, do: where(q, [r], r.support_date >= ^from_date), else: q end)
+    |> then(fn q -> if to_date, do: where(q, [r], r.support_date <= ^to_date), else: q end)
     |> Repo.all()
   end
 
@@ -654,7 +643,7 @@ defmodule Ayumi.Plans do
   def list_recent_support_records(service_user_id, limit \\ 20) do
     SupportRecord
     |> where([r], r.service_user_id == ^service_user_id)
-    |> order_by([r], desc: r.recorded_at, desc: r.id)
+    |> order_by([r], desc: r.support_date, desc: r.recorded_at, desc: r.id)
     |> limit(^limit)
     |> preload([:service_user, :recorded_by])
     |> Repo.all()
@@ -683,19 +672,20 @@ defmodule Ayumi.Plans do
 
   ## Log range queries (exports)
   #
-  # These take a half-open UTC range `[from, to)` and stay time zone agnostic; the
-  # caller decides which wall clock the range represents. Unlike the on-screen
-  # lists, they include withdrawn service users so an export never drops history.
+  # Unlike the on-screen lists, these include withdrawn service users so an export
+  # never drops history. Support records are selected by support date. The other
+  # two logs have only `recorded_at`, so they take a half-open UTC range `[from, to)`
+  # and stay time zone agnostic; the caller decides which wall clock it represents.
 
   @doc """
-  Lists support records with `recorded_at` in `[from, to)`, oldest first.
-  Filter: `:service_user_id`.
+  Lists support records with `support_date` in `from..to` (inclusive), oldest
+  first. Filter: `:service_user_id`.
   """
-  def list_support_records_between(%DateTime{} = from, %DateTime{} = to, opts \\ []) do
+  def list_support_records_between(%Date{} = from, %Date{} = to, opts \\ []) do
     SupportRecord
-    |> where([r], r.recorded_at >= ^from and r.recorded_at < ^to)
+    |> where([r], r.support_date >= ^from and r.support_date <= ^to)
     |> filter_by_service_user(opts, fn q, id -> where(q, [r], r.service_user_id == ^id) end)
-    |> order_by([r], asc: r.recorded_at, asc: r.id)
+    |> order_by([r], asc: r.support_date, asc: r.recorded_at, asc: r.id)
     |> preload([:service_user, :recorded_by])
     |> Repo.all()
   end

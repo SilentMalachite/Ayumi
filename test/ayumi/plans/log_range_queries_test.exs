@@ -4,21 +4,10 @@ defmodule Ayumi.Plans.LogRangeQueriesTest do
   import Ayumi.PlansFixtures
 
   alias Ayumi.Plans
-  alias Ayumi.Plans.SupportRecord
 
   # September 2026 in JST, as the half-open UTC range Ayumi.JST.utc_range/2 yields.
   @from ~U[2026-08-31 15:00:00Z]
   @to ~U[2026-09-30 15:00:00Z]
-
-  defp support_record_at(recorded_at, attrs \\ %{}) do
-    record = support_record_fixture(attrs)
-
-    Repo.update_all(from(r in SupportRecord, where: r.id == ^record.id),
-      set: [recorded_at: recorded_at]
-    )
-
-    record
-  end
 
   defp goal_for(service_user) do
     plan = support_plan_fixture(%{service_user_id: service_user.id})
@@ -26,45 +15,51 @@ defmodule Ayumi.Plans.LogRangeQueriesTest do
   end
 
   describe "list_support_records_between/3" do
-    test "includes the lower bound and excludes the upper bound" do
-      first_second = support_record_at(@from)
-      last_second = support_record_at(DateTime.add(@to, -1, :second))
-      too_early = support_record_at(DateTime.add(@from, -1, :second))
-      too_late = support_record_at(@to)
+    test "selects by support date, inclusive on both ends" do
+      inside_first = support_record_fixture(%{support_date: ~D[2026-06-01]})
+      inside_last = support_record_fixture(%{support_date: ~D[2026-06-30]})
+      too_early = support_record_fixture(%{support_date: ~D[2026-05-31]})
+      too_late = support_record_fixture(%{support_date: ~D[2026-07-01]})
 
-      ids = @from |> Plans.list_support_records_between(@to) |> Enum.map(& &1.id)
+      ids =
+        ~D[2026-06-01] |> Plans.list_support_records_between(~D[2026-06-30]) |> Enum.map(& &1.id)
 
-      assert ids == [first_second.id, last_second.id]
+      assert ids == [inside_first.id, inside_last.id]
       refute too_early.id in ids
       refute too_late.id in ids
     end
 
-    test "orders by recorded_at, then id" do
-      later = support_record_at(~U[2026-09-10 00:00:00Z])
-      earlier = support_record_at(~U[2026-09-05 00:00:00Z])
-      same_time = support_record_at(~U[2026-09-05 00:00:00Z])
+    test "orders by support date, then recording time, then id" do
+      later = support_record_fixture(%{support_date: ~D[2026-06-10]})
+      earlier = support_record_fixture(%{support_date: ~D[2026-06-05]})
+      same_day = support_record_fixture(%{support_date: ~D[2026-06-05]})
 
-      assert @from |> Plans.list_support_records_between(@to) |> Enum.map(& &1.id) ==
-               [earlier.id, same_time.id, later.id]
+      assert ~D[2026-06-01]
+             |> Plans.list_support_records_between(~D[2026-06-30])
+             |> Enum.map(& &1.id) == [earlier.id, same_day.id, later.id]
     end
 
     test "includes records of service users who have since withdrawn" do
       su = service_user_fixture(%{name: "のちに退所"})
-      record = support_record_at(~U[2026-09-05 00:00:00Z], %{service_user_id: su.id})
+      record = support_record_fixture(%{service_user_id: su.id, support_date: ~D[2026-06-05]})
       su = Plans.get_service_user!(su.id)
       {:ok, _} = Plans.update_service_user(su, %{enrollment_status: :withdrawn})
 
-      assert [row] = Plans.list_support_records_between(@from, @to)
+      assert [row] = Plans.list_support_records_between(~D[2026-06-01], ~D[2026-06-30])
       assert row.id == record.id
       assert row.service_user.enrollment_status == :withdrawn
     end
 
     test "filters by :service_user_id and preloads the recorder" do
       su = service_user_fixture()
-      mine = support_record_at(~U[2026-09-05 00:00:00Z], %{service_user_id: su.id})
-      _other = support_record_at(~U[2026-09-05 00:00:00Z])
+      mine = support_record_fixture(%{service_user_id: su.id, support_date: ~D[2026-06-05]})
+      _other = support_record_fixture(%{support_date: ~D[2026-06-05]})
 
-      assert [row] = Plans.list_support_records_between(@from, @to, service_user_id: su.id)
+      assert [row] =
+               Plans.list_support_records_between(~D[2026-06-01], ~D[2026-06-30],
+                 service_user_id: su.id
+               )
+
       assert row.id == mine.id
       assert %Ayumi.Accounts.User{} = row.recorded_by
     end
