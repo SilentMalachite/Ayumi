@@ -1,5 +1,5 @@
 defmodule Ayumi.PlansTest do
-  use Ayumi.DataCase, async: true
+  use Ayumi.DataCase, async: false
 
   alias Ayumi.Plans
   alias Ayumi.Plans.GoalProgress

@@ -124,6 +124,13 @@
     `Ayumi.CSV.Attendance.parse/1`、`ProvisionType.from_label/1` を追加。
 - 依存に `nimble_csv`（純 Elixir・実行時のネットワーク不要）を追加。
 
+### 修正
+
+- テストの間欠的な失敗（`Exqlite.Error: Database busy`）を解消。DB を使うのに `async: true` だった
+  テストモジュール 6 つ（`plans_test.exs` と `plans/` 配下の 5 つ）を `async: false` にしました。
+  SQLite は書き込みが同時に 1 つのため、並行するテストが書き込みロックを取り合い、待ちが busy
+  timeout を超えると落ちていました（CI で発生）。`Ayumi.DataCase` の説明にもこのルールを明記。
+
 ## [0.2.1] — 2026-06-21
 
 ### 変更
