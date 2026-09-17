@@ -246,9 +246,11 @@ Optional (done):
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form
   hides those inputs.
-- CSV import (in progress — increment 4a of the same plan: attendance, context
-  layer only; the manager-only upload screen, the service user master import, and
-  the support record import are not built). `Ayumi.Imports.preview_attendance/2`
+- CSV import (in progress — increments 4a–4b of the same plan: attendance only;
+  the service user master import and the support record import are not built).
+  The manager-only screen is `/admin/import` (`AyumiWeb.ImportLive.Index`,
+  `allow_upload` for one `.csv`): upload → preview → confirm → commit, with a
+  re-confirmation when the commit reports a stale plan. `Ayumi.Imports.preview_attendance/2`
   parses and validates the whole file and plans what would be written without
   writing (`Ayumi.Imports.Preview`: `to_insert` with `kind: :new | :correction`,
   `unchanged`, `errors` with Excel row number and column); `commit_attendance/2`

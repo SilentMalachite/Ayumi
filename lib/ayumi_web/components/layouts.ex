@@ -54,6 +54,9 @@ defmodule AyumiWeb.Layouts do
             <.link navigate={~p"/exports"} class="font-semibold">{gettext("CSV出力")}</.link>
           </li>
           <li :if={Ayumi.Accounts.Scope.manager?(@current_scope)}>
+            <.link navigate={~p"/admin/import"} class="font-semibold">{gettext("CSV取込")}</.link>
+          </li>
+          <li :if={Ayumi.Accounts.Scope.manager?(@current_scope)}>
             <.link navigate={~p"/admin/backup"} class="font-semibold">{gettext("バックアップ")}</.link>
           </li>
           <li>

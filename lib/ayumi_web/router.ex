@@ -56,6 +56,7 @@ defmodule AyumiWeb.Router do
       live "/service_users/:id/edit", ServiceUserLive.Form, :edit
       live "/service_users/:service_user_id/support_plans/new", SupportPlanLive.Form, :new
       live "/admin/backup", BackupLive.Index, :index
+      live "/admin/import", ImportLive.Index, :index
     end
 
     live_session :require_authenticated_user,
