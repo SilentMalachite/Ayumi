@@ -323,5 +323,24 @@ defmodule AyumiWeb.ImportLiveTest do
       assert [imported] = Plans.list_support_records_between(~D[2026-05-20], ~D[2026-05-20])
       assert imported.content == "Excel にあった過去の面談"
     end
+
+    test "a withdrawn service user's past record is flagged, then imported", %{conn: conn} do
+      su = service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
+      {:ok, lv, _html} = live(conn, ~p"/admin/import")
+      html = lv |> form("#import-form", %{"dataset" => "support_records"}) |> render_change()
+      assert html =~ "退所した利用者の過去の記録は取り込めます"
+
+      html =
+        upload_and_preview(
+          lv,
+          CSV.encode(@record_headers, [record_row(su, "2026-06-01", "在籍中の面談")])
+        )
+
+      assert html =~ "追加 1 件"
+      assert has_element?(lv, "#import-warnings tr", "退所した利用者の記録です")
+
+      assert lv |> element("#import-commit") |> render_click() =~ "取込が完了しました"
+      assert [_record] = Plans.list_support_records_between(~D[2026-06-01], ~D[2026-06-01])
+    end
   end
 end

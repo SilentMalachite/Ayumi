@@ -373,24 +373,35 @@ defmodule Ayumi.Plans do
     SupportRecord.changeset(support_record, attrs)
   end
 
-  @doc "Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock."
-  def create_support_record(%Scope{} = scope, attrs) when is_map(attrs) do
+  @doc """
+  Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock.
+
+  Withdrawn service users are refused. `allow_withdrawn: true` lifts that one rule;
+  only the CSV import passes it, to bring in notes written while the person was
+  still enrolled. The screens never do.
+  """
+  def create_support_record(%Scope{} = scope, attrs, opts \\ []) when is_map(attrs) do
     scope
-    |> support_record_changeset(attrs)
+    |> support_record_changeset(attrs, opts)
     |> insert_support_record()
   end
 
   @doc """
-  The changeset `create_support_record/2` inserts: the user fields, the audit
-  stamp (which settles the support date), and the withdrawn-user rule. Public so
+  The changeset `create_support_record/3` inserts: the user fields, the audit
+  stamp (which settles the support date), and the withdrawn-user rule (unless
+  `allow_withdrawn: true`). Public so
   that the CSV import preview can validate a row by the very same rules without
   writing anything.
   """
-  def support_record_changeset(%Scope{} = scope, attrs) when is_map(attrs) do
-    %SupportRecord{}
-    |> SupportRecord.changeset(attrs)
-    |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
-    |> validate_active_service_user("退所者には支援記録を作成できません")
+  def support_record_changeset(%Scope{} = scope, attrs, opts \\ []) when is_map(attrs) do
+    changeset =
+      %SupportRecord{}
+      |> SupportRecord.changeset(attrs)
+      |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
+
+    if Keyword.get(opts, :allow_withdrawn, false),
+      do: changeset,
+      else: validate_active_service_user(changeset, "退所者には支援記録を作成できません")
   end
 
   @doc "Gets the support records with the given ids. Unknown ids are ignored."

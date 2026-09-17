@@ -70,8 +70,12 @@
     出力したファイルの取込ではログが増えません）、それ以外は新しい記録として追加します。出力した
     CSV の内容を書き換えて取り込むと、元の記録は残ったまま新しい記録が追加されます。`記録ID` から
     それが分かる行には「注意」を表示します。
-  - 同一ファイル内の完全に同じ行はエラー。未来の支援日と、退所した利用者の記録は行エラーです
-    （書き込み時と同じ changeset `Plans.support_record_changeset/2` でプレビュー時に検証）。
+  - 同一ファイル内の完全に同じ行はエラー。未来の支援日は行エラーです（書き込み時と同じ changeset
+    `Plans.support_record_changeset/3` でプレビュー時に検証）。
+  - **退所した利用者の過去の記録は、取込に限って登録できます**（在籍中に書かれた記録を移行するため）。
+    確認画面に「注意」として表示します。画面からの入力は従来どおり拒否します。
+    `Plans.create_support_record/3` / `support_record_changeset/3` の `allow_withdrawn: true` で、
+    渡すのは CSV 取込（`Ayumi.Imports.SupportRecordsPlan.write_opts/0`）だけです。
   - `Ayumi.Imports.preview_support_records/2` / `commit_support_records/2`、
     `Ayumi.Imports.SupportRecordsPlan`。利用者の特定（ID 優先・氏名の一意一致）を
     `Ayumi.Imports.ServiceUserResolver` に切り出し、出欠の取込と共有（挙動は不変）。

@@ -123,7 +123,7 @@ defmodule AyumiWeb.ImportLive.Index do
           {gettext("利用者・支援日・区分・内容がすべて同じ記録が既にある行は取り込みません。内容を書き換えた行は、元の記録を残したまま新しい記録として追加されます。")}
         </li>
         <li :if={@dataset == :support_records}>
-          {gettext("退所した利用者の記録と、未来の支援日は取り込めません。")}
+          {gettext("未来の支援日は取り込めません。退所した利用者の過去の記録は取り込めます（画面からの入力はできません）。")}
         </li>
         <li :if={@dataset == :service_users}>
           {gettext(

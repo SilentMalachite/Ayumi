@@ -213,13 +213,15 @@ defmodule Ayumi.Imports.SupportRecordsTest do
       assert preview.to_insert == []
     end
 
-    test "records for withdrawn service users are row errors (current rule)", %{scope: scope} do
+    test "past records of withdrawn service users are planned, with a warning", %{scope: scope} do
       su = service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
 
       assert {:ok, preview} = Imports.preview_support_records(scope, csv([row(su, "2026-06-01")]))
 
-      assert [%{row: 2, column: "利用者ID", message: "退所者には支援記録を作成できません"}] =
-               preview.errors
+      assert preview.errors == []
+      assert [%{row: 2, kind: :new}] = preview.to_insert
+      assert [%{row: 2, column: "利用者ID", message: message}] = preview.warnings
+      assert message =~ "退所"
     end
 
     test "resolves the service user by a unique name when the id is blank", %{scope: scope} do
@@ -258,6 +260,24 @@ defmodule Ayumi.Imports.SupportRecordsTest do
       assert imported.category == :interview
       assert imported.recorded_by_id == manager.id
       assert DateTime.diff(DateTime.utc_now(), imported.recorded_at) < 60
+    end
+
+    test "writes the past records of a withdrawn service user; the screen path still refuses", %{
+      scope: scope
+    } do
+      su = service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
+      {:ok, preview} = Imports.preview_support_records(scope, csv([row(su, "2026-06-01")]))
+
+      assert {:ok, %{inserted: 1}} = Imports.commit_support_records(scope, preview)
+      assert [%{service_user_id: id}] = all_records()
+      assert id == su.id
+
+      assert {:error, _changeset} =
+               Plans.create_support_record(scope, %{
+                 service_user_id: su.id,
+                 content: "画面からの入力",
+                 category: :work
+               })
     end
 
     test "importing the same file twice adds nothing the second time", %{scope: scope} do

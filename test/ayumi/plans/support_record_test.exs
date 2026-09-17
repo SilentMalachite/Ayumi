@@ -186,6 +186,46 @@ defmodule Ayumi.Plans.SupportRecordTest do
     end
   end
 
+  describe "allow_withdrawn: true (CSV import only)" do
+    setup do
+      %{
+        scope: user_scope_fixture(),
+        withdrawn: service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
+      }
+    end
+
+    test "lifts only the withdrawn-user rule", %{scope: scope, withdrawn: withdrawn} do
+      attrs = %{
+        service_user_id: withdrawn.id,
+        content: "在籍中の記録",
+        category: :work,
+        support_date: ~D[2026-06-01]
+      }
+
+      assert Plans.support_record_changeset(scope, attrs, allow_withdrawn: true).valid?
+      refute Plans.support_record_changeset(scope, attrs).valid?
+      refute Plans.support_record_changeset(scope, attrs, allow_withdrawn: false).valid?
+
+      future = %{attrs | support_date: Date.add(Ayumi.JST.today(), 1)}
+
+      assert errors_on(Plans.support_record_changeset(scope, future, allow_withdrawn: true)) ==
+               %{support_date: ["未来の日付は指定できません"]}
+    end
+
+    test "create_support_record/3 writes the record; create_support_record/2 still refuses", %{
+      scope: scope,
+      withdrawn: withdrawn
+    } do
+      attrs = %{service_user_id: withdrawn.id, content: "在籍中の記録", category: :work}
+
+      assert {:error, changeset} = Plans.create_support_record(scope, attrs)
+      assert errors_on(changeset).service_user_id == ["退所者には支援記録を作成できません"]
+
+      assert {:ok, record} = Plans.create_support_record(scope, attrs, allow_withdrawn: true)
+      assert record.service_user_id == withdrawn.id
+    end
+  end
+
   describe "get_support_records/1" do
     test "returns the records with the given ids, ignoring unknown ids" do
       first = support_record_fixture()

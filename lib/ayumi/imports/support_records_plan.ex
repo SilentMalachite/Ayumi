@@ -10,9 +10,11 @@ defmodule Ayumi.Imports.SupportRecordsPlan do
   adds a record next to the original; when the row's 記録ID shows that this is
   what happened, the preview warns about it.
 
-  Rows are validated with `Plans.support_record_changeset/2`, the changeset the
-  write itself uses, so the future-date and withdrawn-user rules apply in the
-  preview exactly as they will at commit.
+  Rows are validated with `Plans.support_record_changeset/3`, the changeset the
+  write itself uses, so the rules apply in the preview exactly as they will at
+  commit. The import lifts one of them: past records of a withdrawn service user
+  are accepted (`write_opts/0`), with a warning, because the notes were written
+  while the person was enrolled. Entering such a record on screen stays refused.
   """
 
   alias Ayumi.Accounts.Scope
@@ -20,6 +22,11 @@ defmodule Ayumi.Imports.SupportRecordsPlan do
   alias Ayumi.Imports.Preview
   alias Ayumi.Imports.ServiceUserResolver
   alias Ayumi.Plans
+
+  @write_opts [allow_withdrawn: true]
+
+  @doc "Options the import passes to `Plans.create_support_record/3`."
+  def write_opts, do: @write_opts
 
   @doc "Builds the preview for decoded `rows` (`[{row_number, cells}]`)."
   def build(%Scope{} = scope, rows, ignored_headers) do
@@ -40,7 +47,8 @@ defmodule Ayumi.Imports.SupportRecordsPlan do
       to_insert: Enum.map(to_insert, &%{row: &1.row, kind: :new, attrs: &1.attrs}),
       unchanged: Enum.map(unchanged, & &1.row),
       errors: Enum.sort_by(row_errors ++ duplicate_errors, & &1.row),
-      warnings: edited_export_warnings(to_insert),
+      warnings:
+        Enum.sort_by(edited_export_warnings(to_insert) ++ withdrawn_warnings(to_insert), & &1.row),
       ignored_headers: ignored_headers
     }
   end
@@ -51,7 +59,13 @@ defmodule Ayumi.Imports.SupportRecordsPlan do
            ServiceUserResolver.resolve(parsed, directory, &SupportRecords.header_for/1),
          attrs = insert_attrs(parsed, service_user),
          :ok <- validate(scope, attrs) do
-      {:ok, %{row: row, attrs: attrs, record_id: parsed.record_id}}
+      {:ok,
+       %{
+         row: row,
+         attrs: attrs,
+         record_id: parsed.record_id,
+         withdrawn?: service_user.enrollment_status == :withdrawn
+       }}
     else
       {:error, errors} -> {:error, Enum.map(errors, &Map.put(&1, :row, row))}
     end
@@ -65,7 +79,7 @@ defmodule Ayumi.Imports.SupportRecordsPlan do
 
   # Validation stays in the changeset; this only maps its errors onto columns.
   defp validate(scope, attrs) do
-    changeset = Plans.support_record_changeset(scope, attrs)
+    changeset = Plans.support_record_changeset(scope, attrs, @write_opts)
 
     if changeset.valid?,
       do: :ok,
@@ -133,6 +147,16 @@ defmodule Ayumi.Imports.SupportRecordsPlan do
         message:
           "記録ID #{candidate.record_id} の記録と内容が異なります。元の記録は残り、" <>
             "この行は新しい記録として追加されます"
+      }
+    end
+  end
+
+  defp withdrawn_warnings(to_insert) do
+    for %{withdrawn?: true} = candidate <- to_insert do
+      %{
+        row: candidate.row,
+        column: SupportRecords.header_for(:service_user_id),
+        message: "退所した利用者の記録です。過去の記録として取り込まれます"
       }
     end
   end

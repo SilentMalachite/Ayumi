@@ -94,7 +94,7 @@ defmodule Ayumi.Imports do
       scope,
       preview,
       &SupportRecordsPlan.build(scope, &1, &2),
-      &Plans.create_support_record(scope, &1)
+      &Plans.create_support_record(scope, &1, SupportRecordsPlan.write_opts())
     )
   end
 

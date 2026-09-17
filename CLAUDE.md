@@ -255,9 +255,8 @@ Optional (done):
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form
   hides those inputs.
-- CSV import (increments 4a–6b of the same plan: attendance, support records, and
-  the service user master; 6c — allowing withdrawn service users' past support
-  records for import only — is agreed but not built).
+- CSV import (done — increments 4a–6c of the same plan: attendance, support
+  records, and the service user master).
   The manager-only screen is `/admin/import` (`AyumiWeb.ImportLive.Index`,
   `allow_upload` for one `.csv`): upload → preview → confirm → commit, with a
   re-confirmation when the commit reports a stale plan. `Ayumi.Imports.preview_attendance/2`
@@ -289,9 +288,13 @@ Optional (done):
   date, category, content — ignoring line endings and trailing whitespace) is
   `unchanged`, anything else is a new record, and an edited exported row (known by
   its optional 記録ID column) gets a warning that the original stays. Its rows are
-  validated with `Plans.support_record_changeset/2`, the changeset
-  `create_support_record/2` itself inserts, so the future-date and withdrawn-user
-  rules apply in the preview exactly as at commit. The log imports share
+  validated with `Plans.support_record_changeset/3`, the changeset
+  `create_support_record/3` itself inserts, so the rules apply in the preview
+  exactly as at commit. One rule is lifted for the import only: past support
+  records of a withdrawn service user are accepted (with a warning) via
+  `allow_withdrawn: true`, which nothing but
+  `Ayumi.Imports.SupportRecordsPlan.write_opts/0` passes — entering such a record
+  on screen stays refused. The log imports share
   `Ayumi.Imports.ServiceUserResolver` (利用者ID first, else a unique 氏名; both must
   agree when given).
 

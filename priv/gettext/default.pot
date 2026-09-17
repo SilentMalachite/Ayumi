@@ -1315,5 +1315,5 @@ msgstr ""
 
 #: lib/ayumi_web/live/import_live/index.ex:126
 #, elixir-autogen, elixir-format
-msgid "退所した利用者の記録と、未来の支援日は取り込めません。"
+msgid "未来の支援日は取り込めません。退所した利用者の過去の記録は取り込めます（画面からの入力はできません）。"
 msgstr ""
