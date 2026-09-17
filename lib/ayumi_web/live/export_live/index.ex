@@ -25,6 +25,7 @@ defmodule AyumiWeb.ExportLive.Index do
   defp assign_request(socket, changeset) do
     socket
     |> assign(:form, to_form(changeset, as: :export))
+    |> assign(:periodic?, Exports.periodic?(changeset))
     |> assign(:period_label, Exports.period_label(changeset))
     |> assign(:download_params, Exports.request_params(changeset))
   end
@@ -47,27 +48,32 @@ defmodule AyumiWeb.ExportLive.Index do
           label={gettext("出力するデータ")}
           options={@dataset_options}
         />
-        <.input
-          field={@form[:unit]}
-          type="select"
-          label={gettext("期間の単位")}
-          options={@unit_options}
-        />
-        <.input field={@form[:anchor_date]} type="date" label={gettext("基準日")} />
-        <p class="text-sm text-base-content/60">
-          {gettext("基準日を含む週(月曜始まり)・月・年度(4月〜翌3月)・暦年が出力されます。")}
+        <div :if={@periodic?}>
+          <.input
+            field={@form[:unit]}
+            type="select"
+            label={gettext("期間の単位")}
+            options={@unit_options}
+          />
+          <.input field={@form[:anchor_date]} type="date" label={gettext("基準日")} />
+          <p class="text-sm text-base-content/60">
+            {gettext("基準日を含む週(月曜始まり)・月・年度(4月〜翌3月)・暦年が出力されます。")}
+          </p>
+          <.input
+            field={@form[:service_user_id]}
+            type="select"
+            label={gettext("利用者")}
+            options={Enum.map(@service_users, &{&1.name, &1.id})}
+            prompt={gettext("全員")}
+          />
+        </div>
+        <p :if={!@periodic?} class="text-sm text-base-content/60">
+          {gettext("期間の指定はありません。退所者を含む全員の現在の登録内容が出力されます。")}
         </p>
-        <.input
-          field={@form[:service_user_id]}
-          type="select"
-          label={gettext("利用者")}
-          options={Enum.map(@service_users, &{&1.name, &1.id})}
-          prompt={gettext("全員")}
-        />
       </.form>
 
       <div :if={@download_params} class="mt-6 space-y-4">
-        <p id="export-period">
+        <p :if={@period_label} id="export-period">
           {gettext("出力期間")}: <strong>{@period_label}</strong>
         </p>
         <.button

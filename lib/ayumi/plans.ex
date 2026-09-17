@@ -20,15 +20,20 @@ defmodule Ayumi.Plans do
 
   ## Service users
 
-  @doc "Lists service users, ordered by kana then name. Excludes withdrawn by default."
+  @doc """
+  Lists service users, ordered by kana then name. Excludes withdrawn by default.
+  Options: `:include_withdrawn` (boolean), `:preload` (associations to preload).
+  """
   def list_service_users(opts \\ []) do
     include_withdrawn = Keyword.get(opts, :include_withdrawn, false)
+    preloads = Keyword.get(opts, :preload, [])
 
     ServiceUser
     |> then(fn q ->
       if include_withdrawn, do: q, else: where(q, [su], su.enrollment_status != :withdrawn)
     end)
     |> order_by([s], asc: s.name_kana, asc: s.name)
+    |> preload(^preloads)
     |> Repo.all()
   end
 

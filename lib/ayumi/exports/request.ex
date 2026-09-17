@@ -1,7 +1,7 @@
 defmodule Ayumi.Exports.Request do
   @moduledoc """
   What to export: a dataset, the period containing an anchor date, and an
-  optional service user. Not persisted — an embedded schema so that the export
+  optional service user. Master lists (see `Dataset.periodic?/1`) need no period. Not persisted — an embedded schema so that the export
   form and the download URL are validated by one changeset.
   """
   use Ecto.Schema
@@ -22,7 +22,17 @@ defmodule Ayumi.Exports.Request do
   def changeset(%__MODULE__{} = request, attrs) do
     request
     |> cast(attrs, [:dataset, :unit, :anchor_date, :service_user_id])
-    |> validate_required([:dataset, :unit], message: "を選択してください")
-    |> validate_required([:anchor_date], message: "を指定してください")
+    |> validate_required([:dataset], message: "を選択してください")
+    |> validate_period()
+  end
+
+  defp validate_period(changeset) do
+    if Dataset.periodic?(get_field(changeset, :dataset)) do
+      changeset
+      |> validate_required([:unit], message: "を選択してください")
+      |> validate_required([:anchor_date], message: "を指定してください")
+    else
+      changeset
+    end
   end
 end

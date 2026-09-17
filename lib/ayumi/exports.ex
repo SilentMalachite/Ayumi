@@ -32,12 +32,22 @@ defmodule Ayumi.Exports do
     %Request{dataset: :attendance, unit: :month, anchor_date: JST.today()}
   end
 
-  @doc "Describes the period a request covers; nil while the request is invalid."
+  @doc "Whether the request's dataset is exported for a period (false for master lists)."
+  def periodic?(%Ecto.Changeset{} = changeset) do
+    changeset |> Ecto.Changeset.get_field(:dataset) |> Dataset.periodic?()
+  end
+
+  @doc """
+  Describes the period a request covers; nil while the request is invalid or when
+  its dataset has no period.
+  """
   def period_label(%Ecto.Changeset{valid?: false}), do: nil
 
   def period_label(%Ecto.Changeset{} = changeset) do
     request = Ecto.Changeset.apply_changes(changeset)
-    Period.label(request.unit, request.anchor_date)
+
+    if Dataset.periodic?(request.dataset),
+      do: Period.label(request.unit, request.anchor_date)
   end
 
   @doc "The request as string params for the download URL; nil while invalid."
@@ -45,9 +55,15 @@ defmodule Ayumi.Exports do
 
   def request_params(%Ecto.Changeset{} = changeset) do
     request = Ecto.Changeset.apply_changes(changeset)
+    params = %{"dataset" => Atom.to_string(request.dataset)}
 
+    if Dataset.periodic?(request.dataset),
+      do: Map.merge(params, period_params(request)),
+      else: params
+  end
+
+  defp period_params(%Request{} = request) do
     params = %{
-      "dataset" => Atom.to_string(request.dataset),
       "unit" => Atom.to_string(request.unit),
       "anchor_date" => Date.to_iso8601(request.anchor_date)
     }
@@ -98,6 +114,13 @@ defmodule Ayumi.Exports do
     CSV.encode(CSV.PlanPhaseEvents.headers(), CSV.PlanPhaseEvents.dump(rows))
   end
 
+  defp content(%Request{dataset: :service_users}) do
+    service_users =
+      Plans.list_service_users(include_withdrawn: true, preload: [:disability_certificates])
+
+    CSV.encode(CSV.ServiceUsers.headers(), CSV.ServiceUsers.dump(service_users))
+  end
+
   # The logs are stamped in UTC, but a "month" on the form means a month on the
   # Japanese calendar, so the period is converted to a UTC range here. Plans
   # stays time zone agnostic.
@@ -117,13 +140,23 @@ defmodule Ayumi.Exports do
   end
 
   defp filename(%Request{} = request) do
-    [
-      Dataset.file_label(request.dataset),
-      Period.filename_part(request.unit, request.anchor_date),
-      request.service_user_id && "利用者#{request.service_user_id}"
-    ]
+    request
+    |> filename_parts()
     |> Enum.filter(& &1)
     |> Enum.join("_")
     |> Kernel.<>(".csv")
+  end
+
+  defp filename_parts(%Request{} = request) do
+    if Dataset.periodic?(request.dataset) do
+      [
+        Dataset.file_label(request.dataset),
+        Period.filename_part(request.unit, request.anchor_date),
+        request.service_user_id && "利用者#{request.service_user_id}"
+      ]
+    else
+      # A master list is a snapshot, so the file is named after the export date.
+      [Dataset.file_label(request.dataset), Date.to_iso8601(JST.today())]
+    end
   end
 end

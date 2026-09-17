@@ -54,6 +54,16 @@ defmodule AyumiWeb.ExportControllerTest do
       assert response(get(conn, ~p"/exports/download?#{params}"), 200) =~ "午前の作業に集中できた"
     end
 
+    test "downloads the service user master without a period", %{conn: conn} do
+      _ = service_user_fixture(%{name: "山田 太郎"})
+
+      conn = get(conn, ~p"/exports/download?#{%{"dataset" => "service_users"}}")
+
+      assert @bom <> csv = response(conn, 200)
+      assert csv =~ "利用者ID,氏名,ふりがな"
+      assert csv =~ "山田 太郎"
+    end
+
     test "redirects back to the export page when the params are invalid", %{conn: conn} do
       conn = get(conn, ~p"/exports/download?#{%{@params | "unit" => "decade"}}")
 

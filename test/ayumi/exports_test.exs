@@ -163,6 +163,54 @@ defmodule Ayumi.ExportsTest do
     end
   end
 
+  describe "the service user master" do
+    setup do
+      %{scope: user_scope_fixture()}
+    end
+
+    test "has no period", %{scope: _scope} do
+      changeset = Exports.change_request(%{"dataset" => "service_users"})
+
+      assert changeset.valid?
+      refute Exports.periodic?(changeset)
+      assert Exports.period_label(changeset) == nil
+      assert Exports.request_params(changeset) == %{"dataset" => "service_users"}
+    end
+
+    test "the other datasets are periodic" do
+      assert Exports.periodic?(Exports.change_request())
+      assert Exports.periodic?(Exports.change_request(params(%{"dataset" => "support_records"})))
+    end
+
+    test "build/2 exports every service user, withdrawn included, in list order", %{
+      scope: scope
+    } do
+      _ = service_user_fixture(%{name: "佐藤", name_kana: "さとう"})
+      _ = service_user_fixture(%{name: "阿部", name_kana: "あべ", enrollment_status: :withdrawn})
+      _ = service_user_with_certificate_fixture(%{name: "手帳 太郎", name_kana: "てちょう"})
+
+      assert {:ok, %{filename: filename, content: content}} =
+               Exports.build(scope, %{"dataset" => "service_users"})
+
+      assert filename == "利用者台帳_#{Date.to_iso8601(Ayumi.JST.today())}.csv"
+      assert content =~ Enum.join(Ayumi.CSV.ServiceUsers.headers(), ",")
+
+      assert [abe, sato, techo] = data_lines(content)
+      assert abe =~ "阿部,あべ,,,退所"
+      assert sato =~ "佐藤,さとう,,,在籍"
+      assert techo =~ "身体障害者手帳 B-123 2級"
+    end
+
+    test "build/2 ignores period params for the master", %{scope: scope} do
+      _ = service_user_fixture(%{name: "佐藤"})
+
+      assert {:ok, %{content: content}} =
+               Exports.build(scope, params(%{"dataset" => "service_users"}))
+
+      assert [_line] = data_lines(content)
+    end
+  end
+
   describe "build/2 for the recorded_at-based logs" do
     setup do
       %{scope: user_scope_fixture()}

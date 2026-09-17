@@ -58,6 +58,29 @@ defmodule AyumiWeb.ExportLiveTest do
       assert has_element?(lv, ~s|#export-download[href*="dataset=support_records"]|)
     end
 
+    test "the service user master hides the period inputs", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/exports")
+
+      assert has_element?(lv, "#export_unit")
+      assert has_element?(lv, "#export_anchor_date")
+
+      html =
+        lv
+        |> form("#export-form", %{"export" => %{"dataset" => "service_users"}})
+        |> render_change()
+
+      assert html =~ "利用者台帳"
+      refute has_element?(lv, "#export_unit")
+      refute has_element?(lv, "#export_anchor_date")
+      refute has_element?(lv, "#export_service_user_id")
+      refute has_element?(lv, "#export-period")
+
+      assert has_element?(
+               lv,
+               ~s|#export-download[href="/exports/download?dataset=service_users"]|
+             )
+    end
+
     test "lists withdrawn service users too", %{conn: conn} do
       _ = service_user_fixture(%{name: "退所した人", enrollment_status: :withdrawn})
 

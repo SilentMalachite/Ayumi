@@ -177,6 +177,18 @@ defmodule Ayumi.PlansTest do
       refute "退所 花子" in names
     end
 
+    test "list_service_users(preload: ...) preloads the given associations" do
+      _ = service_user_with_certificate_fixture()
+
+      assert [%ServiceUser{disability_certificates: %Ecto.Association.NotLoaded{}}] =
+               Plans.list_service_users()
+
+      assert [%ServiceUser{disability_certificates: [certificate]}] =
+               Plans.list_service_users(preload: [:disability_certificates])
+
+      assert certificate.number == "B-123"
+    end
+
     test "list_service_users(include_withdrawn: true) includes withdrawn users" do
       _active = service_user_fixture(%{name: "在籍 太郎", name_kana: "ざいせき たろう"})
 

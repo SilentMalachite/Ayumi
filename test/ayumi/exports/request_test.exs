@@ -41,6 +41,12 @@ defmodule Ayumi.Exports.RequestTest do
            }
   end
 
+  test "the service user master needs no period" do
+    changeset = Request.changeset(%Request{}, %{"dataset" => "service_users"})
+
+    assert changeset.valid?
+  end
+
   test "rejects unknown datasets and units and malformed dates" do
     changeset =
       Request.changeset(%Request{}, %{

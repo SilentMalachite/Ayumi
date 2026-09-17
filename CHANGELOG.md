@@ -32,6 +32,14 @@
   - 列定義は `Ayumi.CSV.SupportRecords` / `Ayumi.CSV.GoalProgress` /
     `Ayumi.CSV.PlanPhaseEvents`。ヘッダ行とデータ行を 1 つの列リストから導く
     `Ayumi.CSV.Columns` を共有します。
+- **CSV 出力（利用者台帳）**: `/exports` の「出力するデータ」に利用者台帳を追加。期間の指定は
+  なく、退所者を含む全員の現在の登録内容を、登録フォームと同じ並び・同じ項目名で出力します
+  （ファイル名は出力日付き: `利用者台帳_2026-09-17.csv`）。障害者手帳は 1 セルに要約します
+  （例: `身体障害者手帳 第123号 下肢機能障害 3級 / 療育手帳 B2`）。
+  - `Ayumi.Exports.Dataset.periodic?/1` で期間の要否を判定し、`Ayumi.Exports.Request` は
+    期間つきのデータセットのときだけ単位と基準日を必須にします。画面も期間の入力欄を隠します。
+  - **Plans コンテキスト**: `list_service_users/1` に `:preload` オプションを追加（既定は従来どおり）。
+  - 列定義は `Ayumi.CSV.ServiceUsers`。
 - 依存に `nimble_csv`（純 Elixir・実行時のネットワーク不要）を追加。
 
 ## [0.2.1] — 2026-06-21
