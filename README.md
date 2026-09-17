@@ -152,6 +152,10 @@ LAN の他の端末からは `http://<このPCのIPアドレス>:4000` でアク
   タイムスタンプ付きのファイル名（衝突時は `_1`, `_2` … と退避）で保存し、
   保存先パス・サイズ・保存時刻（UTC）を表示します。ビルド済みリリースでも
   Web 画面から実行できます。
+- **CSV 出力**: 全職員が `/exports` から、出欠・実績記録を週（月曜始まり）／月／年度／暦年の
+  単位で CSV として保存できます。Excel でそのまま開ける UTF-8（BOM 付き）で、利用者×利用日
+  ごとの最新行（訂正後の内容）を出力し、記録日時は日本時間です。CSV には個人情報が含まれる
+  ため、保存先と持ち出しに注意してください。
 - **ビルド済みバイナリ**: GitHub Releases から Windows（zip）・macOS Apple Silicon（tar.gz）を
   ダウンロードするだけで、Elixir/OTP のインストールなしで起動できます。`v*` タグ push 時に
   GitHub Actions が自動ビルドします。
@@ -165,6 +169,7 @@ LAN の他の端末からは `http://<このPCのIPアドレス>:4000` でアク
 - 認証は `phx.gen.auth`、パスワードハッシュは `bcrypt_elixir`。
 - アセットは `esbuild` + `tailwind`（Mix 管理のため Node.js のインストールは不要）。
 - HTTP サーバは `bandit`。
+- CSV の生成は `nimble_csv`（純 Elixir）。
 - 外部サービスなし: クラウド・メール配信・メッセージキュー・プッシュ通知・ジョブ基盤は使いません。
 - ユーザー向け文言は `gettext`（`AyumiWeb.Gettext`、日本語を msgid）で集約管理（`priv/gettext/default.pot`）。
 

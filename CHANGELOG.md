@@ -3,6 +3,25 @@
 本ファイルの記法は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠し、
 バージョニングは [セマンティック バージョニング](https://semver.org/lang/ja/) に従います。
 
+## [Unreleased]
+
+### 追加
+
+- **CSV 出力（出欠・実績記録）**: 全職員が使える `/exports` 画面を追加。出力するデータ・
+  期間の単位（週＝月曜始まり／月／年度＝4月〜翌3月／暦年）・基準日・利用者（任意）を選ぶと、
+  基準日を含む期間の CSV をダウンロードできます。append-only ログを利用者×利用日ごとに
+  畳み込み、最新行（訂正後の内容）だけを出力します。退所者の記録も含みます。
+  - ファイルは Excel でそのまま開ける UTF-8（BOM 付き）・CRLF・RFC 4180 形式。`=` `+` `-` `@`
+    などで始まるセルには `'` を前置し、Excel に数式として解釈されないようにしています。
+  - 記録日時は日本時間（JST）で出力します（`Ayumi.JST`。固定 +9 時間でタイムゾーン DB 不要）。
+  - **Exports コンテキスト**: `Ayumi.Exports.build/2`、期間計算の純粋関数
+    `Ayumi.Exports.Period`、出力条件の changeset `Ayumi.Exports.Request`。CSV の符号化は
+    `Ayumi.CSV`、列定義は `Ayumi.CSV.Attendance`。ダウンロードは
+    `AyumiWeb.ExportController`（`GET /exports/download`）。
+  - **Plans コンテキスト**: `list_attendance_records_between/3`（期間・全利用者）と
+    純粋関数 `latest_attendance_by_user_date/1` を追加。
+- 依存に `nimble_csv`（純 Elixir・実行時のネットワーク不要）を追加。
+
 ## [0.2.1] — 2026-06-21
 
 ### 変更

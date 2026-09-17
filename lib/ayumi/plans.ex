@@ -509,6 +509,39 @@ defmodule Ayumi.Plans do
     |> Repo.all()
   end
 
+  @doc """
+  Lists raw attendance rows with `service_date` in `from..to` (inclusive),
+  oldest-first by `id`, for every service user — withdrawn ones included, so an
+  export never silently drops history. Filter: `:service_user_id`.
+  """
+  def list_attendance_records_between(%Date{} = from, %Date{} = to, opts \\ []) do
+    service_user_id = Keyword.get(opts, :service_user_id)
+
+    AttendanceRecord
+    |> where([r], r.service_date >= ^from and r.service_date <= ^to)
+    |> then(fn q ->
+      if service_user_id,
+        do: where(q, [r], r.service_user_id == ^service_user_id),
+        else: q
+    end)
+    |> order_by([r], asc: r.id)
+    |> preload([:service_user, :recorded_by])
+    |> Repo.all()
+  end
+
+  @doc """
+  Folds attendance rows into `%{{service_user_id, service_date} => row}`, keeping
+  the largest-id row per key: corrections are appended, so the latest row wins.
+  """
+  def latest_attendance_by_user_date(rows) when is_list(rows) do
+    Enum.reduce(rows, %{}, fn row, acc ->
+      Map.update(acc, {row.service_user_id, row.service_date}, row, &newer_row(&1, row))
+    end)
+  end
+
+  defp newer_row(current, row) when row.id > current.id, do: row
+  defp newer_row(current, _row), do: current
+
   defp month_bounds(year, month) do
     first = Date.new!(year, month, 1)
     last = Date.end_of_month(first)

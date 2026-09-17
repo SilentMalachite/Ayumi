@@ -226,5 +226,19 @@ Optional (done):
   (capped at 16 retries). Reachable via the manager-only LiveView at
   `/admin/backup` and the `mix ayumi.backup [dest]` task. Flash + inline result
   panel show path, size, and the UTC `created_at` timestamp.
+- CSV export (in progress — increment 1 of
+  `docs/superpowers/plans/2026-09-17-csv-export-import.md` is done): `/exports`
+  (`AyumiWeb.ExportLive.Index`, all staff) picks a dataset, a period unit
+  (week from Monday / month / fiscal year Apr–Mar / calendar year), an anchor date,
+  and an optional service user; `GET /exports/download` (`AyumiWeb.ExportController`)
+  sends the file. `Ayumi.Exports.build/2` validates the params with the
+  `Ayumi.Exports.Request` changeset and derives the CSV — never stored.
+  `Ayumi.Exports.Period` is pure. `Ayumi.CSV` encodes UTF-8 with BOM, CRLF, and
+  formula escaping via `nimble_csv`; each dataset's columns live in one module
+  (`Ayumi.CSV.Attendance`). Attendance is folded by
+  `Plans.latest_attendance_by_user_date/1` (latest row per user and date wins) and
+  includes withdrawn users. Exported datetimes are JST via `Ayumi.JST` (fixed +9h;
+  the screens still show UTC). Only attendance is exportable so far; CSV import is
+  planned but not built.
 
 All steps are complete and green. Each was `mix review`-clean before merging.

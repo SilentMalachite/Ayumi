@@ -26,22 +26,6 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: lib/ayumi_web/components/layouts.ex:94
-#: lib/ayumi_web/components/layouts.ex:106
-#, elixir-autogen, elixir-format
-msgid "Attempting to reconnect"
-msgstr ""
-
-#: lib/ayumi_web/components/layouts.ex:101
-#, elixir-autogen, elixir-format
-msgid "Something went wrong!"
-msgstr ""
-
-#: lib/ayumi_web/components/layouts.ex:89
-#, elixir-autogen, elixir-format
-msgid "We can't find the internet"
-msgstr ""
-
 #: lib/ayumi_web/components/core_components.ex:74
 #, elixir-autogen, elixir-format
 msgid "close"
@@ -103,7 +87,8 @@ msgstr ""
 msgid "備考"
 msgstr ""
 
-#: lib/ayumi_web/components/layouts.ex:48
+#: lib/ayumi_web/components/layouts.ex:51
+#: lib/ayumi_web/live/export_live/index.ex:63
 #: lib/ayumi_web/live/support_record_live/index.ex:111
 #: lib/ayumi_web/live/support_record_live/index.ex:150
 #: lib/ayumi_web/live/support_record_live/index.ex:170
@@ -703,7 +688,7 @@ msgstr ""
 msgid "データベースバックアップ"
 msgstr ""
 
-#: lib/ayumi_web/components/layouts.ex:51
+#: lib/ayumi_web/components/layouts.ex:57
 #, elixir-autogen, elixir-format
 msgid "バックアップ"
 msgstr ""
@@ -738,7 +723,7 @@ msgstr ""
 msgid "バックアップ実行"
 msgstr ""
 
-#: lib/ayumi_web/live/attendance_live/index.ex:243
+#: lib/ayumi_web/live/attendance_live/index.ex:241
 #, elixir-autogen, elixir-format
 msgid "保存できませんでした"
 msgstr ""
@@ -748,6 +733,7 @@ msgstr ""
 msgid "保存先ディレクトリ"
 msgstr ""
 
+#: lib/ayumi_web/live/export_live/index.ex:65
 #: lib/ayumi_web/live/support_record_live/index.ex:116
 #, elixir-autogen, elixir-format
 msgid "全員"
@@ -1066,4 +1052,72 @@ msgstr ""
 #: lib/ayumi_web/live/attendance_live/index.ex:181
 #, elixir-autogen, elixir-format
 msgid "表示中の月の日付のみ保存できます"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:84
+#, elixir-autogen, elixir-format
+msgid "CSV には個人情報が含まれます。保存先と持ち出しに注意してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:79
+#, elixir-autogen, elixir-format
+msgid "CSVをダウンロード"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:54
+#: lib/ayumi_web/live/export_live/index.ex:13
+#: lib/ayumi_web/live/export_live/index.ex:37
+#, elixir-autogen, elixir-format
+msgid "CSV出力"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:95
+#, elixir-autogen, elixir-format
+msgid "オフラインです"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:100
+#: lib/ayumi_web/components/layouts.ex:112
+#, elixir-autogen, elixir-format
+msgid "再接続しています"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:47
+#, elixir-autogen, elixir-format
+msgid "出力するデータ"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:71
+#, elixir-autogen, elixir-format
+msgid "出力期間"
+msgstr ""
+
+#: lib/ayumi_web/controllers/export_controller.ex:21
+#, elixir-autogen, elixir-format
+msgid "出力条件が正しくありません。もう一度指定してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:56
+#, elixir-autogen, elixir-format
+msgid "基準日"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:58
+#, elixir-autogen, elixir-format
+msgid "基準日を含む週(月曜始まり)・月・年度(4月〜翌3月)・暦年が出力されます。"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:53
+#, elixir-autogen, elixir-format
+msgid "期間の単位"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:39
+#, elixir-autogen, elixir-format
+msgid "記録を Excel で開ける CSV ファイルとして保存します。"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:107
+#, elixir-autogen, elixir-format
+msgid "通信エラーが発生しました"
 msgstr ""
