@@ -1,6 +1,7 @@
 defmodule AyumiWeb.ServiceUserLiveTest do
   use AyumiWeb.ConnCase
 
+  import Ecto.Query, only: [from: 2]
   import Phoenix.LiveViewTest
   import Ayumi.PlansFixtures
   import Ayumi.AccountsFixtures
@@ -220,7 +221,7 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       su =
         service_user_fixture(%{
           name: "期限テスト",
-          recipient_cert_expiry: Date.add(Date.utc_today(), 10)
+          recipient_cert_expiry: Date.add(Ayumi.JST.today(), 10)
         })
 
       staff = Ayumi.AccountsFixtures.user_fixture()
@@ -228,7 +229,7 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       support_plan_fixture(%{
         service_user_id: su.id,
         staff_id: staff.id,
-        next_monitoring_date: Date.add(Date.utc_today(), -5)
+        next_monitoring_date: Date.add(Ayumi.JST.today(), -5)
       })
 
       {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
@@ -276,6 +277,21 @@ defmodule AyumiWeb.ServiceUserLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/service_users/#{su.id}")
       assert html =~ "支援記録"
       assert html =~ "テスト支援記録"
+    end
+
+    test "shows the recording time of support records in Japan time", %{conn: conn} do
+      su = service_user_fixture()
+      record = support_record_fixture(%{service_user_id: su.id, support_date: ~D[2026-06-02]})
+
+      Ayumi.Repo.update_all(
+        from(r in Ayumi.Plans.SupportRecord, where: r.id == ^record.id),
+        set: [recorded_at: ~U[2026-06-01 15:30:00Z]]
+      )
+
+      {:ok, lv, _html} = live(conn, ~p"/service_users/#{su.id}")
+
+      assert has_element?(lv, "#recent-support-records td", "2026-06-02 00:30")
+      refute has_element?(lv, "#recent-support-records td", "2026-06-01 15:30")
     end
 
     test "does not show other service user's data", %{conn: conn} do

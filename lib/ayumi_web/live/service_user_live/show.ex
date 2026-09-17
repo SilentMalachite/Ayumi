@@ -2,6 +2,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
   use AyumiWeb, :live_view
 
   alias Ayumi.Accounts.User
+  alias Ayumi.JST
   alias Ayumi.Plans
 
   alias Ayumi.Plans.{
@@ -18,7 +19,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     service_user = Plans.get_service_user!(id)
-    today = Date.utc_today()
+    today = JST.today()
     support_plans = Plans.list_support_plans_for_user(service_user)
     current_plan = List.first(support_plans)
 
@@ -288,7 +289,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
         >
           <:col :let={r} label={gettext("支援日")}>{Date.to_iso8601(r.support_date)}</:col>
           <:col :let={r} label={gettext("記録日時")}>
-            {Calendar.strftime(r.recorded_at, "%Y-%m-%d %H:%M")}
+            <.jst_datetime value={r.recorded_at} />
           </:col>
           <:col :let={r} label={gettext("カテゴリ")}>{SupportRecordCategory.label(r.category)}</:col>
           <:col :let={r} label={gettext("内容")}>{String.slice(r.content, 0..50)}</:col>

@@ -1,6 +1,7 @@
 defmodule AyumiWeb.SupportRecordLiveTest do
   use AyumiWeb.ConnCase
 
+  import Ecto.Query, only: [from: 2]
   import Phoenix.LiveViewTest
   import Ayumi.PlansFixtures
 
@@ -100,6 +101,26 @@ defmodule AyumiWeb.SupportRecordLiveTest do
 
       assert html =~ "未来の日付は指定できません"
       refute html =~ "支援記録を保存しました"
+    end
+
+    test "the list shows the recording time in Japan time", %{conn: conn} do
+      su = service_user_fixture()
+      record = support_record_fixture(%{service_user_id: su.id, support_date: ~D[2026-06-02]})
+
+      # 2026-06-01 15:30 UTC is 2026-06-02 00:30 in Japan.
+      Ayumi.Repo.update_all(
+        from(r in Ayumi.Plans.SupportRecord, where: r.id == ^record.id),
+        set: [recorded_at: ~U[2026-06-01 15:30:00Z]]
+      )
+
+      {:ok, lv, _html} = live(conn, ~p"/support_records")
+
+      lv
+      |> element("#support-record-filter")
+      |> render_change(%{"service_user_id" => "", "from" => "2026-06-02", "to" => "2026-06-02"})
+
+      assert has_element?(lv, "#support-records td", "2026-06-02 00:30")
+      refute has_element?(lv, "#support-records td", "2026-06-01 15:30")
     end
 
     test "the service user page shows the support date", %{conn: conn} do

@@ -8,6 +8,7 @@ defmodule Ayumi.Plans do
 
   alias Ayumi.Accounts.Scope
   alias Ayumi.Accounts.User
+  alias Ayumi.JST
   alias Ayumi.Plans.Goal
   alias Ayumi.Plans.GoalProgress
   alias Ayumi.Plans.PlanPhaseEvent
@@ -323,7 +324,7 @@ defmodule Ayumi.Plans do
   """
   def list_monitoring_deadline_alerts(
         %Scope{user: user},
-        today \\ Date.utc_today(),
+        today \\ JST.today(),
         near_days \\ 30
       ) do
     current_staff_id = user.id
@@ -648,7 +649,7 @@ defmodule Ayumi.Plans do
   """
   def list_certificate_expiry_alerts(
         _scope,
-        today \\ Date.utc_today(),
+        today \\ JST.today(),
         near_days \\ 60
       ) do
     ServiceUser

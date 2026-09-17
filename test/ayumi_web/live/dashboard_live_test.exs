@@ -27,13 +27,13 @@ defmodule AyumiWeb.DashboardLiveTest do
       support_plan_fixture(%{
         service_user_id: service_user.id,
         staff_id: staff.id,
-        next_monitoring_date: Date.add(Date.utc_today(), -3)
+        next_monitoring_date: Date.add(Ayumi.JST.today(), -3)
       })
 
       support_plan_fixture(%{
         service_user_id: service_user_fixture(%{name: "通知 花子", name_kana: "つうち はなこ"}).id,
         staff_id: staff.id,
-        next_monitoring_date: Date.add(Date.utc_today(), 10)
+        next_monitoring_date: Date.add(Ayumi.JST.today(), 10)
       })
 
       {:ok, lv, _html} = live(conn, ~p"/")
@@ -54,7 +54,7 @@ defmodule AyumiWeb.DashboardLiveTest do
         support_plan_fixture(%{
           service_user_id: service_user.id,
           staff_id: staff.id,
-          next_monitoring_date: Date.add(Date.utc_today(), -1)
+          next_monitoring_date: Date.add(Ayumi.JST.today(), -1)
         })
 
       {:ok, lv, html} = live(conn, ~p"/")
@@ -75,14 +75,14 @@ defmodule AyumiWeb.DashboardLiveTest do
         support_plan_fixture(%{
           service_user_id: own_user.id,
           staff_id: current_staff.id,
-          next_monitoring_date: Date.add(Date.utc_today(), 7)
+          next_monitoring_date: Date.add(Ayumi.JST.today(), 7)
         })
 
       other_plan =
         support_plan_fixture(%{
           service_user_id: other_user.id,
           staff_id: other_staff.id,
-          next_monitoring_date: Date.add(Date.utc_today(), -10)
+          next_monitoring_date: Date.add(Ayumi.JST.today(), -10)
         })
 
       {:ok, _lv, html} = live(conn, ~p"/")
@@ -99,7 +99,7 @@ defmodule AyumiWeb.DashboardLiveTest do
         service_user_fixture(%{
           name: "証期限 太郎",
           name_kana: "しょうきげん たろう",
-          recipient_cert_expiry: Date.add(Date.utc_today(), -5)
+          recipient_cert_expiry: Date.add(Ayumi.JST.today(), -5)
         })
 
       {:ok, lv, html} = live(conn, ~p"/")

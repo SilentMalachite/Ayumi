@@ -164,7 +164,7 @@ defmodule AyumiWeb.SupportRecordLive.Index do
           {Date.to_iso8601(record.support_date)}
         </:col>
         <:col :let={record} label={gettext("記録日時")}>
-          {Calendar.strftime(record.recorded_at, "%Y-%m-%d %H:%M")}
+          <.jst_datetime value={record.recorded_at} />
         </:col>
         <:col :let={record} label={gettext("利用者")}>
           {record.service_user.name}

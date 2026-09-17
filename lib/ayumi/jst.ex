@@ -19,10 +19,16 @@ defmodule Ayumi.JST do
     datetime |> DateTime.add(@offset_seconds, :second) |> DateTime.to_naive()
   end
 
-  @doc ~S(Formats a UTC datetime as JST text: "YYYY-MM-DD HH:MM:SS".)
-  def format(%DateTime{} = datetime) do
-    datetime |> to_naive() |> Calendar.strftime("%Y-%m-%d %H:%M:%S")
+  @doc """
+  Formats a UTC datetime as JST text: `"YYYY-MM-DD HH:MM:SS"`, or
+  `"YYYY-MM-DD HH:MM"` with `:minute` precision.
+  """
+  def format(%DateTime{} = datetime, precision \\ :second) do
+    datetime |> to_naive() |> Calendar.strftime(strftime_format(precision))
   end
+
+  defp strftime_format(:second), do: "%Y-%m-%d %H:%M:%S"
+  defp strftime_format(:minute), do: "%Y-%m-%d %H:%M"
 
   @doc """
   The half-open UTC range `{from, to_exclusive}` covering the JST dates
