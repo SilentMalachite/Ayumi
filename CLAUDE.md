@@ -63,8 +63,10 @@ Append-only logs (the core idea):
 
 - `plan_phase_event` — one row per transition of a plan through its lifecycle stage.
 - `goal_progress` — one row per progress update of a `goal`.
-- `support_record` — one row per daily support note for a service user (category,
-  content, recorded_by, recorded_at).
+- `support_record` — one row per daily support note for a service user
+  (support_date, category, content, recorded_by, recorded_at). `support_date` is the
+  day the support happened, as `service_date` is for attendance; `recorded_at` is
+  the moment the row was written.
 - `attendance_record` — one row per daily attendance / service-provision entry for
   a service user (service_date, provision_type, pickup, dropoff, start_time,
   end_time, note, recorded_by, recorded_at). Corrections are also new rows; the
@@ -202,8 +204,13 @@ Optional (done):
   Release. `Ayumi.Release` module provides `migrate/0` and `create_user/0`
   for `bin/ayumi eval` in compiled releases.
 - `support_record` (支援記録): daily support notes per service user, append-only
-  with category (work / daily_living / health / interview / other), content,
-  recorded_by, recorded_at. `/support_records` for listing, filtering, creating.
+  with support_date, category (work / daily_living / health / interview / other),
+  content, recorded_by, recorded_at. `/support_records` for listing, filtering,
+  creating. Lists and the `:from` / `:to` filter work on `support_date`. When no
+  support date is given, `SupportRecord.put_audit/3` sets it to the JST date of
+  `recorded_at` (the clock is passed in, so the changeset stays pure) and rejects a
+  date after that day. SQLite cannot make the column NOT NULL after the fact, so
+  presence is enforced by the changeset.
 - `attendance_record` (出欠・実績記録票): daily attendance / service-provision
   rows per service user, append-only with `provision_type` (`ProvisionType`),
   `pickup` / `dropoff`, `start_time` / `end_time`, `note`, `recorded_by`,
@@ -226,5 +233,69 @@ Optional (done):
   (capped at 16 retries). Reachable via the manager-only LiveView at
   `/admin/backup` and the `mix ayumi.backup [dest]` task. Flash + inline result
   panel show path, size, and the UTC `created_at` timestamp.
+- CSV export (done — increments 1–3 of
+  `docs/superpowers/plans/2026-09-17-csv-export-import.md`): `/exports`
+  (`AyumiWeb.ExportLive.Index`, all staff) picks a dataset, a period unit
+  (week from Monday / month / fiscal year Apr–Mar / calendar year), an anchor date,
+  and an optional service user; `GET /exports/download` (`AyumiWeb.ExportController`)
+  sends the file. `Ayumi.Exports.build/2` validates the params with the
+  `Ayumi.Exports.Request` changeset and derives the CSV — never stored.
+  `Ayumi.Exports.Period` is pure. `Ayumi.CSV` encodes UTF-8 with BOM, CRLF, and
+  formula escaping via `nimble_csv`; each dataset's columns live in one module
+  (`Ayumi.CSV.Attendance` / `SupportRecords` / `GoalProgress` / `PlanPhaseEvents` /
+  `ServiceUsers`, all deriving header and rows from one list via `Ayumi.CSV.Columns`). Attendance is folded by
+  `Plans.latest_attendance_by_user_date/1` (latest row per user and date wins) and
+  includes withdrawn users. Support records are selected by `support_date`
+  (`Plans.list_support_records_between/3` takes dates). Goal progress and plan
+  phase events have only `recorded_at`, so their `Plans.list_*_between/3` take a
+  half-open UTC range and `Ayumi.Exports` converts the JST period with
+  `Ayumi.JST.utc_range/2`; `Plans` stays time zone agnostic. All three include
+  withdrawn users. Exported datetimes
+  are JST via `Ayumi.JST` (fixed +9h; the screens still show UTC). The service user
+  master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
+  changeset requires unit and anchor date only for periodic datasets, and the form
+  hides those inputs.
+- CSV import (done — increments 4a–6c of the same plan: attendance, support
+  records, and the service user master).
+  The manager-only screen is `/admin/import` (`AyumiWeb.ImportLive.Index`,
+  `allow_upload` for one `.csv`): upload → preview → confirm → commit, with a
+  re-confirmation when the commit reports a stale plan. `Ayumi.Imports.preview_attendance/2`
+  parses and validates the whole file and plans what would be written without
+  writing (`Ayumi.Imports.Preview`: `to_insert` with `kind: :new | :correction`,
+  `unchanged`, `errors` with Excel row number and column); `commit_attendance/2`
+  re-plans inside a transaction and writes only if the plan still matches, else
+  `{:error, :stale, fresh_preview}`. Append-only: rows go through
+  `Plans.create_attendance_record/2`, an existing date gets a correction row, rows
+  identical to the current latest row are skipped, and removing a CSV row deletes
+  nothing. All or nothing; an in-file duplicate (service user, date) is an error,
+  not last-wins. Manager only, checked in the context too. Each dataset's column
+  list (`Ayumi.CSV.Columns`) carries the import spec next to the dump function, so
+  an exported attendance file imports back unchanged; `Ayumi.CSV.decode/1` and the
+  `Ayumi.CSV.Cell.parse_*` functions accept what Excel rewrites (`2026/9/1`, `9:00`,
+  full-width characters, no BOM, LF) and reject Shift_JIS with advice to save as
+  "CSV UTF-8". Validation stays in the changeset; `Imports` only maps its errors
+  onto columns. `Ayumi.Imports` is the public API plus the shared steps (authorize,
+  file checks, the commit transaction); planning lives in
+  `Ayumi.Imports.AttendancePlan` and `Ayumi.Imports.ServiceUsersPlan`. The service
+  user master import is create-only: a row is `skipped` when its 利用者ID exists,
+  its 受給者証番号 matches ignoring leading zeros (Excel drops them), or its name and
+  birthdate both match (`Ayumi.Imports.Matching`); an unknown 利用者ID is an error;
+  blank cells are left out of the attrs so schema defaults apply; certificates are
+  not imported; non-blocking `warnings` flag a cert number that is not 10 digits and
+  a same-name person who cannot be checked by birthdate. The support record import
+  (`Ayumi.Imports.SupportRecordsPlan`) has no corrections, because a support record
+  has no natural key: a row identical to an existing record (service user, support
+  date, category, content — ignoring line endings and trailing whitespace) is
+  `unchanged`, anything else is a new record, and an edited exported row (known by
+  its optional 記録ID column) gets a warning that the original stays. Its rows are
+  validated with `Plans.support_record_changeset/3`, the changeset
+  `create_support_record/3` itself inserts, so the rules apply in the preview
+  exactly as at commit. One rule is lifted for the import only: past support
+  records of a withdrawn service user are accepted (with a warning) via
+  `allow_withdrawn: true`, which nothing but
+  `Ayumi.Imports.SupportRecordsPlan.write_opts/0` passes — entering such a record
+  on screen stays refused. The log imports share
+  `Ayumi.Imports.ServiceUserResolver` (利用者ID first, else a unique 氏名; both must
+  agree when given).
 
 All steps are complete and green. Each was `mix review`-clean before merging.

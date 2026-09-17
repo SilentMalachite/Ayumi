@@ -8,10 +8,13 @@ defmodule Ayumi.DataCase do
 
   Finally, if the test case interacts with the database,
   we enable the SQL sandbox, so changes done to the database
-  are reverted at the end of every test. If you are using
-  PostgreSQL, you can even run database tests asynchronously
-  by setting `use Ayumi.DataCase, async: true`, although
-  this option is not recommended for other databases.
+  are reverted at the end of every test.
+
+  Always `use Ayumi.DataCase, async: false`. This app runs on SQLite, which has a
+  single writer: concurrent test modules queue for the write lock, and one that
+  waits longer than the busy timeout fails with `Exqlite.Error: Database busy` —
+  intermittently, and mostly on CI. Only tests that never touch the database may
+  be `async: true`.
   """
 
   use ExUnit.CaseTemplate

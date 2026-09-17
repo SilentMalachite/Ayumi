@@ -11,7 +11,7 @@
 msgid ""
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:325
+#: lib/ayumi_web/live/service_user_live/show.ex:326
 #, elixir-autogen, elixir-format
 msgid "%{birthdate}（%{age}歳）"
 msgstr ""
@@ -24,22 +24,6 @@ msgstr ""
 #: lib/ayumi_web/components/core_components.ex:342
 #, elixir-autogen, elixir-format
 msgid "Actions"
-msgstr ""
-
-#: lib/ayumi_web/components/layouts.ex:94
-#: lib/ayumi_web/components/layouts.ex:106
-#, elixir-autogen, elixir-format
-msgid "Attempting to reconnect"
-msgstr ""
-
-#: lib/ayumi_web/components/layouts.ex:101
-#, elixir-autogen, elixir-format
-msgid "Something went wrong!"
-msgstr ""
-
-#: lib/ayumi_web/components/layouts.ex:89
-#, elixir-autogen, elixir-format
-msgid "We can't find the internet"
 msgstr ""
 
 #: lib/ayumi_web/components/core_components.ex:74
@@ -103,10 +87,11 @@ msgstr ""
 msgid "備考"
 msgstr ""
 
-#: lib/ayumi_web/components/layouts.ex:48
-#: lib/ayumi_web/live/support_record_live/index.ex:111
-#: lib/ayumi_web/live/support_record_live/index.ex:150
-#: lib/ayumi_web/live/support_record_live/index.ex:170
+#: lib/ayumi_web/components/layouts.ex:51
+#: lib/ayumi_web/live/export_live/index.ex:65
+#: lib/ayumi_web/live/support_record_live/index.ex:127
+#: lib/ayumi_web/live/support_record_live/index.ex:169
+#: lib/ayumi_web/live/support_record_live/index.ex:189
 #, elixir-autogen, elixir-format
 msgid "利用者"
 msgstr ""
@@ -379,8 +364,8 @@ msgstr ""
 #: lib/ayumi_web/live/support_plan_live/form.ex:85
 #: lib/ayumi_web/live/support_plan_live/show.ex:192
 #: lib/ayumi_web/live/support_plan_live/show.ex:262
-#: lib/ayumi_web/live/support_record_live/index.ex:172
-#: lib/ayumi_web/live/support_record_live/index.ex:179
+#: lib/ayumi_web/live/support_record_live/index.ex:191
+#: lib/ayumi_web/live/support_record_live/index.ex:204
 #, elixir-autogen, elixir-format
 msgid "選択してください"
 msgstr ""
@@ -582,13 +567,13 @@ msgid "説明・同意・交付"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:213
-#: lib/ayumi_web/live/service_user_live/show.ex:348
+#: lib/ayumi_web/live/service_user_live/show.ex:349
 #, elixir-autogen, elixir-format
 msgid "%{days}日超過"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:217
-#: lib/ayumi_web/live/service_user_live/show.ex:350
+#: lib/ayumi_web/live/service_user_live/show.ex:351
 #, elixir-autogen, elixir-format
 msgid "あと%{days}日"
 msgstr ""
@@ -632,7 +617,7 @@ msgid "期限が近いモニタリング予定はありません"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:216
-#: lib/ayumi_web/live/service_user_live/show.ex:349
+#: lib/ayumi_web/live/service_user_live/show.ex:350
 #, elixir-autogen, elixir-format
 msgid "本日期限"
 msgstr ""
@@ -648,7 +633,7 @@ msgid "計画を開く"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:209
-#: lib/ayumi_web/live/service_user_live/show.ex:345
+#: lib/ayumi_web/live/service_user_live/show.ex:346
 #, elixir-autogen, elixir-format
 msgid "超過"
 msgstr ""
@@ -659,7 +644,7 @@ msgid "超過と%{days}日以内の予定を表示しています"
 msgstr ""
 
 #: lib/ayumi_web/live/dashboard_live/index.ex:210
-#: lib/ayumi_web/live/service_user_live/show.ex:346
+#: lib/ayumi_web/live/service_user_live/show.ex:347
 #, elixir-autogen, elixir-format
 msgid "近接"
 msgstr ""
@@ -692,7 +677,7 @@ msgstr ""
 msgid "この操作にはサービス管理責任者の権限が必要です"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:292
+#: lib/ayumi_web/live/service_user_live/show.ex:293
 #, elixir-autogen, elixir-format
 msgid "カテゴリ"
 msgstr ""
@@ -703,7 +688,7 @@ msgstr ""
 msgid "データベースバックアップ"
 msgstr ""
 
-#: lib/ayumi_web/components/layouts.ex:51
+#: lib/ayumi_web/components/layouts.ex:60
 #, elixir-autogen, elixir-format
 msgid "バックアップ"
 msgstr ""
@@ -738,7 +723,7 @@ msgstr ""
 msgid "バックアップ実行"
 msgstr ""
 
-#: lib/ayumi_web/live/attendance_live/index.ex:243
+#: lib/ayumi_web/live/attendance_live/index.ex:241
 #, elixir-autogen, elixir-format
 msgid "保存できませんでした"
 msgstr ""
@@ -748,14 +733,16 @@ msgstr ""
 msgid "保存先ディレクトリ"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:116
+#: lib/ayumi_web/live/export_live/index.ex:67
+#: lib/ayumi_web/live/support_record_live/index.ex:132
 #, elixir-autogen, elixir-format
 msgid "全員"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:293
-#: lib/ayumi_web/live/support_record_live/index.ex:159
-#: lib/ayumi_web/live/support_record_live/index.ex:184
+#: lib/ayumi_web/live/import_live/index.ex:235
+#: lib/ayumi_web/live/service_user_live/show.ex:294
+#: lib/ayumi_web/live/support_record_live/index.ex:178
+#: lib/ayumi_web/live/support_record_live/index.ex:209
 #, elixir-autogen, elixir-format
 msgid "内容"
 msgstr ""
@@ -782,8 +769,8 @@ msgstr ""
 msgid "利用開始日"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:153
-#: lib/ayumi_web/live/support_record_live/index.ex:177
+#: lib/ayumi_web/live/support_record_live/index.ex:172
+#: lib/ayumi_web/live/support_record_live/index.ex:202
 #, elixir-autogen, elixir-format
 msgid "区分"
 msgstr ""
@@ -844,28 +831,28 @@ msgid "支援計画なし"
 msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:283
-#: lib/ayumi_web/live/support_record_live/index.ex:15
-#: lib/ayumi_web/live/support_record_live/index.ex:106
+#: lib/ayumi_web/live/support_record_live/index.ex:17
+#: lib/ayumi_web/live/support_record_live/index.ex:118
 #, elixir-autogen, elixir-format
 msgid "支援記録"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:297
+#: lib/ayumi_web/live/service_user_live/show.ex:298
 #, elixir-autogen, elixir-format
 msgid "支援記録なし"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:50
+#: lib/ayumi_web/live/support_record_live/index.ex:52
 #, elixir-autogen, elixir-format
 msgid "支援記録を保存しました"
 msgstr ""
 
-#: lib/ayumi_web/live/service_user_live/show.ex:301
+#: lib/ayumi_web/live/service_user_live/show.ex:302
 #, elixir-autogen, elixir-format
 msgid "支援記録表を見る →"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:165
+#: lib/ayumi_web/live/support_record_live/index.ex:184
 #, elixir-autogen, elixir-format
 msgid "新規記録"
 msgstr ""
@@ -874,12 +861,6 @@ msgstr ""
 #: lib/ayumi_web/live/attendance_live/sheet.ex:104
 #, elixir-autogen, elixir-format
 msgid "日"
-msgstr ""
-
-#: lib/ayumi_web/live/service_user_live/show.ex:289
-#: lib/ayumi_web/live/support_record_live/index.ex:147
-#, elixir-autogen, elixir-format
-msgid "日時"
 msgstr ""
 
 #: lib/ayumi_web/live/attendance_live/index.ex:80
@@ -927,11 +908,6 @@ msgstr ""
 msgid "終了"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:136
-#, elixir-autogen, elixir-format
-msgid "終了日"
-msgstr ""
-
 #: lib/ayumi_web/live/attendance_live/index.ex:52
 #: lib/ayumi_web/live/attendance_live/sheet.ex:55
 #, elixir-autogen, elixir-format
@@ -948,19 +924,19 @@ msgstr ""
 msgid "計画詳細を見る →"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:156
+#: lib/ayumi_web/live/support_record_live/index.ex:175
 #, elixir-autogen, elixir-format
 msgid "記入者"
 msgstr ""
 
-#: lib/ayumi_web/live/support_record_live/index.ex:187
+#: lib/ayumi_web/live/support_record_live/index.ex:212
 #, elixir-autogen, elixir-format
 msgid "記録する"
 msgstr ""
 
 #: lib/ayumi_web/live/service_user_live/show.ex:257
 #: lib/ayumi_web/live/service_user_live/show.ex:268
-#: lib/ayumi_web/live/service_user_live/show.ex:294
+#: lib/ayumi_web/live/service_user_live/show.ex:295
 #, elixir-autogen, elixir-format
 msgid "記録者"
 msgstr ""
@@ -1005,11 +981,6 @@ msgstr ""
 #: lib/ayumi_web/live/attendance_live/sheet.ex:107
 #, elixir-autogen, elixir-format
 msgid "開始"
-msgstr ""
-
-#: lib/ayumi_web/live/support_record_live/index.ex:127
-#, elixir-autogen, elixir-format
-msgid "開始日"
 msgstr ""
 
 #: lib/ayumi_web/live/attendance_live/index.ex:16
@@ -1066,4 +1037,283 @@ msgstr ""
 #: lib/ayumi_web/live/attendance_live/index.ex:181
 #, elixir-autogen, elixir-format
 msgid "表示中の月の日付のみ保存できます"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:90
+#, elixir-autogen, elixir-format
+msgid "CSV には個人情報が含まれます。保存先と持ち出しに注意してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:85
+#, elixir-autogen, elixir-format
+msgid "CSVをダウンロード"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:54
+#: lib/ayumi_web/live/export_live/index.ex:13
+#: lib/ayumi_web/live/export_live/index.ex:38
+#, elixir-autogen, elixir-format
+msgid "CSV出力"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:98
+#, elixir-autogen, elixir-format
+msgid "オフラインです"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:103
+#: lib/ayumi_web/components/layouts.ex:115
+#, elixir-autogen, elixir-format
+msgid "再接続しています"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:48
+#, elixir-autogen, elixir-format
+msgid "出力するデータ"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:77
+#, elixir-autogen, elixir-format
+msgid "出力期間"
+msgstr ""
+
+#: lib/ayumi_web/controllers/export_controller.ex:21
+#, elixir-autogen, elixir-format
+msgid "出力条件が正しくありません。もう一度指定してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:58
+#, elixir-autogen, elixir-format
+msgid "基準日"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:60
+#, elixir-autogen, elixir-format
+msgid "基準日を含む週(月曜始まり)・月・年度(4月〜翌3月)・暦年が出力されます。"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:55
+#, elixir-autogen, elixir-format
+msgid "期間の単位"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:40
+#, elixir-autogen, elixir-format
+msgid "記録を Excel で開ける CSV ファイルとして保存します。"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:110
+#, elixir-autogen, elixir-format
+msgid "通信エラーが発生しました"
+msgstr ""
+
+#: lib/ayumi_web/live/export_live/index.ex:71
+#, elixir-autogen, elixir-format
+msgid "期間の指定はありません。退所者を含む全員の現在の登録内容が出力されます。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:143
+#, elixir-autogen, elixir-format
+msgid "1 行でもエラーがあると、ファイル全体を取り込みません。上限は %{rows} 行です。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:140
+#, elixir-autogen, elixir-format
+msgid "CSV から行を消しても、記録は削除されません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:305
+#, elixir-autogen, elixir-format
+msgid "CSV ファイル（.csv）を選択してください。"
+msgstr ""
+
+#: lib/ayumi_web/components/layouts.ex:57
+#: lib/ayumi_web/live/import_live/index.ex:15
+#: lib/ayumi_web/live/import_live/index.ex:103
+#, elixir-autogen, elixir-format
+msgid "CSV取込"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:114
+#, elixir-autogen, elixir-format
+msgid "Excel で保存するときは、ファイルの種類を「CSV UTF-8（コンマ区切り）」にしてください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:117
+#, elixir-autogen, elixir-format
+msgid "すでに記録のある利用日は、訂正として追記されます（元の記録は履歴に残ります）。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:296
+#, elixir-autogen, elixir-format
+msgid "やめる"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:228
+#, elixir-autogen, elixir-format
+msgid "エラーを修正して、もう一度ファイルを選択してください。何も取り込まれていません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:304
+#, elixir-autogen, elixir-format
+msgid "ファイルが大きすぎます。月ごとに分けて取り込んでください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:306
+#, elixir-autogen, elixir-format
+msgid "ファイルは 1 つだけ選択してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:307
+#, elixir-autogen, elixir-format
+msgid "ファイルを読み込めませんでした。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:87
+#, elixir-autogen, elixir-format
+msgid "ファイルを選択してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:247
+#, elixir-autogen, elixir-format
+msgid "他 %{count} 件"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:177
+#, elixir-autogen, elixir-format
+msgid "内容を確認"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:234
+#, elixir-autogen, elixir-format
+msgid "列"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:281
+#, elixir-autogen, elixir-format
+msgid "取り込む変更はありません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:65
+#: lib/ayumi_web/live/import_live/index.ex:186
+#, elixir-autogen, elixir-format
+msgid "取込が完了しました"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:293
+#, elixir-autogen, elixir-format
+msgid "取込を実行"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:290
+#, elixir-autogen, elixir-format
+msgid "取込中…"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "取込内容の確認"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:221
+#, elixir-autogen, elixir-format
+msgid "次の列は取り込まれません: %{headers}"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:204
+#, elixir-autogen, elixir-format
+msgid "確認のあとに記録が変更されたため、内容を計算し直しました。もう一度確認してから実行してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:233
+#, elixir-autogen, elixir-format
+msgid "行"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:105
+#, elixir-autogen, elixir-format
+msgid "Excel で作成・編集した CSV を取り込みます。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:111
+#, elixir-autogen, elixir-format
+msgid "「CSV出力」で保存したファイルを Excel で編集し、そのまま取り込めます。見出しの行は変えないでください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:209
+#, elixir-autogen, elixir-format
+msgid "全 %{total} 行: 追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件／エラー %{errors} 件"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:152
+#, elixir-autogen, elixir-format
+msgid "取り込むデータ"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:137
+#, elixir-autogen, elixir-format
+msgid "受給者証番号・電話番号・郵便番号の列は、Excel で「文字列」にしておくと先頭の 0 が消えません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:129
+#, elixir-autogen, elixir-format
+msgid "新しい利用者だけを追加します。登録済みの利用者（利用者ID・受給者証番号・氏名と生年月日のいずれかが一致）は変更しません。変更は利用者の編集画面で行ってください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:134
+#, elixir-autogen, elixir-format
+msgid "新しい利用者は利用者ID を空欄にしてください。障害者手帳の列は取り込まれません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:253
+#, elixir-autogen, elixir-format
+msgid "次の行は取り込めますが、内容を確認してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:268
+#, elixir-autogen, elixir-format
+msgid "次の行は登録済みのため取り込まれません（変更もされません）。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:188
+#, elixir-autogen, elixir-format
+msgid "追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:289
+#: lib/ayumi_web/live/support_record_live/index.ex:163
+#: lib/ayumi_web/live/support_record_live/index.ex:196
+#, elixir-autogen, elixir-format
+msgid "支援日"
+msgstr ""
+
+#: lib/ayumi_web/live/support_record_live/index.ex:152
+#, elixir-autogen, elixir-format
+msgid "支援日（終了）"
+msgstr ""
+
+#: lib/ayumi_web/live/support_record_live/index.ex:143
+#, elixir-autogen, elixir-format
+msgid "支援日（開始）"
+msgstr ""
+
+#: lib/ayumi_web/live/service_user_live/show.ex:290
+#: lib/ayumi_web/live/support_record_live/index.ex:166
+#, elixir-autogen, elixir-format
+msgid "記録日時"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:123
+#, elixir-autogen, elixir-format
+msgid "利用者・支援日・区分・内容がすべて同じ記録が既にある行は取り込みません。内容を書き換えた行は、元の記録を残したまま新しい記録として追加されます。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:120
+#, elixir-autogen, elixir-format
+msgid "支援日・区分・内容は必須です。記録者は取り込んだ人、記録日時は取り込んだ時刻になります。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:126
+#, elixir-autogen, elixir-format
+msgid "未来の支援日は取り込めません。退所した利用者の過去の記録は取り込めます（画面からの入力はできません）。"
 msgstr ""

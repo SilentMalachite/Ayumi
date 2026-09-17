@@ -369,6 +369,94 @@ defmodule Ayumi.Plans.AttendanceRecordTest do
     end
   end
 
+  describe "list_attendance_records_between/3" do
+    test "returns rows within the inclusive date range, oldest-first by id" do
+      su = service_user_fixture()
+      before = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-05-31]})
+      first = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-30]})
+      second = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-01]})
+      later = attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-07-01]})
+
+      rows = Plans.list_attendance_records_between(~D[2026-06-01], ~D[2026-06-30])
+      ids = Enum.map(rows, & &1.id)
+
+      assert ids == [first.id, second.id]
+      refute before.id in ids
+      refute later.id in ids
+    end
+
+    test "covers every service user, including withdrawn ones" do
+      active = service_user_fixture(%{name: "在籍者"})
+      withdrawn = service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
+      _ = attendance_record_fixture(%{service_user_id: active.id})
+      _ = attendance_record_fixture(%{service_user_id: withdrawn.id})
+
+      rows = Plans.list_attendance_records_between(~D[2026-06-01], ~D[2026-06-01])
+
+      assert rows |> Enum.map(& &1.service_user_id) |> Enum.sort() ==
+               Enum.sort([active.id, withdrawn.id])
+    end
+
+    test "filters by :service_user_id" do
+      su = service_user_fixture()
+      other = service_user_fixture()
+      mine = attendance_record_fixture(%{service_user_id: su.id})
+      _ = attendance_record_fixture(%{service_user_id: other.id})
+
+      assert [row] =
+               Plans.list_attendance_records_between(~D[2026-06-01], ~D[2026-06-01],
+                 service_user_id: su.id
+               )
+
+      assert row.id == mine.id
+    end
+
+    test "preloads the service user and the recorder" do
+      _ = attendance_record_fixture()
+
+      assert [row] = Plans.list_attendance_records_between(~D[2026-06-01], ~D[2026-06-01])
+      assert %Ayumi.Plans.ServiceUser{} = row.service_user
+      assert %Ayumi.Accounts.User{} = row.recorded_by
+    end
+  end
+
+  describe "latest_attendance_by_user_date/1" do
+    test "keeps the largest-id row per service user and date" do
+      su = service_user_fixture()
+      other = service_user_fixture()
+      _old = attendance_record_fixture(%{service_user_id: su.id, provision_type: :commute})
+      fix = attendance_record_fixture(%{service_user_id: su.id, provision_type: :absence})
+      same_day = attendance_record_fixture(%{service_user_id: other.id})
+
+      next_day =
+        attendance_record_fixture(%{service_user_id: su.id, service_date: ~D[2026-06-02]})
+
+      latest =
+        ~D[2026-06-01]
+        |> Plans.list_attendance_records_between(~D[2026-06-02])
+        |> Plans.latest_attendance_by_user_date()
+
+      assert map_size(latest) == 3
+      assert latest[{su.id, ~D[2026-06-01]}].id == fix.id
+      assert latest[{other.id, ~D[2026-06-01]}].id == same_day.id
+      assert latest[{su.id, ~D[2026-06-02]}].id == next_day.id
+    end
+
+    test "is pure: does not depend on the input order" do
+      rows = [
+        %AttendanceRecord{id: 2, service_user_id: 1, service_date: ~D[2026-06-01]},
+        %AttendanceRecord{id: 1, service_user_id: 1, service_date: ~D[2026-06-01]}
+      ]
+
+      assert %{{1, ~D[2026-06-01]} => %AttendanceRecord{id: 2}} =
+               Plans.latest_attendance_by_user_date(rows)
+    end
+
+    test "returns an empty map for no rows" do
+      assert Plans.latest_attendance_by_user_date([]) == %{}
+    end
+  end
+
   describe "attendance_record_fixture/1" do
     test "creates a default commute record on 2026-06-01" do
       rec = attendance_record_fixture()

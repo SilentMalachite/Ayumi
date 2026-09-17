@@ -3,6 +3,134 @@
 本ファイルの記法は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠し、
 バージョニングは [セマンティック バージョニング](https://semver.org/lang/ja/) に従います。
 
+## [Unreleased]
+
+> **更新時の注意**: DB マイグレーションがあります（`support_records.support_date`）。ビルド済み
+> リリースは起動スクリプトが `Ayumi.Release.migrate()` を実行します。ソースから動かしている場合は
+> `mix ecto.migrate` を実行してください。
+
+### 変更
+
+- **支援記録に「支援日」（`support_date`）を追加**: 支援した日と、記録した瞬間（`recorded_at`）を
+  分けました。出欠の `service_date` と同じ考え方で、あとから入力した記録や CSV 取込でも
+  「いつの支援か」を保持できます。
+  - 既存の記録は、記録日時の日本時間の日付で埋めます（新しい導出列の初期化で、記録内容は
+    書き換えません）。SQLite は既存列を NOT NULL にできないため、必須は changeset で保証します。
+  - 入力フォームに「支援日」（既定は日本時間の今日）。未指定なら記録した日になり、**未来の日付は
+    指定できません**（`SupportRecord.put_audit/3`。時計はコンテキストから渡すので changeset は
+    純粋なまま）。
+  - 一覧・フィルタ・利用者まとめ画面は支援日基準になりました（`list_support_records/2` の
+    `:from` / `:to`、`list_recent_support_records/2` の並び）。フィルタの初期値も日本時間の今日に
+    なり、朝 9 時前の記録が前日扱いになる問題はこの画面では解消しています。一覧には「支援日」と
+    「記録日時」の両方を表示します。
+  - CSV 出力の支援記録に `支援日` 列を追加し、期間は支援日で絞ります
+    （`list_support_records_between/3` は日付の範囲を受け取る形に変更）。
+
+### 追加
+
+- **CSV 出力（出欠・実績記録）**: 全職員が使える `/exports` 画面を追加。出力するデータ・
+  期間の単位（週＝月曜始まり／月／年度＝4月〜翌3月／暦年）・基準日・利用者（任意）を選ぶと、
+  基準日を含む期間の CSV をダウンロードできます。append-only ログを利用者×利用日ごとに
+  畳み込み、最新行（訂正後の内容）だけを出力します。退所者の記録も含みます。
+  - ファイルは Excel でそのまま開ける UTF-8（BOM 付き）・CRLF・RFC 4180 形式。`=` `+` `-` `@`
+    などで始まるセルには `'` を前置し、Excel に数式として解釈されないようにしています。
+  - 記録日時は日本時間（JST）で出力します（`Ayumi.JST`。固定 +9 時間でタイムゾーン DB 不要）。
+  - **Exports コンテキスト**: `Ayumi.Exports.build/2`、期間計算の純粋関数
+    `Ayumi.Exports.Period`、出力条件の changeset `Ayumi.Exports.Request`。CSV の符号化は
+    `Ayumi.CSV`、列定義は `Ayumi.CSV.Attendance`。ダウンロードは
+    `AyumiWeb.ExportController`（`GET /exports/download`）。
+  - **Plans コンテキスト**: `list_attendance_records_between/3`（期間・全利用者）と
+    純粋関数 `latest_attendance_by_user_date/1` を追加。
+- **CSV 出力（支援記録／目標進捗の履歴／計画段階の履歴）**: `/exports` の「出力するデータ」に
+  3 種類のログを追加。記録日時（`recorded_at`）で期間を絞り、古い順に出力します。
+  - 期間の境界は日本時間の 0 時です（例: 9 月分は `2026-08-31T15:00:00Z` 以上
+    `2026-09-30T15:00:00Z` 未満）。変換は `Ayumi.Exports` が `Ayumi.JST.utc_range/2` で行い、
+    `Plans` はタイムゾーンに依存しません。
+  - 退所者の記録も含め、`在籍状態` 列で判別できます。画面の支援記録一覧
+    （`list_support_records/2`。退所者を除外・UTC 基準）の挙動は変えていません。
+  - **Plans コンテキスト**: `list_support_records_between/3`、`list_goal_progress_between/3`、
+    `list_plan_phase_events_between/3`（半開区間 `[from, to)`・`:service_user_id` 絞り込み）。
+  - 列定義は `Ayumi.CSV.SupportRecords` / `Ayumi.CSV.GoalProgress` /
+    `Ayumi.CSV.PlanPhaseEvents`。ヘッダ行とデータ行を 1 つの列リストから導く
+    `Ayumi.CSV.Columns` を共有します。
+- **CSV 出力（利用者台帳）**: `/exports` の「出力するデータ」に利用者台帳を追加。期間の指定は
+  なく、退所者を含む全員の現在の登録内容を、登録フォームと同じ並び・同じ項目名で出力します
+  （ファイル名は出力日付き: `利用者台帳_2026-09-17.csv`）。障害者手帳は 1 セルに要約します
+  （例: `身体障害者手帳 第123号 下肢機能障害 3級 / 療育手帳 B2`）。
+  - `Ayumi.Exports.Dataset.periodic?/1` で期間の要否を判定し、`Ayumi.Exports.Request` は
+    期間つきのデータセットのときだけ単位と基準日を必須にします。画面も期間の入力欄を隠します。
+  - **Plans コンテキスト**: `list_service_users/1` に `:preload` オプションを追加（既定は従来どおり）。
+  - 列定義は `Ayumi.CSV.ServiceUsers`。
+- **CSV 取込（支援記録）**: `/admin/import` の「取り込むデータ」で支援記録を選べます。Excel に
+  あった過去の記録を、支援日つきで取り込めます。
+  - 読む列は `利用者ID`・`氏名`・`支援日`・`区分`・`内容`（支援日・区分・内容は必須）。`記録ID` の列は
+    任意で、手作りのファイルには不要です。記録者は取り込んだ人、記録日時は取り込んだ時刻です。
+  - 支援記録には自然キーがない（同じ人に同じ日の記録が複数あるのが普通）ため、「訂正」はありません。
+    利用者・支援日・区分・内容がすべて同じ記録が既にある行は「変更なし」としてスキップし（再取込や、
+    出力したファイルの取込ではログが増えません）、それ以外は新しい記録として追加します。出力した
+    CSV の内容を書き換えて取り込むと、元の記録は残ったまま新しい記録が追加されます。`記録ID` から
+    それが分かる行には「注意」を表示します。
+  - 同一ファイル内の完全に同じ行はエラー。未来の支援日は行エラーです（書き込み時と同じ changeset
+    `Plans.support_record_changeset/3` でプレビュー時に検証）。
+  - **退所した利用者の過去の記録は、取込に限って登録できます**（在籍中に書かれた記録を移行するため）。
+    確認画面に「注意」として表示します。画面からの入力は従来どおり拒否します。
+    `Plans.create_support_record/3` / `support_record_changeset/3` の `allow_withdrawn: true` で、
+    渡すのは CSV 取込（`Ayumi.Imports.SupportRecordsPlan.write_opts/0`）だけです。
+  - `Ayumi.Imports.preview_support_records/2` / `commit_support_records/2`、
+    `Ayumi.Imports.SupportRecordsPlan`。利用者の特定（ID 優先・氏名の一意一致）を
+    `Ayumi.Imports.ServiceUserResolver` に切り出し、出欠の取込と共有（挙動は不変）。
+    `Ayumi.CSV.Columns` に任意の見出し（`optional_header`）、`SupportRecordCategory.from_label/1`、
+    `Plans.get_support_records/1` を追加。
+- **CSV 取込（利用者台帳）**: `/admin/import` の「取り込むデータ」で利用者台帳を選べます。
+  **新規作成のみ**で、登録済みの利用者は変更せずスキップします（台帳の変更は、楽観ロックと
+  手帳の行を持つ編集画面で行います）。
+  - 登録済みの判定: `利用者ID` が存在する／`受給者証番号` が一致（Excel が落とす先頭の 0 は
+    無視）／`氏名` と `生年月日` がともに一致（全角・半角や空白の違いは無視）。存在しない
+    `利用者ID` はエラーです（新しい利用者は空欄にします）。
+  - 同一ファイル内で同じ人（氏名＋生年月日、または受給者証番号）が重複していればエラー。
+  - 取込はできるが確認してほしい行は「注意」として表示します: 受給者証番号が 10 桁でない、
+    同じ氏名の利用者が登録済みだが生年月日で照合できない。
+  - 空欄のセルは送らないので既定値が生きます（在籍状態の既定は「在籍」）。障害者手帳の列は
+    取り込みません。`/exports` で出力した台帳を取り込むと全件「既存」になります（往復）。
+  - `Ayumi.Imports.preview_service_users/2` / `commit_service_users/2`、データセットで振り分ける
+    `Imports.preview/3` / `commit/2`、`Ayumi.Imports.Dataset`。計画ロジックを
+    `Ayumi.Imports.AttendancePlan` / `Ayumi.Imports.ServiceUsersPlan` に分け、照合キーは
+    `Ayumi.Imports.Matching`。`Preview` に `skipped` / `warnings` を追加。
+  - `Gender` / `SupportCategory` / `EnrollmentStatus` に `from_label/1`、
+    `Ayumi.CSV.ServiceUsers` に取込仕様（`parse/1` ほか）を追加。
+- **CSV 取込画面（出欠・実績記録）**: サービス管理責任者専用の `/admin/import`
+  （`AyumiWeb.ImportLive.Index`、ナビに「CSV取込」）。CSV を選んで「内容を確認」を押すと、
+  何も書き込まずに「追加 N 件（うち訂正 M 件）／変更なし／エラー」を表示し、エラーは行番号・
+  列名つきの一覧（100 件まで）で示します。エラーがなければ「取込を実行」で確定します。確認の
+  あとに他の職員が同じ日を記録していた場合は、内容を計算し直して再確認を求めます。
+- **CSV 取込の土台（出欠・実績記録／コンテキスト層）**:
+  `Ayumi.Imports.preview_attendance/2` がファイル全体を解析・検証して「何が書き込まれるか」を
+  書き込まずに計画し（`Ayumi.Imports.Preview`: 追加／訂正／変更なし／エラー）、
+  `commit_attendance/2` がトランザクション内で計画し直して、確認時と同じ内容のときだけ
+  書き込みます（変わっていれば `{:error, :stale, 新しいプレビュー}`）。
+  - append-only: 登録は `Plans.create_attendance_record/2` 経由。既存の利用日は訂正行の追加に
+    なり、現在の最新行と同じ内容の行は「変更なし」としてスキップします（同じファイルを 2 回
+    取り込んでもログは増えません）。CSV から行を消しても記録は削除されません。
+  - 全件成功か全件中止。行エラーは Excel の行番号と列名つきで全件まとめて返します。同一ファイル内の
+    同じ利用者・利用日の重複は後勝ちにせずエラーにします。
+  - 利用者は `利用者ID` を優先し、空なら `氏名` の一意一致で特定。両方あれば一致が必須です
+    （全角・半角や空白の違いは無視）。
+  - `/exports` で出力した出欠 CSV はそのまま取り込めます（往復）。Excel が書き換えがちな
+    `2026/9/1`・`9:00`・全角文字・BOM なし・LF・末尾の空列も受け付けます。Shift_JIS は拒否し、
+    「CSV UTF-8（コンマ区切り）」での保存を案内します。上限は 2 MB・5,000 行。
+  - サービス管理責任者のみ（コンテキストでも `Scope.manager?/1` を確認）。
+  - `Ayumi.CSV.decode/1`、`Ayumi.CSV.Cell` の `parse_*`、`Ayumi.CSV.Columns.parse_row/2`
+    （列定義に取込仕様を追加し、出力と取込で 1 つの列リストを共有）、
+    `Ayumi.CSV.Attendance.parse/1`、`ProvisionType.from_label/1` を追加。
+- 依存に `nimble_csv`（純 Elixir・実行時のネットワーク不要）を追加。
+
+### 修正
+
+- テストの間欠的な失敗（`Exqlite.Error: Database busy`）を解消。DB を使うのに `async: true` だった
+  テストモジュール 6 つ（`plans_test.exs` と `plans/` 配下の 5 つ）を `async: false` にしました。
+  SQLite は書き込みが同時に 1 つのため、並行するテストが書き込みロックを取り合い、待ちが busy
+  timeout を超えると落ちていました（CI で発生）。`Ayumi.DataCase` の説明にもこのルールを明記。
+
 ## [0.2.1] — 2026-06-21
 
 ### 変更

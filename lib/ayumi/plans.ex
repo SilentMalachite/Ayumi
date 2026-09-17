@@ -20,15 +20,20 @@ defmodule Ayumi.Plans do
 
   ## Service users
 
-  @doc "Lists service users, ordered by kana then name. Excludes withdrawn by default."
+  @doc """
+  Lists service users, ordered by kana then name. Excludes withdrawn by default.
+  Options: `:include_withdrawn` (boolean), `:preload` (associations to preload).
+  """
   def list_service_users(opts \\ []) do
     include_withdrawn = Keyword.get(opts, :include_withdrawn, false)
+    preloads = Keyword.get(opts, :preload, [])
 
     ServiceUser
     |> then(fn q ->
       if include_withdrawn, do: q, else: where(q, [su], su.enrollment_status != :withdrawn)
     end)
     |> order_by([s], asc: s.name_kana, asc: s.name)
+    |> preload(^preloads)
     |> Repo.all()
   end
 
@@ -368,16 +373,50 @@ defmodule Ayumi.Plans do
     SupportRecord.changeset(support_record, attrs)
   end
 
-  @doc "Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock."
-  def create_support_record(%Scope{} = scope, attrs) when is_map(attrs) do
-    %SupportRecord{}
-    |> SupportRecord.changeset(attrs)
-    |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
-    |> validate_active_service_user("退所者には支援記録を作成できません")
+  @doc """
+  Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock.
+
+  Withdrawn service users are refused. `allow_withdrawn: true` lifts that one rule;
+  only the CSV import passes it, to bring in notes written while the person was
+  still enrolled. The screens never do.
+  """
+  def create_support_record(%Scope{} = scope, attrs, opts \\ []) when is_map(attrs) do
+    scope
+    |> support_record_changeset(attrs, opts)
     |> insert_support_record()
   end
 
-  @doc "Lists support records, newest first. Filters: service_user_id, from, to."
+  @doc """
+  The changeset `create_support_record/3` inserts: the user fields, the audit
+  stamp (which settles the support date), and the withdrawn-user rule (unless
+  `allow_withdrawn: true`). Public so
+  that the CSV import preview can validate a row by the very same rules without
+  writing anything.
+  """
+  def support_record_changeset(%Scope{} = scope, attrs, opts \\ []) when is_map(attrs) do
+    changeset =
+      %SupportRecord{}
+      |> SupportRecord.changeset(attrs)
+      |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
+
+    if Keyword.get(opts, :allow_withdrawn, false),
+      do: changeset,
+      else: validate_active_service_user(changeset, "退所者には支援記録を作成できません")
+  end
+
+  @doc "Gets the support records with the given ids. Unknown ids are ignored."
+  def get_support_records([]), do: []
+
+  def get_support_records(ids) when is_list(ids) do
+    SupportRecord
+    |> where([r], r.id in ^ids)
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists support records, newest support date first. Filters: `:service_user_id`,
+  and `:from` / `:to` on the support date (inclusive).
+  """
   def list_support_records(%Scope{}, opts \\ []) do
     service_user_id = Keyword.get(opts, :service_user_id)
     from_date = Keyword.get(opts, :from)
@@ -386,29 +425,15 @@ defmodule Ayumi.Plans do
     SupportRecord
     |> join(:inner, [r], su in assoc(r, :service_user))
     |> where([_r, su], su.enrollment_status != :withdrawn)
-    |> order_by([r], desc: r.recorded_at, desc: r.id)
+    |> order_by([r], desc: r.support_date, desc: r.recorded_at, desc: r.id)
     |> preload([:service_user, :recorded_by])
     |> then(fn q ->
       if service_user_id,
         do: where(q, [r], r.service_user_id == ^service_user_id),
         else: q
     end)
-    |> then(fn q ->
-      if from_date do
-        from_dt = DateTime.new!(from_date, ~T[00:00:00], "Etc/UTC")
-        where(q, [r], r.recorded_at >= ^from_dt)
-      else
-        q
-      end
-    end)
-    |> then(fn q ->
-      if to_date do
-        to_dt = DateTime.new!(Date.add(to_date, 1), ~T[00:00:00], "Etc/UTC")
-        where(q, [r], r.recorded_at < ^to_dt)
-      else
-        q
-      end
-    end)
+    |> then(fn q -> if from_date, do: where(q, [r], r.support_date >= ^from_date), else: q end)
+    |> then(fn q -> if to_date, do: where(q, [r], r.support_date <= ^to_date), else: q end)
     |> Repo.all()
   end
 
@@ -508,6 +533,39 @@ defmodule Ayumi.Plans do
     |> order_by([r], asc: r.id)
     |> Repo.all()
   end
+
+  @doc """
+  Lists raw attendance rows with `service_date` in `from..to` (inclusive),
+  oldest-first by `id`, for every service user — withdrawn ones included, so an
+  export never silently drops history. Filter: `:service_user_id`.
+  """
+  def list_attendance_records_between(%Date{} = from, %Date{} = to, opts \\ []) do
+    service_user_id = Keyword.get(opts, :service_user_id)
+
+    AttendanceRecord
+    |> where([r], r.service_date >= ^from and r.service_date <= ^to)
+    |> then(fn q ->
+      if service_user_id,
+        do: where(q, [r], r.service_user_id == ^service_user_id),
+        else: q
+    end)
+    |> order_by([r], asc: r.id)
+    |> preload([:service_user, :recorded_by])
+    |> Repo.all()
+  end
+
+  @doc """
+  Folds attendance rows into `%{{service_user_id, service_date} => row}`, keeping
+  the largest-id row per key: corrections are appended, so the latest row wins.
+  """
+  def latest_attendance_by_user_date(rows) when is_list(rows) do
+    Enum.reduce(rows, %{}, fn row, acc ->
+      Map.update(acc, {row.service_user_id, row.service_date}, row, &newer_row(&1, row))
+    end)
+  end
+
+  defp newer_row(current, row) when row.id > current.id, do: row
+  defp newer_row(current, _row), do: current
 
   defp month_bounds(year, month) do
     first = Date.new!(year, month, 1)
@@ -616,7 +674,7 @@ defmodule Ayumi.Plans do
   def list_recent_support_records(service_user_id, limit \\ 20) do
     SupportRecord
     |> where([r], r.service_user_id == ^service_user_id)
-    |> order_by([r], desc: r.recorded_at, desc: r.id)
+    |> order_by([r], desc: r.support_date, desc: r.recorded_at, desc: r.id)
     |> limit(^limit)
     |> preload([:service_user, :recorded_by])
     |> Repo.all()
@@ -641,6 +699,65 @@ defmodule Ayumi.Plans do
     |> limit(^limit)
     |> preload([:recorded_by, :support_plan])
     |> Repo.all()
+  end
+
+  ## Log range queries (exports)
+  #
+  # Unlike the on-screen lists, these include withdrawn service users so an export
+  # never drops history. Support records are selected by support date. The other
+  # two logs have only `recorded_at`, so they take a half-open UTC range `[from, to)`
+  # and stay time zone agnostic; the caller decides which wall clock it represents.
+
+  @doc """
+  Lists support records with `support_date` in `from..to` (inclusive), oldest
+  first. Filter: `:service_user_id`.
+  """
+  def list_support_records_between(%Date{} = from, %Date{} = to, opts \\ []) do
+    SupportRecord
+    |> where([r], r.support_date >= ^from and r.support_date <= ^to)
+    |> filter_by_service_user(opts, fn q, id -> where(q, [r], r.service_user_id == ^id) end)
+    |> order_by([r], asc: r.support_date, asc: r.recorded_at, asc: r.id)
+    |> preload([:service_user, :recorded_by])
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists goal progress rows with `recorded_at` in `[from, to)`, oldest first, with
+  the goal, its plan, and the plan's service user preloaded.
+  Filter: `:service_user_id`.
+  """
+  def list_goal_progress_between(%DateTime{} = from, %DateTime{} = to, opts \\ []) do
+    GoalProgress
+    |> join(:inner, [gp], g in Goal, on: gp.goal_id == g.id)
+    |> join(:inner, [gp, g], sp in SupportPlan, on: g.support_plan_id == sp.id)
+    |> where([gp], gp.recorded_at >= ^from and gp.recorded_at < ^to)
+    |> filter_by_service_user(opts, fn q, id ->
+      where(q, [gp, g, sp], sp.service_user_id == ^id)
+    end)
+    |> order_by([gp], asc: gp.recorded_at, asc: gp.id)
+    |> preload([:recorded_by, goal: [support_plan: :service_user]])
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists plan phase events with `recorded_at` in `[from, to)`, oldest first, with
+  the plan and its service user preloaded. Filter: `:service_user_id`.
+  """
+  def list_plan_phase_events_between(%DateTime{} = from, %DateTime{} = to, opts \\ []) do
+    PlanPhaseEvent
+    |> join(:inner, [e], sp in SupportPlan, on: e.support_plan_id == sp.id)
+    |> where([e], e.recorded_at >= ^from and e.recorded_at < ^to)
+    |> filter_by_service_user(opts, fn q, id -> where(q, [e, sp], sp.service_user_id == ^id) end)
+    |> order_by([e], asc: e.recorded_at, asc: e.id)
+    |> preload([:recorded_by, support_plan: :service_user])
+    |> Repo.all()
+  end
+
+  defp filter_by_service_user(query, opts, filter) do
+    case Keyword.get(opts, :service_user_id) do
+      nil -> query
+      id -> filter.(query, id)
+    end
   end
 
   defp parse_goal_progress_goal_id(attrs) do

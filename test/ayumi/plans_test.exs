@@ -1,5 +1,5 @@
 defmodule Ayumi.PlansTest do
-  use Ayumi.DataCase, async: true
+  use Ayumi.DataCase, async: false
 
   alias Ayumi.Plans
   alias Ayumi.Plans.GoalProgress
@@ -175,6 +175,18 @@ defmodule Ayumi.PlansTest do
       names = Plans.list_service_users() |> Enum.map(& &1.name)
       assert "在籍 太郎" in names
       refute "退所 花子" in names
+    end
+
+    test "list_service_users(preload: ...) preloads the given associations" do
+      _ = service_user_with_certificate_fixture()
+
+      assert [%ServiceUser{disability_certificates: %Ecto.Association.NotLoaded{}}] =
+               Plans.list_service_users()
+
+      assert [%ServiceUser{disability_certificates: [certificate]}] =
+               Plans.list_service_users(preload: [:disability_certificates])
+
+      assert certificate.number == "B-123"
     end
 
     test "list_service_users(include_withdrawn: true) includes withdrawn users" do
@@ -990,35 +1002,26 @@ defmodule Ayumi.PlansTest do
       assert hd(records).content == "記録1"
     end
 
-    test "list_support_records/2 filters by date range" do
+    test "list_support_records/2 filters by support date range" do
       su = service_user_fixture()
       staff = Ayumi.AccountsFixtures.user_fixture()
       scope = Ayumi.Accounts.Scope.for_user(staff)
 
-      {:ok, early} =
+      {:ok, _early} =
         Plans.create_support_record(scope, %{
           service_user_id: su.id,
           content: "早い記録",
-          category: :work
+          category: :work,
+          support_date: ~D[2026-06-01]
         })
 
-      # Manually update recorded_at to a known date for testing
-      Ayumi.Repo.update_all(
-        from(r in SupportRecord, where: r.id == ^early.id),
-        set: [recorded_at: ~U[2026-06-01 10:00:00Z]]
-      )
-
-      {:ok, late} =
+      {:ok, _late} =
         Plans.create_support_record(scope, %{
           service_user_id: su.id,
           content: "遅い記録",
-          category: :health
+          category: :health,
+          support_date: ~D[2026-06-15]
         })
-
-      Ayumi.Repo.update_all(
-        from(r in SupportRecord, where: r.id == ^late.id),
-        set: [recorded_at: ~U[2026-06-15 10:00:00Z]]
-      )
 
       records =
         Plans.list_support_records(scope, from: ~D[2026-06-10], to: ~D[2026-06-20])
