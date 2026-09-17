@@ -10,13 +10,14 @@ defmodule Ayumi.Imports do
 
     * Append-only. Rows are inserted through the normal context functions. For
       attendance, an existing date gets a correction row and history is kept; for
-      the service user master, an already registered person is skipped, never
-      updated. Removing a row from the CSV deletes nothing.
+      support records, a row that differs from every existing record is a new
+      record; for the service user master, an already registered person is
+      skipped, never updated. Removing a row from the CSV deletes nothing.
     * All or nothing. Any row error blocks the whole file.
     * Manager only, checked here as well as at the route.
 
-  The planning itself lives in `Ayumi.Imports.AttendancePlan` and
-  `Ayumi.Imports.ServiceUsersPlan`.
+  The planning itself lives in `Ayumi.Imports.AttendancePlan`,
+  `Ayumi.Imports.SupportRecordsPlan`, and `Ayumi.Imports.ServiceUsersPlan`.
   """
 
   alias Ayumi.Accounts.Scope
@@ -24,6 +25,7 @@ defmodule Ayumi.Imports do
   alias Ayumi.Imports.AttendancePlan
   alias Ayumi.Imports.Preview
   alias Ayumi.Imports.ServiceUsersPlan
+  alias Ayumi.Imports.SupportRecordsPlan
   alias Ayumi.Plans
   alias Ayumi.Repo
 
@@ -44,12 +46,18 @@ defmodule Ayumi.Imports do
   def preview(%Scope{} = scope, :attendance, binary), do: preview_attendance(scope, binary)
   def preview(%Scope{} = scope, :service_users, binary), do: preview_service_users(scope, binary)
 
+  def preview(%Scope{} = scope, :support_records, binary),
+    do: preview_support_records(scope, binary)
+
   @doc "Writes a confirmed preview of any dataset. See `commit_attendance/2`."
   def commit(%Scope{} = scope, %Preview{dataset: :attendance} = preview),
     do: commit_attendance(scope, preview)
 
   def commit(%Scope{} = scope, %Preview{dataset: :service_users} = preview),
     do: commit_service_users(scope, preview)
+
+  def commit(%Scope{} = scope, %Preview{dataset: :support_records} = preview),
+    do: commit_support_records(scope, preview)
 
   ## Attendance
 
@@ -68,6 +76,26 @@ defmodule Ayumi.Imports do
   """
   def commit_attendance(%Scope{} = scope, %Preview{dataset: :attendance} = preview) do
     write(scope, preview, &AttendancePlan.build/2, &Plans.create_attendance_record(scope, &1))
+  end
+
+  ## Support records
+
+  @doc """
+  Plans a support record import (see `Ayumi.Imports.SupportRecordsPlan`). Same
+  return shape as `preview_attendance/2`.
+  """
+  def preview_support_records(%Scope{} = scope, binary) when is_binary(binary) do
+    plan(scope, binary, CSV.SupportRecords, &SupportRecordsPlan.build(scope, &1, &2))
+  end
+
+  @doc "Writes a confirmed support record preview. Same return shape as `commit_attendance/2`."
+  def commit_support_records(%Scope{} = scope, %Preview{dataset: :support_records} = preview) do
+    write(
+      scope,
+      preview,
+      &SupportRecordsPlan.build(scope, &1, &2),
+      &Plans.create_support_record(scope, &1)
+    )
   end
 
   ## Service user master

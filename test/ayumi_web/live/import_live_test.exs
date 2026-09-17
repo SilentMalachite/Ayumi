@@ -271,4 +271,57 @@ defmodule AyumiWeb.ImportLiveTest do
       refute has_element?(lv, "#import-preview")
     end
   end
+
+  describe "importing support records" do
+    setup :register_and_log_in_manager
+
+    @record_headers CSV.SupportRecords.required_headers()
+
+    defp record_row(service_user, date, content) do
+      [Integer.to_string(service_user.id), service_user.name, date, "面談", content]
+    end
+
+    test "choosing support records shows their own rules", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/admin/import")
+
+      html = lv |> form("#import-form", %{"dataset" => "support_records"}) |> render_change()
+
+      assert html =~ "新しい記録として追加"
+      assert html =~ "支援日"
+      refute html =~ "訂正として追記"
+    end
+
+    test "upload → preview → commit adds past records under their support date", %{conn: conn} do
+      su = service_user_fixture()
+
+      _ =
+        support_record_fixture(%{
+          service_user_id: su.id,
+          support_date: ~D[2026-06-01],
+          content: "既にある記録",
+          category: :interview
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/admin/import")
+      _ = lv |> form("#import-form", %{"dataset" => "support_records"}) |> render_change()
+
+      html =
+        upload_and_preview(
+          lv,
+          CSV.encode(@record_headers, [
+            record_row(su, "2026-06-01", "既にある記録"),
+            record_row(su, "2026/5/20", "Excel にあった過去の面談")
+          ])
+        )
+
+      assert html =~ "追加 1 件"
+      assert html =~ "変更なし 1 件"
+
+      html = lv |> element("#import-commit") |> render_click()
+      assert html =~ "取込が完了しました"
+
+      assert [imported] = Plans.list_support_records_between(~D[2026-05-20], ~D[2026-05-20])
+      assert imported.content == "Excel にあった過去の面談"
+    end
+  end
 end

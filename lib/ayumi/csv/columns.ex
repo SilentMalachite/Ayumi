@@ -11,6 +11,8 @@ defmodule Ayumi.CSV.Columns do
     * `:key` — the attrs key the parsed value is stored under
     * `:parse` — a `Ayumi.CSV.Cell` parser, `cell -> {:ok, value} | {:error, message}`
     * `:required` — when true, a blank cell is an error (default false)
+    * `:optional_header` — when true, a file may omit the column altogether; its
+      value is then nil (default false)
   """
 
   @required_message "入力してください"
@@ -27,7 +29,9 @@ defmodule Ayumi.CSV.Columns do
 
   @doc "Headers of the columns the import reads. A file must contain all of them."
   def required_headers(columns) do
-    for {header, _dump, _import} <- columns, do: header
+    for {header, _dump, import} <- columns, not Keyword.get(import, :optional_header, false) do
+      header
+    end
   end
 
   @doc "The header of the column stored under `key`; nil when there is none."

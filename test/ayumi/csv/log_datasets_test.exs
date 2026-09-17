@@ -48,6 +48,53 @@ defmodule Ayumi.CSV.LogDatasetsTest do
     end
   end
 
+  describe "SupportRecords import" do
+    @cells %{
+      "利用者ID" => "3",
+      "氏名" => "山田 太郎",
+      "在籍状態" => "在籍",
+      "支援日" => "2026/9/16",
+      "区分" => "面談",
+      "内容" => "面談を実施。\r\n次回は来週。",
+      "記録者" => "無視される",
+      "記録日時(日本時間)" => "無視される",
+      "記録ID" => "21"
+    }
+
+    test "required_headers/0 leaves 記録ID optional, so hand-made files need no such column" do
+      assert CSV.SupportRecords.required_headers() == ~w[利用者ID 氏名 支援日 区分 内容]
+    end
+
+    test "parse/1 reads the support itself plus 記録ID for recognizing an exported row" do
+      assert CSV.SupportRecords.parse(@cells) ==
+               {:ok,
+                %{
+                  service_user_id: 3,
+                  service_user_name: "山田 太郎",
+                  support_date: ~D[2026-09-16],
+                  category: :interview,
+                  content: "面談を実施。\n次回は来週。",
+                  record_id: 21
+                }}
+    end
+
+    test "parse/1 works without the optional 記録ID column" do
+      assert {:ok, %{record_id: nil}} = CSV.SupportRecords.parse(Map.delete(@cells, "記録ID"))
+    end
+
+    test "parse/1 requires 支援日, 区分, and 内容" do
+      cells = Map.merge(@cells, %{"支援日" => "", "区分" => "", "内容" => " "})
+
+      assert {:error, errors} = CSV.SupportRecords.parse(cells)
+      assert Enum.map(errors, & &1.column) == ["支援日", "区分", "内容"]
+    end
+
+    test "header_for/1" do
+      assert CSV.SupportRecords.header_for(:support_date) == "支援日"
+      assert CSV.SupportRecords.header_for(:service_user_id) == "利用者ID"
+    end
+  end
+
   describe "GoalProgress" do
     test "headers/0" do
       assert CSV.GoalProgress.headers() ==

@@ -255,9 +255,9 @@ Optional (done):
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form
   hides those inputs.
-- CSV import (increments 4a–5 of the same plan: attendance and the service user
-  master; the support record import, increment 6, is not built — it needs a schema
-  decision about a support date first).
+- CSV import (increments 4a–6b of the same plan: attendance, support records, and
+  the service user master; 6c — allowing withdrawn service users' past support
+  records for import only — is agreed but not built).
   The manager-only screen is `/admin/import` (`AyumiWeb.ImportLive.Index`,
   `allow_upload` for one `.csv`): upload → preview → confirm → commit, with a
   re-confirmation when the commit reports a stale plan. `Ayumi.Imports.preview_attendance/2`
@@ -283,6 +283,16 @@ Optional (done):
   birthdate both match (`Ayumi.Imports.Matching`); an unknown 利用者ID is an error;
   blank cells are left out of the attrs so schema defaults apply; certificates are
   not imported; non-blocking `warnings` flag a cert number that is not 10 digits and
-  a same-name person who cannot be checked by birthdate.
+  a same-name person who cannot be checked by birthdate. The support record import
+  (`Ayumi.Imports.SupportRecordsPlan`) has no corrections, because a support record
+  has no natural key: a row identical to an existing record (service user, support
+  date, category, content — ignoring line endings and trailing whitespace) is
+  `unchanged`, anything else is a new record, and an edited exported row (known by
+  its optional 記録ID column) gets a warning that the original stays. Its rows are
+  validated with `Plans.support_record_changeset/2`, the changeset
+  `create_support_record/2` itself inserts, so the future-date and withdrawn-user
+  rules apply in the preview exactly as at commit. The log imports share
+  `Ayumi.Imports.ServiceUserResolver` (利用者ID first, else a unique 氏名; both must
+  agree when given).
 
 All steps are complete and green. Each was `mix review`-clean before merging.

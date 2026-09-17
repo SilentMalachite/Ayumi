@@ -375,11 +375,31 @@ defmodule Ayumi.Plans do
 
   @doc "Creates a support record. `recorded_by_id` and `recorded_at` are set from scope / clock."
   def create_support_record(%Scope{} = scope, attrs) when is_map(attrs) do
+    scope
+    |> support_record_changeset(attrs)
+    |> insert_support_record()
+  end
+
+  @doc """
+  The changeset `create_support_record/2` inserts: the user fields, the audit
+  stamp (which settles the support date), and the withdrawn-user rule. Public so
+  that the CSV import preview can validate a row by the very same rules without
+  writing anything.
+  """
+  def support_record_changeset(%Scope{} = scope, attrs) when is_map(attrs) do
     %SupportRecord{}
     |> SupportRecord.changeset(attrs)
     |> SupportRecord.put_audit(scope.user.id, DateTime.utc_now(:second))
     |> validate_active_service_user("退所者には支援記録を作成できません")
-    |> insert_support_record()
+  end
+
+  @doc "Gets the support records with the given ids. Unknown ids are ignored."
+  def get_support_records([]), do: []
+
+  def get_support_records(ids) when is_list(ids) do
+    SupportRecord
+    |> where([r], r.id in ^ids)
+    |> Repo.all()
   end
 
   @doc """

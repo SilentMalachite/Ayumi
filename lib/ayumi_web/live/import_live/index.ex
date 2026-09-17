@@ -116,6 +116,15 @@ defmodule AyumiWeb.ImportLive.Index do
         <li :if={@dataset == :attendance}>
           {gettext("すでに記録のある利用日は、訂正として追記されます（元の記録は履歴に残ります）。")}
         </li>
+        <li :if={@dataset == :support_records}>
+          {gettext("支援日・区分・内容は必須です。記録者は取り込んだ人、記録日時は取り込んだ時刻になります。")}
+        </li>
+        <li :if={@dataset == :support_records}>
+          {gettext("利用者・支援日・区分・内容がすべて同じ記録が既にある行は取り込みません。内容を書き換えた行は、元の記録を残したまま新しい記録として追加されます。")}
+        </li>
+        <li :if={@dataset == :support_records}>
+          {gettext("退所した利用者の記録と、未来の支援日は取り込めません。")}
+        </li>
         <li :if={@dataset == :service_users}>
           {gettext(
             "新しい利用者だけを追加します。登録済みの利用者（利用者ID・受給者証番号・氏名と生年月日のいずれかが一致）は変更しません。変更は利用者の編集画面で行ってください。"

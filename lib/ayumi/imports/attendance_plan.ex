@@ -6,14 +6,14 @@ defmodule Ayumi.Imports.AttendancePlan do
   """
 
   alias Ayumi.CSV.Attendance
-  alias Ayumi.Imports.Matching
   alias Ayumi.Imports.Preview
+  alias Ayumi.Imports.ServiceUserResolver
   alias Ayumi.Plans
   alias Ayumi.Plans.AttendanceRecord
 
   @doc "Builds the preview for decoded `rows` (`[{row_number, cells}]`)."
   def build(rows, ignored_headers) do
-    directory = service_user_directory()
+    directory = ServiceUserResolver.directory()
     results = Enum.map(rows, &plan_row(&1, directory))
 
     {candidates, duplicate_errors} =
@@ -35,7 +35,8 @@ defmodule Ayumi.Imports.AttendancePlan do
 
   defp plan_row({row, cells}, directory) do
     with {:ok, parsed} <- Attendance.parse(cells),
-         {:ok, service_user} <- resolve_service_user(parsed, directory),
+         {:ok, service_user} <-
+           ServiceUserResolver.resolve(parsed, directory, &Attendance.header_for/1),
          attrs = attendance_attrs(parsed, service_user),
          :ok <- validate(attrs) do
       {:ok, %{row: row, attrs: attrs}}
@@ -126,62 +127,4 @@ defmodule Ayumi.Imports.AttendancePlan do
 
   defp comparable_note(nil), do: ""
   defp comparable_note(note), do: note |> String.replace("\r\n", "\n") |> String.trim_trailing()
-
-  ## Resolving service users
-
-  # `利用者ID` is authoritative. `氏名` alone is accepted only when it is unique,
-  # and when both are given they must agree — a guard against a pasted id column
-  # that has slipped by a row. Withdrawn service users are included.
-  defp service_user_directory do
-    service_users = Plans.list_service_users(include_withdrawn: true)
-
-    %{
-      by_id: Map.new(service_users, &{&1.id, &1}),
-      by_name: Enum.group_by(service_users, &Matching.name_key(&1.name))
-    }
-  end
-
-  defp resolve_service_user(%{service_user_id: nil, service_user_name: nil}, _directory) do
-    service_user_error(:service_user_id, "利用者ID か氏名を入力してください")
-  end
-
-  defp resolve_service_user(%{service_user_id: nil, service_user_name: name}, directory) do
-    case Map.get(directory.by_name, Matching.name_key(name), []) do
-      [service_user] ->
-        {:ok, service_user}
-
-      [] ->
-        service_user_error(:service_user_name, "氏名「#{name}」の利用者が見つかりません")
-
-      _several ->
-        service_user_error(
-          :service_user_name,
-          "氏名「#{name}」の利用者が複数います。利用者ID を入力してください"
-        )
-    end
-  end
-
-  defp resolve_service_user(%{service_user_id: id, service_user_name: name}, directory) do
-    case Map.get(directory.by_id, id) do
-      nil -> service_user_error(:service_user_id, "利用者ID #{id} は登録されていません")
-      service_user -> check_name(service_user, name)
-    end
-  end
-
-  defp check_name(service_user, nil), do: {:ok, service_user}
-
-  defp check_name(service_user, name) do
-    if Matching.name_key(service_user.name) == Matching.name_key(name) do
-      {:ok, service_user}
-    else
-      service_user_error(
-        :service_user_name,
-        "利用者ID #{service_user.id} の氏名は「#{service_user.name}」です。ID か氏名を確認してください"
-      )
-    end
-  end
-
-  defp service_user_error(key, message) do
-    {:error, [%{column: Attendance.header_for(key), message: message}]}
-  end
 end

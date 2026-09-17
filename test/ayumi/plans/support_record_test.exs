@@ -139,4 +139,63 @@ defmodule Ayumi.Plans.SupportRecordTest do
                [recent.id, backdated.id]
     end
   end
+
+  describe "support_record_changeset/2" do
+    setup do
+      %{scope: user_scope_fixture(), su: service_user_fixture()}
+    end
+
+    test "validates exactly as create_support_record/2 would, without writing", %{
+      scope: scope,
+      su: su
+    } do
+      valid =
+        Plans.support_record_changeset(scope, %{
+          service_user_id: su.id,
+          content: "確認のみ",
+          category: :work,
+          support_date: ~D[2026-06-01]
+        })
+
+      assert valid.valid?
+      assert get_field(valid, :recorded_by_id) == scope.user.id
+
+      future =
+        Plans.support_record_changeset(scope, %{
+          service_user_id: su.id,
+          content: "未来",
+          category: :work,
+          support_date: Date.add(Ayumi.JST.today(), 1)
+        })
+
+      assert errors_on(future).support_date == ["未来の日付は指定できません"]
+      assert Plans.list_support_records(scope) == []
+    end
+
+    test "applies the withdrawn-user rule", %{scope: scope} do
+      withdrawn = service_user_fixture(%{name: "退所者", enrollment_status: :withdrawn})
+
+      changeset =
+        Plans.support_record_changeset(scope, %{
+          service_user_id: withdrawn.id,
+          content: "退所後",
+          category: :work
+        })
+
+      assert errors_on(changeset).service_user_id == ["退所者には支援記録を作成できません"]
+    end
+  end
+
+  describe "get_support_records/1" do
+    test "returns the records with the given ids, ignoring unknown ids" do
+      first = support_record_fixture()
+      second = support_record_fixture()
+      _other = support_record_fixture()
+
+      ids = [first.id, second.id, -1] |> Plans.get_support_records() |> Enum.map(& &1.id)
+
+      assert Enum.sort(ids) == Enum.sort([first.id, second.id])
+      assert Plans.get_support_records([]) == []
+    end
+  end
 end

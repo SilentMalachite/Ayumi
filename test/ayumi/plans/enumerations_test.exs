@@ -199,7 +199,13 @@ defmodule Ayumi.Plans.EnumerationsTest do
 
   describe "from_label/1 (CSV import)" do
     test "is the inverse of label/1 for every value of the imported enums" do
-      for enum <- [Gender, SupportCategory, Ayumi.Plans.EnrollmentStatus, ProvisionType],
+      for enum <- [
+            Gender,
+            SupportCategory,
+            Ayumi.Plans.EnrollmentStatus,
+            Ayumi.Plans.SupportRecordCategory,
+            ProvisionType
+          ],
           value <- enum.all() do
         assert enum.from_label(enum.label(value)) == {:ok, value}
       end

@@ -3,6 +3,7 @@ defmodule Ayumi.Imports.Dataset do
 
   @labels [
     attendance: "出欠・実績記録",
+    support_records: "支援記録",
     service_users: "利用者台帳"
   ]
 
