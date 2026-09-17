@@ -2,6 +2,7 @@ defmodule AyumiWeb.DashboardLive.Index do
   use AyumiWeb, :live_view
 
   alias Ayumi.Accounts.User
+  alias Ayumi.JST
   alias Ayumi.Plans
 
   @near_days 30
@@ -10,7 +11,7 @@ defmodule AyumiWeb.DashboardLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.current_scope
-    today = Date.utc_today()
+    today = JST.today()
 
     monitoring_alerts =
       Plans.list_monitoring_deadline_alerts(scope, today, @near_days)

@@ -2,6 +2,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
   use AyumiWeb, :live_view
 
   alias Ayumi.Accounts.User
+  alias Ayumi.JST
   alias Ayumi.Plans
 
   alias Ayumi.Plans.{
@@ -18,7 +19,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     service_user = Plans.get_service_user!(id)
-    today = Date.utc_today()
+    today = JST.today()
     support_plans = Plans.list_support_plans_for_user(service_user)
     current_plan = List.first(support_plans)
 

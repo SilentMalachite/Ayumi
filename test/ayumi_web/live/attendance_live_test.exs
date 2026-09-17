@@ -11,7 +11,7 @@ defmodule AyumiWeb.AttendanceLiveTest do
   describe "GET /service_users/:id/attendance (general staff)" do
     test "renders the service user name and a row per day of the current month", %{conn: conn} do
       su = service_user_fixture(%{name: "山田 太郎", name_kana: "やまだ たろう"})
-      today = Date.utc_today()
+      today = Ayumi.JST.today()
       days = Date.days_in_month(Date.new!(today.year, today.month, 1))
 
       {:ok, view, html} = live(conn, ~p"/service_users/#{su.id}/attendance")
@@ -69,7 +69,7 @@ defmodule AyumiWeb.AttendanceLiveTest do
 
     test "不正な year/month は当月にフォールバックする", %{conn: conn} do
       su = service_user_fixture()
-      today = Date.utc_today()
+      today = Ayumi.JST.today()
 
       {:ok, _view, html} =
         live(conn, ~p"/service_users/#{su.id}/attendance?#{[year: "bad", month: "13"]}")

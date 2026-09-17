@@ -239,6 +239,12 @@ Optional (done):
   export uses, and keeps the UTC instant in the `<time datetime>` attribute.
   Storage stays UTC. Do not render a stored `DateTime` with `Calendar.strftime` or
   interpolate it raw in a template.
+- "Today" is always the Japanese calendar date: use `Ayumi.JST.today/1`, never
+  `Date.utc_today/0` (which is still yesterday in Japan until 09:00 JST). A guard
+  test in `test/ayumi/jst_test.exs` fails if `Date.utc_today(` appears under `lib/`.
+  Functions that need today take it as an argument with that default (e.g.
+  `AttendanceLive.MonthParams.parse/2`, the `Plans` alert functions), so tests can
+  pin the date.
 - CSV export (done — increments 1–3 of
   `docs/superpowers/plans/2026-09-17-csv-export-import.md`): `/exports`
   (`AyumiWeb.ExportLive.Index`, all staff) picks a dataset, a period unit
