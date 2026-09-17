@@ -83,6 +83,31 @@ defmodule Ayumi.Exports do
     CSV.encode(CSV.Attendance.headers(), CSV.Attendance.dump(records))
   end
 
+  defp content(%Request{dataset: :support_records} = request) do
+    records = list_log(request, &Plans.list_support_records_between/3)
+    CSV.encode(CSV.SupportRecords.headers(), CSV.SupportRecords.dump(records))
+  end
+
+  defp content(%Request{dataset: :goal_progress} = request) do
+    rows = list_log(request, &Plans.list_goal_progress_between/3)
+    CSV.encode(CSV.GoalProgress.headers(), CSV.GoalProgress.dump(rows))
+  end
+
+  defp content(%Request{dataset: :plan_phase_events} = request) do
+    rows = list_log(request, &Plans.list_plan_phase_events_between/3)
+    CSV.encode(CSV.PlanPhaseEvents.headers(), CSV.PlanPhaseEvents.dump(rows))
+  end
+
+  # The logs are stamped in UTC, but a "month" on the form means a month on the
+  # Japanese calendar, so the period is converted to a UTC range here. Plans
+  # stays time zone agnostic.
+  defp list_log(%Request{} = request, list_between) do
+    {from_date, to_date} = Period.range(request.unit, request.anchor_date)
+    {from, to} = JST.utc_range(from_date, to_date)
+
+    list_between.(from, to, service_user_id: request.service_user_id)
+  end
+
   # Same order as Plans.list_service_users/1 (kana, then name), then by date.
   defp attendance_sort_key(record) do
     service_user = record.service_user

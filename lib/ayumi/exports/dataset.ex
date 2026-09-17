@@ -2,11 +2,17 @@ defmodule Ayumi.Exports.Dataset do
   @moduledoc "Exportable datasets. Labels live here, not in views."
 
   @labels [
-    attendance: "出欠・実績記録"
+    attendance: "出欠・実績記録",
+    support_records: "支援記録",
+    goal_progress: "目標進捗の履歴",
+    plan_phase_events: "計画段階の履歴"
   ]
 
   @file_labels [
-    attendance: "出欠実績"
+    attendance: "出欠実績",
+    support_records: "支援記録",
+    goal_progress: "目標進捗",
+    plan_phase_events: "計画段階"
   ]
 
   @doc "All values, in display order."

@@ -226,8 +226,8 @@ Optional (done):
   (capped at 16 retries). Reachable via the manager-only LiveView at
   `/admin/backup` and the `mix ayumi.backup [dest]` task. Flash + inline result
   panel show path, size, and the UTC `created_at` timestamp.
-- CSV export (in progress — increment 1 of
-  `docs/superpowers/plans/2026-09-17-csv-export-import.md` is done): `/exports`
+- CSV export (in progress — increments 1–2 of
+  `docs/superpowers/plans/2026-09-17-csv-export-import.md` are done): `/exports`
   (`AyumiWeb.ExportLive.Index`, all staff) picks a dataset, a period unit
   (week from Monday / month / fiscal year Apr–Mar / calendar year), an anchor date,
   and an optional service user; `GET /exports/download` (`AyumiWeb.ExportController`)
@@ -235,10 +235,14 @@ Optional (done):
   `Ayumi.Exports.Request` changeset and derives the CSV — never stored.
   `Ayumi.Exports.Period` is pure. `Ayumi.CSV` encodes UTF-8 with BOM, CRLF, and
   formula escaping via `nimble_csv`; each dataset's columns live in one module
-  (`Ayumi.CSV.Attendance`). Attendance is folded by
+  (`Ayumi.CSV.Attendance` / `SupportRecords` / `GoalProgress` / `PlanPhaseEvents`,
+  all deriving header and rows from one list via `Ayumi.CSV.Columns`). Attendance is folded by
   `Plans.latest_attendance_by_user_date/1` (latest row per user and date wins) and
-  includes withdrawn users. Exported datetimes are JST via `Ayumi.JST` (fixed +9h;
-  the screens still show UTC). Only attendance is exportable so far; CSV import is
-  planned but not built.
+  includes withdrawn users. The three `recorded_at` logs come from
+  `Plans.list_*_between/3`, which take a half-open UTC range and also include
+  withdrawn users; `Ayumi.Exports` converts the JST period with
+  `Ayumi.JST.utc_range/2`, so `Plans` stays time zone agnostic. Exported datetimes
+  are JST via `Ayumi.JST` (fixed +9h; the screens still show UTC). The service user
+  master export and CSV import are planned but not built.
 
 All steps are complete and green. Each was `mix review`-clean before merging.

@@ -44,6 +44,20 @@ defmodule AyumiWeb.ExportLiveTest do
       assert has_element?(lv, ~s|#export-download[href*="service_user_id=#{su.id}"]|)
     end
 
+    test "offers every dataset and links to the chosen one", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/exports")
+
+      for label <- ["出欠・実績記録", "支援記録", "目標進捗の履歴", "計画段階の履歴"] do
+        assert html =~ label
+      end
+
+      lv
+      |> form("#export-form", %{"export" => %{"dataset" => "support_records"}})
+      |> render_change()
+
+      assert has_element?(lv, ~s|#export-download[href*="dataset=support_records"]|)
+    end
+
     test "lists withdrawn service users too", %{conn: conn} do
       _ = service_user_fixture(%{name: "退所した人", enrollment_status: :withdrawn})
 

@@ -676,6 +676,64 @@ defmodule Ayumi.Plans do
     |> Repo.all()
   end
 
+  ## Log range queries (exports)
+  #
+  # These take a half-open UTC range `[from, to)` and stay time zone agnostic; the
+  # caller decides which wall clock the range represents. Unlike the on-screen
+  # lists, they include withdrawn service users so an export never drops history.
+
+  @doc """
+  Lists support records with `recorded_at` in `[from, to)`, oldest first.
+  Filter: `:service_user_id`.
+  """
+  def list_support_records_between(%DateTime{} = from, %DateTime{} = to, opts \\ []) do
+    SupportRecord
+    |> where([r], r.recorded_at >= ^from and r.recorded_at < ^to)
+    |> filter_by_service_user(opts, fn q, id -> where(q, [r], r.service_user_id == ^id) end)
+    |> order_by([r], asc: r.recorded_at, asc: r.id)
+    |> preload([:service_user, :recorded_by])
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists goal progress rows with `recorded_at` in `[from, to)`, oldest first, with
+  the goal, its plan, and the plan's service user preloaded.
+  Filter: `:service_user_id`.
+  """
+  def list_goal_progress_between(%DateTime{} = from, %DateTime{} = to, opts \\ []) do
+    GoalProgress
+    |> join(:inner, [gp], g in Goal, on: gp.goal_id == g.id)
+    |> join(:inner, [gp, g], sp in SupportPlan, on: g.support_plan_id == sp.id)
+    |> where([gp], gp.recorded_at >= ^from and gp.recorded_at < ^to)
+    |> filter_by_service_user(opts, fn q, id ->
+      where(q, [gp, g, sp], sp.service_user_id == ^id)
+    end)
+    |> order_by([gp], asc: gp.recorded_at, asc: gp.id)
+    |> preload([:recorded_by, goal: [support_plan: :service_user]])
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists plan phase events with `recorded_at` in `[from, to)`, oldest first, with
+  the plan and its service user preloaded. Filter: `:service_user_id`.
+  """
+  def list_plan_phase_events_between(%DateTime{} = from, %DateTime{} = to, opts \\ []) do
+    PlanPhaseEvent
+    |> join(:inner, [e], sp in SupportPlan, on: e.support_plan_id == sp.id)
+    |> where([e], e.recorded_at >= ^from and e.recorded_at < ^to)
+    |> filter_by_service_user(opts, fn q, id -> where(q, [e, sp], sp.service_user_id == ^id) end)
+    |> order_by([e], asc: e.recorded_at, asc: e.id)
+    |> preload([:recorded_by, support_plan: :service_user])
+    |> Repo.all()
+  end
+
+  defp filter_by_service_user(query, opts, filter) do
+    case Keyword.get(opts, :service_user_id) do
+      nil -> query
+      id -> filter.(query, id)
+    end
+  end
+
   defp parse_goal_progress_goal_id(attrs) do
     attrs
     |> goal_progress_attr(:goal_id)

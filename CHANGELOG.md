@@ -20,6 +20,18 @@
     `AyumiWeb.ExportController`（`GET /exports/download`）。
   - **Plans コンテキスト**: `list_attendance_records_between/3`（期間・全利用者）と
     純粋関数 `latest_attendance_by_user_date/1` を追加。
+- **CSV 出力（支援記録／目標進捗の履歴／計画段階の履歴）**: `/exports` の「出力するデータ」に
+  3 種類のログを追加。記録日時（`recorded_at`）で期間を絞り、古い順に出力します。
+  - 期間の境界は日本時間の 0 時です（例: 9 月分は `2026-08-31T15:00:00Z` 以上
+    `2026-09-30T15:00:00Z` 未満）。変換は `Ayumi.Exports` が `Ayumi.JST.utc_range/2` で行い、
+    `Plans` はタイムゾーンに依存しません。
+  - 退所者の記録も含め、`在籍状態` 列で判別できます。画面の支援記録一覧
+    （`list_support_records/2`。退所者を除外・UTC 基準）の挙動は変えていません。
+  - **Plans コンテキスト**: `list_support_records_between/3`、`list_goal_progress_between/3`、
+    `list_plan_phase_events_between/3`（半開区間 `[from, to)`・`:service_user_id` 絞り込み）。
+  - 列定義は `Ayumi.CSV.SupportRecords` / `Ayumi.CSV.GoalProgress` /
+    `Ayumi.CSV.PlanPhaseEvents`。ヘッダ行とデータ行を 1 つの列リストから導く
+    `Ayumi.CSV.Columns` を共有します。
 - 依存に `nimble_csv`（純 Elixir・実行時のネットワーク不要）を追加。
 
 ## [0.2.1] — 2026-06-21

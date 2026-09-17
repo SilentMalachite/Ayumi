@@ -1,25 +1,21 @@
 defmodule Ayumi.CSV.Attendance do
   @moduledoc """
-  CSV layout for attendance records (出欠・実績記録). Each column is defined once,
-  as a header plus the function that renders its cell, so the header order and
-  the cell order cannot drift apart. Headers reuse the printed sheet's wording.
+  CSV layout for attendance records (出欠・実績記録). Headers reuse the printed
+  sheet's wording.
 
   Records must have `:service_user` and `:recorded_by` preloaded.
   """
 
   alias Ayumi.Accounts.User
   alias Ayumi.CSV.Cell
+  alias Ayumi.CSV.Columns
   alias Ayumi.Plans.ProvisionType
 
   @doc "The header row."
-  def headers, do: Enum.map(columns(), fn {header, _dump} -> header end)
+  def headers, do: Columns.headers(columns())
 
   @doc "Renders records as rows of cells aligned with `headers/0`."
-  def dump(records) when is_list(records) do
-    Enum.map(records, fn record ->
-      Enum.map(columns(), fn {_header, dump} -> dump.(record) end)
-    end)
-  end
+  def dump(records), do: Columns.dump(columns(), records)
 
   # A function rather than a module attribute: anonymous functions cannot be
   # stored in attributes.

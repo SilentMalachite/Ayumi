@@ -162,4 +162,117 @@ defmodule Ayumi.ExportsTest do
                Exports.build(scope, params(%{"dataset" => "nope"}))
     end
   end
+
+  describe "build/2 for the recorded_at-based logs" do
+    setup do
+      %{scope: user_scope_fixture()}
+    end
+
+    defp log_params(dataset, attrs \\ %{}) do
+      Map.merge(
+        %{"dataset" => dataset, "unit" => "month", "anchor_date" => "2026-09-15"},
+        attrs
+      )
+    end
+
+    defp backdate(%Ayumi.Plans.SupportRecord{id: id}, recorded_at) do
+      Repo.update_all(from(r in Ayumi.Plans.SupportRecord, where: r.id == ^id),
+        set: [recorded_at: recorded_at]
+      )
+    end
+
+    test "support records use JST month boundaries and JST datetimes", %{scope: scope} do
+      su = service_user_fixture(%{name: "山田 太郎"})
+
+      # 2026-09-01 00:00:00 JST — the first second of September in Japan.
+      first = support_record_fixture(%{service_user_id: su.id, content: "九月の最初"})
+      backdate(first, ~U[2026-08-31 15:00:00Z])
+
+      # 2026-08-31 23:59:59 JST — still August in Japan.
+      august = support_record_fixture(%{service_user_id: su.id, content: "八月の最後"})
+      backdate(august, ~U[2026-08-31 14:59:59Z])
+
+      # 2026-10-01 00:00:00 JST — already October in Japan.
+      october = support_record_fixture(%{service_user_id: su.id, content: "十月の最初"})
+      backdate(october, ~U[2026-09-30 15:00:00Z])
+
+      assert {:ok, %{filename: filename, content: content}} =
+               Exports.build(scope, log_params("support_records"))
+
+      assert filename == "支援記録_2026年09月.csv"
+      assert [line] = data_lines(content)
+      assert line =~ "山田 太郎,在籍,作業,九月の最初"
+      assert line =~ "2026-09-01 00:00:00"
+    end
+
+    test "support records of withdrawn service users are included", %{scope: scope} do
+      su = service_user_fixture(%{name: "のちに退所"})
+      record = support_record_fixture(%{service_user_id: su.id})
+      backdate(record, ~U[2026-09-10 00:00:00Z])
+
+      {:ok, _} =
+        su.id
+        |> Ayumi.Plans.get_service_user!()
+        |> Ayumi.Plans.update_service_user(%{enrollment_status: :withdrawn})
+
+      assert {:ok, %{content: content}} = Exports.build(scope, log_params("support_records"))
+      assert [line] = data_lines(content)
+      assert line =~ "のちに退所,退所"
+    end
+
+    test "goal progress history", %{scope: scope} do
+      su = service_user_fixture(%{name: "山田 太郎"})
+      plan = support_plan_fixture(%{service_user_id: su.id})
+      goal = goal_fixture(%{support_plan_id: plan.id, description: "週3日通所する"})
+
+      _ =
+        goal_progress_fixture(%{
+          goal_id: goal.id,
+          stage: :met,
+          recorded_at: ~U[2026-09-10 00:00:00Z]
+        })
+
+      _ = goal_progress_fixture(%{goal_id: goal.id, recorded_at: ~U[2026-08-10 00:00:00Z]})
+      _ = goal_progress_fixture(%{recorded_at: ~U[2026-09-10 00:00:00Z]})
+
+      assert {:ok, %{filename: filename, content: content}} =
+               Exports.build(
+                 scope,
+                 log_params("goal_progress", %{"service_user_id" => Integer.to_string(su.id)})
+               )
+
+      assert filename == "目標進捗_2026年09月_利用者#{su.id}.csv"
+      assert content =~ Enum.join(Ayumi.CSV.GoalProgress.headers(), ",")
+      assert [line] = data_lines(content)
+      assert line =~ "週3日通所する,達成"
+      assert line =~ "2026-09-10 09:00:00"
+    end
+
+    test "plan phase history", %{scope: scope} do
+      su = service_user_fixture(%{name: "山田 太郎"})
+      plan = support_plan_fixture(%{service_user_id: su.id})
+
+      _ =
+        plan_phase_event_fixture(%{
+          support_plan_id: plan.id,
+          stage: :monitoring,
+          recorded_at: ~U[2026-09-10 00:00:00Z]
+        })
+
+      _ =
+        plan_phase_event_fixture(%{
+          support_plan_id: plan.id,
+          recorded_at: ~U[2026-10-10 00:00:00Z]
+        })
+
+      assert {:ok, %{filename: filename, content: content}} =
+               Exports.build(scope, log_params("plan_phase_events"))
+
+      assert filename == "計画段階_2026年09月.csv"
+      assert content =~ Enum.join(Ayumi.CSV.PlanPhaseEvents.headers(), ",")
+      assert [line] = data_lines(content)
+      assert line =~ "山田 太郎,在籍"
+      assert line =~ "モニタリング"
+    end
+  end
 end

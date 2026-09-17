@@ -34,6 +34,26 @@ defmodule AyumiWeb.ExportControllerTest do
       assert disposition =~ URI.encode("出欠実績_2026年06月.csv", &URI.char_unreserved?/1)
     end
 
+    test "downloads each recorded_at-based log", %{conn: conn} do
+      _ = support_record_fixture(%{content: "午前の作業に集中できた"})
+      today = Date.to_iso8601(Ayumi.JST.today())
+
+      for {dataset, header} <- [
+            {"support_records", "区分,内容"},
+            {"goal_progress", "短期目標,進捗"},
+            {"plan_phase_events", "段階,所見"}
+          ] do
+        params = %{"dataset" => dataset, "unit" => "week", "anchor_date" => today}
+        conn = get(conn, ~p"/exports/download?#{params}")
+
+        assert @bom <> csv = response(conn, 200)
+        assert csv =~ header
+      end
+
+      params = %{"dataset" => "support_records", "unit" => "week", "anchor_date" => today}
+      assert response(get(conn, ~p"/exports/download?#{params}"), 200) =~ "午前の作業に集中できた"
+    end
+
     test "redirects back to the export page when the params are invalid", %{conn: conn} do
       conn = get(conn, ~p"/exports/download?#{%{@params | "unit" => "decade"}}")
 
