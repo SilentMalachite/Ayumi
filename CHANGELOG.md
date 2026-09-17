@@ -3,45 +3,16 @@
 本ファイルの記法は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に準拠し、
 バージョニングは [セマンティック バージョニング](https://semver.org/lang/ja/) に従います。
 
-## [Unreleased]
+## [未リリース]
+
+## [0.3.0] — 2026-09-17
+
+Excel と CSV でデータをやり取りできるようになりました（全職員の CSV 出力、サービス管理責任者の
+CSV 取込）。あわせて支援記録に「支援日」を追加し、画面の日時と「今日」の判定を日本時間に揃えました。
 
 > **更新時の注意**: DB マイグレーションがあります（`support_records.support_date`）。ビルド済み
 > リリースは起動スクリプトが `Ayumi.Release.migrate()` を実行します。ソースから動かしている場合は
 > `mix ecto.migrate` を実行してください。
-
-### 変更
-
-- **支援記録に「支援日」（`support_date`）を追加**: 支援した日と、記録した瞬間（`recorded_at`）を
-  分けました。出欠の `service_date` と同じ考え方で、あとから入力した記録や CSV 取込でも
-  「いつの支援か」を保持できます。
-  - 既存の記録は、記録日時の日本時間の日付で埋めます（新しい導出列の初期化で、記録内容は
-    書き換えません）。SQLite は既存列を NOT NULL にできないため、必須は changeset で保証します。
-  - 入力フォームに「支援日」（既定は日本時間の今日）。未指定なら記録した日になり、**未来の日付は
-    指定できません**（`SupportRecord.put_audit/3`。時計はコンテキストから渡すので changeset は
-    純粋なまま）。
-  - 一覧・フィルタ・利用者まとめ画面は支援日基準になりました（`list_support_records/2` の
-    `:from` / `:to`、`list_recent_support_records/2` の並び）。フィルタの初期値も日本時間の今日に
-    なり、朝 9 時前の記録が前日扱いになる問題はこの画面では解消しています。一覧には「支援日」と
-    「記録日時」の両方を表示します。
-  - CSV 出力の支援記録に `支援日` 列を追加し、期間は支援日で絞ります
-    （`list_support_records_between/3` は日付の範囲を受け取る形に変更）。
-- **画面の日時を日本時間で表示**: これまで UTC のまま（日本時間より 9 時間遅れて）表示していた
-  日時を、日本時間に揃えました。対象は支援記録一覧と利用者まとめ画面の「記録日時」、支援計画画面の
-  目標進捗・計画段階の履歴の時刻、DB バックアップの保存時刻（「（日本時間）」と明記）です。
-  - 表示は共通コンポーネント `<.jst_datetime value={...} />`（`AyumiWeb.CoreComponents`）に集約し、
-    変換は CSV と同じ `Ayumi.JST.format/2`（`:minute` / `:second`）を使います。`<time>` 要素の
-    `datetime` 属性には元の UTC 時刻を残します。
-  - 保存形式（UTC）は変わりません。支援計画画面の履歴は、これまで `2026-06-18 01:02:03Z` のような
-    生の値を出していましたが、他の画面と同じ `YYYY-MM-DD HH:MM` 形式になります。
-- **「今日」を日本時間で判定**: ダッシュボードのモニタリング期限・受給者証期限、利用者まとめ画面の
-  期限バッジ、出欠入力・実績記録票の初期表示月が、UTC の日付（`Date.utc_today/0`）で「今日」を
-  決めていたため、日本時間の 0〜9 時は前日扱いになっていました（毎月 1 日の朝に出欠画面を開くと
-  前月が表示される、期限切れの判定が 1 日遅れる、など）。すべて `Ayumi.JST.today/1` に揃えました。
-  - `AttendanceLive.MonthParams.parse/2` は基準日を引数で受け取れるようにし（既定は日本時間の今日）、
-    境界の日付で単体テストしています。`Plans.list_monitoring_deadline_alerts/3` と
-    `list_certificate_expiry_alerts/3` の既定値も日本時間の今日です。
-  - 時刻に依存する不具合は通常のテストでは再現しにくいため、`lib/` に `Date.utc_today()` が
-    現れたら失敗するガードテストを `test/ayumi/jst_test.exs` に置きました。
 
 ### 追加
 
@@ -78,43 +49,6 @@
     期間つきのデータセットのときだけ単位と基準日を必須にします。画面も期間の入力欄を隠します。
   - **Plans コンテキスト**: `list_service_users/1` に `:preload` オプションを追加（既定は従来どおり）。
   - 列定義は `Ayumi.CSV.ServiceUsers`。
-- **CSV 取込（支援記録）**: `/admin/import` の「取り込むデータ」で支援記録を選べます。Excel に
-  あった過去の記録を、支援日つきで取り込めます。
-  - 読む列は `利用者ID`・`氏名`・`支援日`・`区分`・`内容`（支援日・区分・内容は必須）。`記録ID` の列は
-    任意で、手作りのファイルには不要です。記録者は取り込んだ人、記録日時は取り込んだ時刻です。
-  - 支援記録には自然キーがない（同じ人に同じ日の記録が複数あるのが普通）ため、「訂正」はありません。
-    利用者・支援日・区分・内容がすべて同じ記録が既にある行は「変更なし」としてスキップし（再取込や、
-    出力したファイルの取込ではログが増えません）、それ以外は新しい記録として追加します。出力した
-    CSV の内容を書き換えて取り込むと、元の記録は残ったまま新しい記録が追加されます。`記録ID` から
-    それが分かる行には「注意」を表示します。
-  - 同一ファイル内の完全に同じ行はエラー。未来の支援日は行エラーです（書き込み時と同じ changeset
-    `Plans.support_record_changeset/3` でプレビュー時に検証）。
-  - **退所した利用者の過去の記録は、取込に限って登録できます**（在籍中に書かれた記録を移行するため）。
-    確認画面に「注意」として表示します。画面からの入力は従来どおり拒否します。
-    `Plans.create_support_record/3` / `support_record_changeset/3` の `allow_withdrawn: true` で、
-    渡すのは CSV 取込（`Ayumi.Imports.SupportRecordsPlan.write_opts/0`）だけです。
-  - `Ayumi.Imports.preview_support_records/2` / `commit_support_records/2`、
-    `Ayumi.Imports.SupportRecordsPlan`。利用者の特定（ID 優先・氏名の一意一致）を
-    `Ayumi.Imports.ServiceUserResolver` に切り出し、出欠の取込と共有（挙動は不変）。
-    `Ayumi.CSV.Columns` に任意の見出し（`optional_header`）、`SupportRecordCategory.from_label/1`、
-    `Plans.get_support_records/1` を追加。
-- **CSV 取込（利用者台帳）**: `/admin/import` の「取り込むデータ」で利用者台帳を選べます。
-  **新規作成のみ**で、登録済みの利用者は変更せずスキップします（台帳の変更は、楽観ロックと
-  手帳の行を持つ編集画面で行います）。
-  - 登録済みの判定: `利用者ID` が存在する／`受給者証番号` が一致（Excel が落とす先頭の 0 は
-    無視）／`氏名` と `生年月日` がともに一致（全角・半角や空白の違いは無視）。存在しない
-    `利用者ID` はエラーです（新しい利用者は空欄にします）。
-  - 同一ファイル内で同じ人（氏名＋生年月日、または受給者証番号）が重複していればエラー。
-  - 取込はできるが確認してほしい行は「注意」として表示します: 受給者証番号が 10 桁でない、
-    同じ氏名の利用者が登録済みだが生年月日で照合できない。
-  - 空欄のセルは送らないので既定値が生きます（在籍状態の既定は「在籍」）。障害者手帳の列は
-    取り込みません。`/exports` で出力した台帳を取り込むと全件「既存」になります（往復）。
-  - `Ayumi.Imports.preview_service_users/2` / `commit_service_users/2`、データセットで振り分ける
-    `Imports.preview/3` / `commit/2`、`Ayumi.Imports.Dataset`。計画ロジックを
-    `Ayumi.Imports.AttendancePlan` / `Ayumi.Imports.ServiceUsersPlan` に分け、照合キーは
-    `Ayumi.Imports.Matching`。`Preview` に `skipped` / `warnings` を追加。
-  - `Gender` / `SupportCategory` / `EnrollmentStatus` に `from_label/1`、
-    `Ayumi.CSV.ServiceUsers` に取込仕様（`parse/1` ほか）を追加。
 - **CSV 取込画面（出欠・実績記録）**: サービス管理責任者専用の `/admin/import`
   （`AyumiWeb.ImportLive.Index`、ナビに「CSV取込」）。CSV を選んで「内容を確認」を押すと、
   何も書き込まずに「追加 N 件（うち訂正 M 件）／変更なし／エラー」を表示し、エラーは行番号・
@@ -139,14 +73,89 @@
   - `Ayumi.CSV.decode/1`、`Ayumi.CSV.Cell` の `parse_*`、`Ayumi.CSV.Columns.parse_row/2`
     （列定義に取込仕様を追加し、出力と取込で 1 つの列リストを共有）、
     `Ayumi.CSV.Attendance.parse/1`、`ProvisionType.from_label/1` を追加。
+- **CSV 取込（利用者台帳）**: `/admin/import` の「取り込むデータ」で利用者台帳を選べます。
+  **新規作成のみ**で、登録済みの利用者は変更せずスキップします（台帳の変更は、楽観ロックと
+  手帳の行を持つ編集画面で行います）。
+  - 登録済みの判定: `利用者ID` が存在する／`受給者証番号` が一致（Excel が落とす先頭の 0 は
+    無視）／`氏名` と `生年月日` がともに一致（全角・半角や空白の違いは無視）。存在しない
+    `利用者ID` はエラーです（新しい利用者は空欄にします）。
+  - 同一ファイル内で同じ人（氏名＋生年月日、または受給者証番号）が重複していればエラー。
+  - 取込はできるが確認してほしい行は「注意」として表示します: 受給者証番号が 10 桁でない、
+    同じ氏名の利用者が登録済みだが生年月日で照合できない。
+  - 空欄のセルは送らないので既定値が生きます（在籍状態の既定は「在籍」）。障害者手帳の列は
+    取り込みません。`/exports` で出力した台帳を取り込むと全件「既存」になります（往復）。
+  - `Ayumi.Imports.preview_service_users/2` / `commit_service_users/2`、データセットで振り分ける
+    `Imports.preview/3` / `commit/2`、`Ayumi.Imports.Dataset`。計画ロジックを
+    `Ayumi.Imports.AttendancePlan` / `Ayumi.Imports.ServiceUsersPlan` に分け、照合キーは
+    `Ayumi.Imports.Matching`。`Preview` に `skipped` / `warnings` を追加。
+  - `Gender` / `SupportCategory` / `EnrollmentStatus` に `from_label/1`、
+    `Ayumi.CSV.ServiceUsers` に取込仕様（`parse/1` ほか）を追加。
+- **CSV 取込（支援記録）**: `/admin/import` の「取り込むデータ」で支援記録を選べます。Excel に
+  あった過去の記録を、支援日つきで取り込めます。
+  - 読む列は `利用者ID`・`氏名`・`支援日`・`区分`・`内容`（支援日・区分・内容は必須）。`記録ID` の列は
+    任意で、手作りのファイルには不要です。記録者は取り込んだ人、記録日時は取り込んだ時刻です。
+  - 支援記録には自然キーがない（同じ人に同じ日の記録が複数あるのが普通）ため、「訂正」はありません。
+    利用者・支援日・区分・内容がすべて同じ記録が既にある行は「変更なし」としてスキップし（再取込や、
+    出力したファイルの取込ではログが増えません）、それ以外は新しい記録として追加します。出力した
+    CSV の内容を書き換えて取り込むと、元の記録は残ったまま新しい記録が追加されます。`記録ID` から
+    それが分かる行には「注意」を表示します。
+  - 同一ファイル内の完全に同じ行はエラー。未来の支援日は行エラーです（書き込み時と同じ changeset
+    `Plans.support_record_changeset/3` でプレビュー時に検証）。
+  - **退所した利用者の過去の記録は、取込に限って登録できます**（在籍中に書かれた記録を移行するため）。
+    確認画面に「注意」として表示します。画面からの入力は従来どおり拒否します。
+    `Plans.create_support_record/3` / `support_record_changeset/3` の `allow_withdrawn: true` で、
+    渡すのは CSV 取込（`Ayumi.Imports.SupportRecordsPlan.write_opts/0`）だけです。
+  - `Ayumi.Imports.preview_support_records/2` / `commit_support_records/2`、
+    `Ayumi.Imports.SupportRecordsPlan`。利用者の特定（ID 優先・氏名の一意一致）を
+    `Ayumi.Imports.ServiceUserResolver` に切り出し、出欠の取込と共有（挙動は不変）。
+    `Ayumi.CSV.Columns` に任意の見出し（`optional_header`）、`SupportRecordCategory.from_label/1`、
+    `Plans.get_support_records/1` を追加。
 - 依存に `nimble_csv`（純 Elixir・実行時のネットワーク不要）を追加。
+
+### 変更
+
+- **支援記録に「支援日」（`support_date`）を追加**: 支援した日と、記録した瞬間（`recorded_at`）を
+  分けました。出欠の `service_date` と同じ考え方で、あとから入力した記録や CSV 取込でも
+  「いつの支援か」を保持できます。
+  - 既存の記録は、記録日時の日本時間の日付で埋めます（新しい導出列の初期化で、記録内容は
+    書き換えません）。SQLite は既存列を NOT NULL にできないため、必須は changeset で保証します。
+  - 入力フォームに「支援日」（既定は日本時間の今日）。未指定なら記録した日になり、**未来の日付は
+    指定できません**（`SupportRecord.put_audit/3`。時計はコンテキストから渡すので changeset は
+    純粋なまま）。
+  - 一覧・フィルタ・利用者まとめ画面は支援日基準になりました（`list_support_records/2` の
+    `:from` / `:to`、`list_recent_support_records/2` の並び）。フィルタの初期値も日本時間の今日に
+    なり、朝 9 時前の記録が前日扱いになる問題はこの画面では解消しています。一覧には「支援日」と
+    「記録日時」の両方を表示します。
+  - CSV 出力の支援記録に `支援日` 列を追加し、期間は支援日で絞ります
+    （`list_support_records_between/3` は日付の範囲を受け取る形に変更）。
+- **画面の日時を日本時間で表示**: これまで UTC のまま（日本時間より 9 時間遅れて）表示していた
+  日時を、日本時間に揃えました。対象は支援記録一覧と利用者まとめ画面の「記録日時」、支援計画画面の
+  目標進捗・計画段階の履歴の時刻、DB バックアップの保存時刻（「（日本時間）」と明記）です。
+  - 表示は共通コンポーネント `<.jst_datetime value={...} />`（`AyumiWeb.CoreComponents`）に集約し、
+    変換は CSV と同じ `Ayumi.JST.format/2`（`:minute` / `:second`）を使います。`<time>` 要素の
+    `datetime` 属性には元の UTC 時刻を残します。
+  - 保存形式（UTC）は変わりません。支援計画画面の履歴は、これまで `2026-06-18 01:02:03Z` のような
+    生の値を出していましたが、他の画面と同じ `YYYY-MM-DD HH:MM` 形式になります。
 
 ### 修正
 
+- **「今日」を日本時間で判定**: ダッシュボードのモニタリング期限・受給者証期限、利用者まとめ画面の
+  期限バッジ、出欠入力・実績記録票の初期表示月が、UTC の日付（`Date.utc_today/0`）で「今日」を
+  決めていたため、日本時間の 0〜9 時は前日扱いになっていました（毎月 1 日の朝に出欠画面を開くと
+  前月が表示される、期限切れの判定が 1 日遅れる、など）。すべて `Ayumi.JST.today/1` に揃えました。
+  - `AttendanceLive.MonthParams.parse/2` は基準日を引数で受け取れるようにし（既定は日本時間の今日）、
+    境界の日付で単体テストしています。`Plans.list_monitoring_deadline_alerts/3` と
+    `list_certificate_expiry_alerts/3` の既定値も日本時間の今日です。
+  - 時刻に依存する不具合は通常のテストでは再現しにくいため、`lib/` に `Date.utc_today()` が
+    現れたら失敗するガードテストを `test/ayumi/jst_test.exs` に置きました。
 - テストの間欠的な失敗（`Exqlite.Error: Database busy`）を解消。DB を使うのに `async: true` だった
   テストモジュール 6 つ（`plans_test.exs` と `plans/` 配下の 5 つ）を `async: false` にしました。
   SQLite は書き込みが同時に 1 つのため、並行するテストが書き込みロックを取り合い、待ちが busy
   timeout を超えると落ちていました（CI で発生）。`Ayumi.DataCase` の説明にもこのルールを明記。
+- GitHub Release のリリースノートに変更内容が載らない不具合を修正（v0.2.0・v0.2.1 は空でした）。
+  リリース用ワークフローが `## [未リリース]` の節を読んでいましたが、リリースコミットでその見出しを
+  バージョン番号に書き換えるため、何も抜き出せていませんでした。タグのバージョンの節
+  （`## [X.Y.Z]`）を読むように直し、節が見つからなければリリースを中止します。
 
 ## [0.2.1] — 2026-06-21
 
@@ -337,7 +346,8 @@
   本番は `check_origin: false`（LAN の IP 直アクセス向け。送信元 IP 制限で担保）、dev は全
   インターフェースにバインド。
 
-[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.1...HEAD
+[未リリース]: https://github.com/SilentMalachite/Ayumi/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/SilentMalachite/Ayumi/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.6...v0.2.0
 [0.1.6]: https://github.com/SilentMalachite/Ayumi/compare/v0.1.5...v0.1.6

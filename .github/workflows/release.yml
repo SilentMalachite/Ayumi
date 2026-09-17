@@ -141,7 +141,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
-          changelog=$(sed -n '/^## \[未リリース\]/,/^## \[/{/^## \[/!p}' CHANGELOG.md)
+          # The release commit renames "## [未リリース]" to "## [X.Y.Z] — date", so
+          # read the section of the tagged version, up to the next "## [" heading.
+          version="${TAG_NAME#v}"
+          changelog=$(awk -v heading="## [${version}]" '
+            index($0, heading) == 1 { in_section = 1; next }
+            in_section && /^## \[/ { exit }
+            in_section { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$(printf '%s' "$changelog" | tr -d '[:space:]')" ]; then
+            echo "::error file=CHANGELOG.md::No changelog section \"## [${version}]\" for tag ${TAG_NAME}"
+            exit 1
+          fi
 
           notes="${changelog}
 
