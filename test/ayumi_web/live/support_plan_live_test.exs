@@ -117,6 +117,25 @@ defmodule AyumiWeb.SupportPlanLiveTest do
     assert event.recorded_by_id == staff.id
   end
 
+  test "shows history times in Japan time", %{conn: conn} do
+    plan = support_plan_fixture()
+    goal = goal_fixture(%{support_plan_id: plan.id})
+
+    progress =
+      goal_progress_fixture(%{goal_id: goal.id, recorded_at: ~U[2026-06-17 15:04:05Z]})
+
+    event =
+      plan_phase_event_fixture(%{support_plan_id: plan.id, recorded_at: ~U[2026-06-18 01:02:03Z]})
+
+    {:ok, lv, _html} = live(conn, ~p"/support_plans/#{plan.id}")
+
+    assert has_element?(lv, "#goal-progress-#{progress.id} time", "2026-06-18 00:04")
+    assert has_element?(lv, "#plan-phase-event-#{event.id} time", "2026-06-18 10:02")
+    # The UTC wall-clock text is gone (the machine-readable datetime attribute keeps UTC).
+    refute has_element?(lv, "#goal-progress-#{progress.id}", "15:04")
+    refute has_element?(lv, "#plan-phase-event-#{event.id}", "01:02")
+  end
+
   test "rejects forged goal progress for a goal from another support plan", %{conn: conn} do
     plan = support_plan_fixture()
     visible_goal = goal_fixture(%{support_plan_id: plan.id})

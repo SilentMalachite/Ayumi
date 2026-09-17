@@ -91,7 +91,7 @@ defmodule AyumiWeb.BackupLive.Index do
             <p class="text-sm">{@backup_info.path}</p>
             <p class="text-sm">{@backup_info.size_kb} KB</p>
             <p class="text-sm">
-              {Calendar.strftime(@backup_info.created_at, "%Y-%m-%d %H:%M:%S UTC")}
+              <.jst_datetime value={@backup_info.created_at} seconds />{gettext("（日本時間）")}
             </p>
           </div>
         </div>

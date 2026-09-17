@@ -232,7 +232,13 @@ Optional (done):
   and avoiding same-second filename collisions with `_1`, `_2`, … suffixes
   (capped at 16 retries). Reachable via the manager-only LiveView at
   `/admin/backup` and the `mix ayumi.backup [dest]` task. Flash + inline result
-  panel show path, size, and the UTC `created_at` timestamp.
+  panel show path, size, and the `created_at` timestamp in Japan time.
+- Screen datetimes are shown in Japan time through one function component,
+  `<.jst_datetime value={...} />` (`AyumiWeb.CoreComponents`; `seconds` for
+  second precision). It formats with `Ayumi.JST.format/2`, the same helper the CSV
+  export uses, and keeps the UTC instant in the `<time datetime>` attribute.
+  Storage stays UTC. Do not render a stored `DateTime` with `Calendar.strftime` or
+  interpolate it raw in a template.
 - CSV export (done — increments 1–3 of
   `docs/superpowers/plans/2026-09-17-csv-export-import.md`): `/exports`
   (`AyumiWeb.ExportLive.Index`, all staff) picks a dataset, a period unit
@@ -251,7 +257,7 @@ Optional (done):
   half-open UTC range and `Ayumi.Exports` converts the JST period with
   `Ayumi.JST.utc_range/2`; `Plans` stays time zone agnostic. All three include
   withdrawn users. Exported datetimes
-  are JST via `Ayumi.JST` (fixed +9h; the screens still show UTC). The service user
+  are JST via `Ayumi.JST` (fixed +9h), as on the screens. The service user
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form
   hides those inputs.

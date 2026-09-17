@@ -217,7 +217,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span class="font-medium text-zinc-900">{plan_phase_stage_label(event.stage)}</span>
                 <span class="text-zinc-600">{User.display_name(event.recorded_by)}</span>
-                <span class="text-zinc-500">{event.recorded_at}</span>
+                <.jst_datetime value={event.recorded_at} class="text-zinc-500" />
               </div>
               <p :if={event.note not in [nil, ""]} class="mt-1 whitespace-pre-line text-zinc-700">
                 {event.note}
@@ -293,7 +293,7 @@ defmodule AyumiWeb.SupportPlanLive.Show do
                     {goal_progress_stage_label(progress.stage)}
                   </span>
                   <span class="text-zinc-600">{User.display_name(progress.recorded_by)}</span>
-                  <span class="text-zinc-500">{progress.recorded_at}</span>
+                  <.jst_datetime value={progress.recorded_at} class="text-zinc-500" />
                 </div>
                 <p :if={progress.note not in [nil, ""]} class="mt-1 whitespace-pre-line text-zinc-700">
                   {progress.note}

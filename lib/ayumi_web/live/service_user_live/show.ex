@@ -288,7 +288,7 @@ defmodule AyumiWeb.ServiceUserLive.Show do
         >
           <:col :let={r} label={gettext("支援日")}>{Date.to_iso8601(r.support_date)}</:col>
           <:col :let={r} label={gettext("記録日時")}>
-            {Calendar.strftime(r.recorded_at, "%Y-%m-%d %H:%M")}
+            <.jst_datetime value={r.recorded_at} />
           </:col>
           <:col :let={r} label={gettext("カテゴリ")}>{SupportRecordCategory.label(r.category)}</:col>
           <:col :let={r} label={gettext("内容")}>{String.slice(r.content, 0..50)}</:col>

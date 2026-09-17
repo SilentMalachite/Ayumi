@@ -393,6 +393,32 @@ defmodule AyumiWeb.CoreComponents do
   end
 
   @doc """
+  Renders a stored UTC timestamp on the Japanese wall clock.
+
+  Timestamps are stored in UTC; staff read them in Japan time. The `datetime`
+  attribute keeps the exact instant for machines. Renders nothing for `nil`.
+
+  ## Examples
+
+      <.jst_datetime value={record.recorded_at} />
+      <.jst_datetime value={@backup_info.created_at} seconds />
+  """
+  attr :value, DateTime, default: nil
+  attr :seconds, :boolean, default: false, doc: "include seconds"
+  attr :rest, :global
+
+  def jst_datetime(%{value: nil} = assigns), do: ~H""
+
+  def jst_datetime(assigns) do
+    precision = if assigns.seconds, do: :second, else: :minute
+    assigns = assign(assigns, :text, Ayumi.JST.format(assigns.value, precision))
+
+    ~H"""
+    <time datetime={DateTime.to_iso8601(@value)} {@rest}>{@text}</time>
+    """
+  end
+
+  @doc """
   Renders a [Heroicon](https://heroicons.com).
 
   Heroicons come in three styles – outline, solid, and mini.

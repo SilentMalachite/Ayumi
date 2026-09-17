@@ -72,9 +72,10 @@ defmodule AyumiWeb.BackupLiveTest do
         |> form("#backup-form", %{dest_dir: tmp_dir})
         |> render_submit()
 
-      # 「YYYY-MM-DD HH:MM:SS UTC」形式の時刻が出る（ファイル名の連結桁とは別物）。
-      # 末尾の " UTC" まで含めることで、将来別箇所に日時が出ても誤検知しない。
-      assert html =~ ~r/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC/
+      # 「YYYY-MM-DD HH:MM:SS（日本時間）」形式の時刻が出る（ファイル名の連結桁とは別物）。
+      # 末尾の「（日本時間）」まで含めることで、将来別箇所に日時が出ても誤検知しない。
+      assert html =~ ~r/>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>（日本時間）/
+      refute html =~ "UTC"
     end
   end
 end

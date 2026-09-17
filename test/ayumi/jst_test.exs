@@ -15,6 +15,15 @@ defmodule Ayumi.JSTTest do
       assert JST.format(~U[2026-09-17 01:02:03Z]) == "2026-09-17 10:02:03"
       assert JST.format(~U[2026-12-31 15:00:00Z]) == "2027-01-01 00:00:00"
     end
+
+    test "can stop at minutes, for screens" do
+      assert JST.format(~U[2026-09-17 01:02:03Z], :minute) == "2026-09-17 10:02"
+      assert JST.format(~U[2026-09-17 01:02:03Z], :second) == "2026-09-17 10:02:03"
+    end
+
+    test "accepts microsecond precision" do
+      assert JST.format(~U[2026-09-17 01:02:03.456789Z]) == "2026-09-17 10:02:03"
+    end
   end
 
   describe "utc_range/2" do
