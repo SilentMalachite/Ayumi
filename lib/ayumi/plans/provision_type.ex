@@ -15,6 +15,14 @@ defmodule Ayumi.Plans.ProvisionType do
   @doc "値の日本語ラベル。未知/nil は nil。"
   def label(value), do: Keyword.get(@labels, value)
 
+  @doc "日本語ラベルから値を引く（CSV 取込用）。`label/1` の逆。未知は `:error`。"
+  def from_label(label) do
+    case List.keyfind(@labels, label, 1) do
+      {value, _label} -> {:ok, value}
+      nil -> :error
+    end
+  end
+
   @doc "`<.input type=\"select\">` 用の `[{label, value}]`。"
   def options, do: Enum.map(@labels, fn {value, label} -> {label, value} end)
 

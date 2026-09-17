@@ -227,8 +227,7 @@ Optional (done):
   `/admin/backup` and the `mix ayumi.backup [dest]` task. Flash + inline result
   panel show path, size, and the UTC `created_at` timestamp.
 - CSV export (done — increments 1–3 of
-  `docs/superpowers/plans/2026-09-17-csv-export-import.md`; CSV import, increments
-  4–6, is planned but not built): `/exports`
+  `docs/superpowers/plans/2026-09-17-csv-export-import.md`): `/exports`
   (`AyumiWeb.ExportLive.Index`, all staff) picks a dataset, a period unit
   (week from Monday / month / fiscal year Apr–Mar / calendar year), an anchor date,
   and an optional service user; `GET /exports/download` (`AyumiWeb.ExportController`)
@@ -247,5 +246,23 @@ Optional (done):
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form
   hides those inputs.
+- CSV import (in progress — increment 4a of the same plan: attendance, context
+  layer only; the manager-only upload screen, the service user master import, and
+  the support record import are not built). `Ayumi.Imports.preview_attendance/2`
+  parses and validates the whole file and plans what would be written without
+  writing (`Ayumi.Imports.Preview`: `to_insert` with `kind: :new | :correction`,
+  `unchanged`, `errors` with Excel row number and column); `commit_attendance/2`
+  re-plans inside a transaction and writes only if the plan still matches, else
+  `{:error, :stale, fresh_preview}`. Append-only: rows go through
+  `Plans.create_attendance_record/2`, an existing date gets a correction row, rows
+  identical to the current latest row are skipped, and removing a CSV row deletes
+  nothing. All or nothing; an in-file duplicate (service user, date) is an error,
+  not last-wins. Manager only, checked in the context too. Each dataset's column
+  list (`Ayumi.CSV.Columns`) carries the import spec next to the dump function, so
+  an exported attendance file imports back unchanged; `Ayumi.CSV.decode/1` and the
+  `Ayumi.CSV.Cell.parse_*` functions accept what Excel rewrites (`2026/9/1`, `9:00`,
+  full-width characters, no BOM, LF) and reject Shift_JIS with advice to save as
+  "CSV UTF-8". Validation stays in the changeset; `Imports` only maps its errors
+  onto columns.
 
 All steps are complete and green. Each was `mix review`-clean before merging.

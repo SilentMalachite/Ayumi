@@ -183,5 +183,17 @@ defmodule Ayumi.Plans.EnumerationsTest do
     test "offsite/0 lists only offsite_work / offsite_support" do
       assert ProvisionType.offsite() == [:offsite_work, :offsite_support]
     end
+
+    test "from_label/1 is the inverse of label/1 for every value" do
+      for value <- ProvisionType.all() do
+        assert ProvisionType.from_label(ProvisionType.label(value)) == {:ok, value}
+      end
+    end
+
+    test "from_label/1 returns :error for unknown labels" do
+      assert ProvisionType.from_label("出席") == :error
+      assert ProvisionType.from_label("commute") == :error
+      assert ProvisionType.from_label(nil) == :error
+    end
   end
 end
