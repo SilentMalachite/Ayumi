@@ -40,6 +40,23 @@
     期間つきのデータセットのときだけ単位と基準日を必須にします。画面も期間の入力欄を隠します。
   - **Plans コンテキスト**: `list_service_users/1` に `:preload` オプションを追加（既定は従来どおり）。
   - 列定義は `Ayumi.CSV.ServiceUsers`。
+- **CSV 取込（利用者台帳）**: `/admin/import` の「取り込むデータ」で利用者台帳を選べます。
+  **新規作成のみ**で、登録済みの利用者は変更せずスキップします（台帳の変更は、楽観ロックと
+  手帳の行を持つ編集画面で行います）。
+  - 登録済みの判定: `利用者ID` が存在する／`受給者証番号` が一致（Excel が落とす先頭の 0 は
+    無視）／`氏名` と `生年月日` がともに一致（全角・半角や空白の違いは無視）。存在しない
+    `利用者ID` はエラーです（新しい利用者は空欄にします）。
+  - 同一ファイル内で同じ人（氏名＋生年月日、または受給者証番号）が重複していればエラー。
+  - 取込はできるが確認してほしい行は「注意」として表示します: 受給者証番号が 10 桁でない、
+    同じ氏名の利用者が登録済みだが生年月日で照合できない。
+  - 空欄のセルは送らないので既定値が生きます（在籍状態の既定は「在籍」）。障害者手帳の列は
+    取り込みません。`/exports` で出力した台帳を取り込むと全件「既存」になります（往復）。
+  - `Ayumi.Imports.preview_service_users/2` / `commit_service_users/2`、データセットで振り分ける
+    `Imports.preview/3` / `commit/2`、`Ayumi.Imports.Dataset`。計画ロジックを
+    `Ayumi.Imports.AttendancePlan` / `Ayumi.Imports.ServiceUsersPlan` に分け、照合キーは
+    `Ayumi.Imports.Matching`。`Preview` に `skipped` / `warnings` を追加。
+  - `Gender` / `SupportCategory` / `EnrollmentStatus` に `from_label/1`、
+    `Ayumi.CSV.ServiceUsers` に取込仕様（`parse/1` ほか）を追加。
 - **CSV 取込画面（出欠・実績記録）**: サービス管理責任者専用の `/admin/import`
   （`AyumiWeb.ImportLive.Index`、ナビに「CSV取込」）。CSV を選んで「内容を確認」を押すと、
   何も書き込まずに「追加 N 件（うち訂正 M 件）／変更なし／エラー」を表示し、エラーは行番号・

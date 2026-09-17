@@ -9,7 +9,10 @@ defmodule Ayumi.Imports.Preview do
       appends a row for a date that already has one (history is never lost)
     * `unchanged` — row numbers identical to the current state; skipped, so
       importing the same file twice does not bloat the log
+    * `skipped` — `[%{row:, reason:}]`; rows for something that already exists
+      and is deliberately left alone (the service user master never updates)
     * `errors` — `[%{row:, column:, message:}]`; any error blocks the whole import
+    * `warnings` — `[%{row:, column:, message:}]`; worth a look, but not blocking
     * `ignored_headers` — columns in the file that the import does not know
 
   Row numbers are the ones Excel shows (the header is row 1).
@@ -20,7 +23,9 @@ defmodule Ayumi.Imports.Preview do
             rows: [],
             to_insert: [],
             unchanged: [],
+            skipped: [],
             errors: [],
+            warnings: [],
             ignored_headers: []
 
   @doc "Counts for the confirmation screen."
@@ -31,7 +36,9 @@ defmodule Ayumi.Imports.Preview do
       new: length(preview.to_insert) - corrections,
       corrections: corrections,
       unchanged: length(preview.unchanged),
-      errors: length(preview.errors)
+      skipped: length(preview.skipped),
+      errors: length(preview.errors),
+      warnings: length(preview.warnings)
     }
   end
 end

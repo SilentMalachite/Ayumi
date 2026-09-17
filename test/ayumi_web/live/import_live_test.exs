@@ -189,4 +189,86 @@ defmodule AyumiWeb.ImportLiveTest do
       assert Plans.list_attendance_records_between(~D[2026-09-01], ~D[2026-09-01]) == []
     end
   end
+
+  describe "importing the service user master" do
+    setup :register_and_log_in_manager
+
+    @master_headers CSV.ServiceUsers.required_headers()
+
+    defp master_csv(rows) do
+      CSV.encode(
+        @master_headers,
+        Enum.map(rows, fn cells ->
+          Enum.map(@master_headers, &Map.get(cells, &1, ""))
+        end)
+      )
+    end
+
+    defp choose_master(lv) do
+      lv |> form("#import-form", %{"dataset" => "service_users"}) |> render_change()
+    end
+
+    test "choosing the master shows its own rules", %{conn: conn} do
+      {:ok, lv, html} = live(conn, ~p"/admin/import")
+      assert html =~ "訂正として追記"
+
+      html = choose_master(lv)
+
+      assert html =~ "新しい利用者だけを追加"
+      assert html =~ "障害者手帳"
+      refute html =~ "訂正として追記"
+    end
+
+    test "upload → preview → commit adds only new people", %{conn: conn} do
+      existing = service_user_fixture(%{name: "既存 花子", birthdate: ~D[1980-01-01]})
+      {:ok, lv, _html} = live(conn, ~p"/admin/import")
+      _ = choose_master(lv)
+
+      html =
+        upload_and_preview(
+          lv,
+          master_csv([
+            %{"氏名" => "既存 花子", "生年月日" => "1980/1/1"},
+            %{"氏名" => "新人 一郎", "受給者証番号" => "123456789"},
+            %{"氏名" => "新人 二郎", "在籍状態" => "体験利用"}
+          ])
+        )
+
+      assert html =~ "追加 2 件"
+      assert html =~ "既存 1 件"
+      assert has_element?(lv, "#import-skipped tr", "ID #{existing.id}")
+      assert has_element?(lv, "#import-warnings tr", "10 桁")
+      assert length(Plans.list_service_users()) == 1
+
+      html = lv |> element("#import-commit") |> render_click()
+
+      assert html =~ "取込が完了しました"
+      assert html =~ "既存 1 件"
+
+      names = Plans.list_service_users() |> Enum.map(& &1.name) |> Enum.sort()
+      assert names == Enum.sort(["既存 花子", "新人 一郎", "新人 二郎"])
+    end
+
+    test "an attendance file chosen by mistake is rejected as a whole", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/admin/import")
+      _ = choose_master(lv)
+
+      html = upload_and_preview(lv, csv([row(su, "2026-09-01")]))
+
+      assert has_element?(lv, "#import-file-error")
+      assert html =~ "必要な列がありません"
+    end
+
+    test "switching the dataset discards a pending preview", %{conn: conn} do
+      su = service_user_fixture()
+      {:ok, lv, _html} = live(conn, ~p"/admin/import")
+      _ = upload_and_preview(lv, csv([row(su, "2026-09-01")]))
+      assert has_element?(lv, "#import-preview")
+
+      _ = choose_master(lv)
+
+      refute has_element?(lv, "#import-preview")
+    end
+  end
 end

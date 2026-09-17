@@ -739,7 +739,7 @@ msgstr ""
 msgid "全員"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:185
+#: lib/ayumi_web/live/import_live/index.ex:226
 #: lib/ayumi_web/live/service_user_live/show.ex:293
 #: lib/ayumi_web/live/support_record_live/index.ex:159
 #: lib/ayumi_web/live/support_record_live/index.ex:184
@@ -1128,140 +1128,170 @@ msgstr ""
 msgid "期間の指定はありません。退所者を含む全員の現在の登録内容が出力されます。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:111
+#: lib/ayumi_web/live/import_live/index.ex:134
 #, elixir-autogen, elixir-format
 msgid "1 行でもエラーがあると、ファイル全体を取り込みません。上限は %{rows} 行です。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:108
+#: lib/ayumi_web/live/import_live/index.ex:131
 #, elixir-autogen, elixir-format
 msgid "CSV から行を消しても、記録は削除されません。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:226
+#: lib/ayumi_web/live/import_live/index.ex:296
 #, elixir-autogen, elixir-format
 msgid "CSV ファイル（.csv）を選択してください。"
 msgstr ""
 
 #: lib/ayumi_web/components/layouts.ex:57
-#: lib/ayumi_web/live/import_live/index.ex:14
-#: lib/ayumi_web/live/import_live/index.ex:91
+#: lib/ayumi_web/live/import_live/index.ex:15
+#: lib/ayumi_web/live/import_live/index.ex:103
 #, elixir-autogen, elixir-format
 msgid "CSV取込"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:93
-#, elixir-autogen, elixir-format
-msgid "Excel で作成・編集した出欠・実績記録の CSV を取り込みます。"
-msgstr ""
-
-#: lib/ayumi_web/live/import_live/index.ex:102
+#: lib/ayumi_web/live/import_live/index.ex:114
 #, elixir-autogen, elixir-format
 msgid "Excel で保存するときは、ファイルの種類を「CSV UTF-8（コンマ区切り）」にしてください。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:99
-#, elixir-autogen, elixir-format
-msgid "「CSV出力」で保存した出欠・実績記録のファイルを Excel で編集し、そのまま取り込めます。見出しの行は変えないでください。"
-msgstr ""
-
-#: lib/ayumi_web/live/import_live/index.ex:105
+#: lib/ayumi_web/live/import_live/index.ex:117
 #, elixir-autogen, elixir-format
 msgid "すでに記録のある利用日は、訂正として追記されます（元の記録は履歴に残ります）。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:217
+#: lib/ayumi_web/live/import_live/index.ex:287
 #, elixir-autogen, elixir-format
 msgid "やめる"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:178
+#: lib/ayumi_web/live/import_live/index.ex:219
 #, elixir-autogen, elixir-format
 msgid "エラーを修正して、もう一度ファイルを選択してください。何も取り込まれていません。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:225
+#: lib/ayumi_web/live/import_live/index.ex:295
 #, elixir-autogen, elixir-format
 msgid "ファイルが大きすぎます。月ごとに分けて取り込んでください。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:227
+#: lib/ayumi_web/live/import_live/index.ex:297
 #, elixir-autogen, elixir-format
 msgid "ファイルは 1 つだけ選択してください。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:228
+#: lib/ayumi_web/live/import_live/index.ex:298
 #, elixir-autogen, elixir-format
 msgid "ファイルを読み込めませんでした。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:75
+#: lib/ayumi_web/live/import_live/index.ex:87
 #, elixir-autogen, elixir-format
 msgid "ファイルを選択してください。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:197
+#: lib/ayumi_web/live/import_live/index.ex:238
 #, elixir-autogen, elixir-format
 msgid "他 %{count} 件"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:160
-#, elixir-autogen, elixir-format
-msgid "全 %{total} 行: 追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／エラー %{errors} 件"
-msgstr ""
-
-#: lib/ayumi_web/live/import_live/index.ex:130
+#: lib/ayumi_web/live/import_live/index.ex:168
 #, elixir-autogen, elixir-format
 msgid "内容を確認"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:184
+#: lib/ayumi_web/live/import_live/index.ex:225
 #, elixir-autogen, elixir-format
 msgid "列"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:202
+#: lib/ayumi_web/live/import_live/index.ex:272
 #, elixir-autogen, elixir-format
 msgid "取り込む変更はありません。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:53
-#: lib/ayumi_web/live/import_live/index.ex:139
+#: lib/ayumi_web/live/import_live/index.ex:65
+#: lib/ayumi_web/live/import_live/index.ex:177
 #, elixir-autogen, elixir-format
 msgid "取込が完了しました"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:214
+#: lib/ayumi_web/live/import_live/index.ex:284
 #, elixir-autogen, elixir-format
 msgid "取込を実行"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:211
+#: lib/ayumi_web/live/import_live/index.ex:281
 #, elixir-autogen, elixir-format
 msgid "取込中…"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:151
+#: lib/ayumi_web/live/import_live/index.ex:191
 #, elixir-autogen, elixir-format
 msgid "取込内容の確認"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:171
+#: lib/ayumi_web/live/import_live/index.ex:212
 #, elixir-autogen, elixir-format
 msgid "次の列は取り込まれません: %{headers}"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:155
+#: lib/ayumi_web/live/import_live/index.ex:195
 #, elixir-autogen, elixir-format
 msgid "確認のあとに記録が変更されたため、内容を計算し直しました。もう一度確認してから実行してください。"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:183
+#: lib/ayumi_web/live/import_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "行"
 msgstr ""
 
-#: lib/ayumi_web/live/import_live/index.ex:141
+#: lib/ayumi_web/live/import_live/index.ex:105
 #, elixir-autogen, elixir-format
-msgid "追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件"
+msgid "Excel で作成・編集した CSV を取り込みます。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:111
+#, elixir-autogen, elixir-format
+msgid "「CSV出力」で保存したファイルを Excel で編集し、そのまま取り込めます。見出しの行は変えないでください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "全 %{total} 行: 追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件／エラー %{errors} 件"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:143
+#, elixir-autogen, elixir-format
+msgid "取り込むデータ"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:128
+#, elixir-autogen, elixir-format
+msgid "受給者証番号・電話番号・郵便番号の列は、Excel で「文字列」にしておくと先頭の 0 が消えません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:120
+#, elixir-autogen, elixir-format
+msgid "新しい利用者だけを追加します。登録済みの利用者（利用者ID・受給者証番号・氏名と生年月日のいずれかが一致）は変更しません。変更は利用者の編集画面で行ってください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:125
+#, elixir-autogen, elixir-format
+msgid "新しい利用者は利用者ID を空欄にしてください。障害者手帳の列は取り込まれません。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:244
+#, elixir-autogen, elixir-format
+msgid "次の行は取り込めますが、内容を確認してください。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:259
+#, elixir-autogen, elixir-format
+msgid "次の行は登録済みのため取り込まれません（変更もされません）。"
+msgstr ""
+
+#: lib/ayumi_web/live/import_live/index.ex:179
+#, elixir-autogen, elixir-format
+msgid "追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件"
 msgstr ""

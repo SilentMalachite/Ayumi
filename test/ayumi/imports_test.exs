@@ -53,7 +53,8 @@ defmodule Ayumi.ImportsTest do
       assert {:error, message} = Imports.preview_attendance(scope, csv([row(su, "2026-09-01")]))
       assert message =~ "サービス管理責任者"
 
-      assert {:error, ^message} = Imports.commit_attendance(scope, %Preview{})
+      assert {:error, ^message} =
+               Imports.commit_attendance(scope, %Preview{dataset: :attendance})
     end
   end
 
@@ -108,7 +109,7 @@ defmodule Ayumi.ImportsTest do
       assert first.service_user_id == su.id
       assert first.service_date == ~D[2026-09-01]
       assert second.pickup == true
-      assert Preview.counts(preview) == %{new: 2, corrections: 0, unchanged: 0, errors: 0}
+      assert %{new: 2, corrections: 0, unchanged: 0, errors: 0} = Preview.counts(preview)
 
       assert Plans.list_attendance_records_between(~D[2026-09-01], ~D[2026-09-30]) == []
     end
@@ -167,7 +168,7 @@ defmodule Ayumi.ImportsTest do
 
       assert {:ok, preview} = Imports.preview_attendance(scope, csv([edited]))
       assert [%{row: 2, kind: :correction, attrs: %{end_time: ~T[16:00:00]}}] = preview.to_insert
-      assert Preview.counts(preview) == %{new: 0, corrections: 1, unchanged: 0, errors: 0}
+      assert %{new: 0, corrections: 1, unchanged: 0, errors: 0} = Preview.counts(preview)
     end
 
     test "a blank note equals a missing note, and trailing whitespace is ignored", %{

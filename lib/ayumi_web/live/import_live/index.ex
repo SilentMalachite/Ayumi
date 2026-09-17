@@ -2,6 +2,7 @@ defmodule AyumiWeb.ImportLive.Index do
   use AyumiWeb, :live_view
 
   alias Ayumi.Imports
+  alias Ayumi.Imports.Dataset
   alias Ayumi.Imports.Preview
 
   # Long error lists are cut off on screen; the counts above still show the total.
@@ -13,6 +14,8 @@ defmodule AyumiWeb.ImportLive.Index do
      socket
      |> assign(:page_title, gettext("CSV取込"))
      |> assign(:max_rows, Imports.max_rows())
+     |> assign(:dataset_options, Dataset.options())
+     |> assign(:dataset, :attendance)
      |> reset()
      |> allow_upload(:csv,
        accept: ~w(.csv),
@@ -30,9 +33,18 @@ defmodule AyumiWeb.ImportLive.Index do
     |> assign(:result, nil)
   end
 
-  # Required by live uploads; the file is only read on submit.
+  # Required by live uploads; the file is only read on submit. Changing the
+  # dataset discards a pending preview, which belongs to the previous choice.
   @impl true
-  def handle_event("validate", _params, socket), do: {:noreply, socket}
+  def handle_event("validate", params, socket) do
+    case Dataset.from_param(params["dataset"]) do
+      {:ok, dataset} when dataset != socket.assigns.dataset ->
+        {:noreply, socket |> reset() |> assign(:dataset, dataset)}
+
+      _same_or_unknown ->
+        {:noreply, socket}
+    end
+  end
 
   def handle_event("preview", _params, socket) do
     uploaded =
@@ -44,7 +56,7 @@ defmodule AyumiWeb.ImportLive.Index do
   end
 
   def handle_event("commit", _params, %{assigns: %{preview: %Preview{} = preview}} = socket) do
-    case Imports.commit_attendance(socket.assigns.current_scope, preview) do
+    case Imports.commit(socket.assigns.current_scope, preview) do
       {:ok, result} ->
         {:noreply,
          socket
@@ -65,7 +77,7 @@ defmodule AyumiWeb.ImportLive.Index do
   def handle_event("cancel", _params, socket), do: {:noreply, reset(socket)}
 
   defp preview(socket, [binary]) do
-    case Imports.preview_attendance(socket.assigns.current_scope, binary) do
+    case Imports.preview(socket.assigns.current_scope, socket.assigns.dataset, binary) do
       {:ok, preview} -> assign_preview(socket, preview)
       {:error, message} -> assign(socket, :file_error, message)
     end
@@ -90,19 +102,30 @@ defmodule AyumiWeb.ImportLive.Index do
       <.header>
         {gettext("CSV取込")}
         <:subtitle>
-          {gettext("Excel で作成・編集した出欠・実績記録の CSV を取り込みます。")}
+          {gettext("Excel で作成・編集した CSV を取り込みます。")}
         </:subtitle>
       </.header>
 
       <ul class="mt-4 list-disc pl-5 text-sm text-base-content/70 space-y-1">
         <li>
-          {gettext("「CSV出力」で保存した出欠・実績記録のファイルを Excel で編集し、そのまま取り込めます。見出しの行は変えないでください。")}
+          {gettext("「CSV出力」で保存したファイルを Excel で編集し、そのまま取り込めます。見出しの行は変えないでください。")}
         </li>
         <li>
           {gettext("Excel で保存するときは、ファイルの種類を「CSV UTF-8（コンマ区切り）」にしてください。")}
         </li>
-        <li>
+        <li :if={@dataset == :attendance}>
           {gettext("すでに記録のある利用日は、訂正として追記されます（元の記録は履歴に残ります）。")}
+        </li>
+        <li :if={@dataset == :service_users}>
+          {gettext(
+            "新しい利用者だけを追加します。登録済みの利用者（利用者ID・受給者証番号・氏名と生年月日のいずれかが一致）は変更しません。変更は利用者の編集画面で行ってください。"
+          )}
+        </li>
+        <li :if={@dataset == :service_users}>
+          {gettext("新しい利用者は利用者ID を空欄にしてください。障害者手帳の列は取り込まれません。")}
+        </li>
+        <li :if={@dataset == :service_users}>
+          {gettext("受給者証番号・電話番号・郵便番号の列は、Excel で「文字列」にしておくと先頭の 0 が消えません。")}
         </li>
         <li>
           {gettext("CSV から行を消しても、記録は削除されません。")}
@@ -115,6 +138,21 @@ defmodule AyumiWeb.ImportLive.Index do
       </ul>
 
       <form id="import-form" phx-change="validate" phx-submit="preview" class="mt-6 space-y-4">
+        <div>
+          <label for="import-dataset" class="block text-sm font-medium">
+            {gettext("取り込むデータ")}
+          </label>
+          <select id="import-dataset" name="dataset" class="select select-bordered w-full mt-1">
+            <option
+              :for={{label, value} <- @dataset_options}
+              value={value}
+              selected={value == @dataset}
+            >
+              {label}
+            </option>
+          </select>
+        </div>
+
         <.live_file_input upload={@uploads.csv} class="file-input file-input-bordered w-full" />
 
         <p :for={entry <- @uploads.csv.entries} class="text-sm">
@@ -138,10 +176,12 @@ defmodule AyumiWeb.ImportLive.Index do
         <div>
           <p class="font-semibold">{gettext("取込が完了しました")}</p>
           <p class="text-sm">
-            {gettext("追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件",
+            {gettext(
+              "追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件",
               inserted: @result.inserted,
               corrections: @result.corrections,
-              unchanged: @result.unchanged
+              unchanged: @result.unchanged,
+              skipped: @result.skipped
             )}
           </p>
         </div>
@@ -158,11 +198,12 @@ defmodule AyumiWeb.ImportLive.Index do
 
         <p id="import-counts">
           {gettext(
-            "全 %{total} 行: 追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／エラー %{errors} 件",
+            "全 %{total} 行: 追加 %{inserted} 件（うち訂正 %{corrections} 件）／変更なし %{unchanged} 件／既存 %{skipped} 件／エラー %{errors} 件",
             total: @preview.total_rows,
             inserted: @counts.new + @counts.corrections,
             corrections: @counts.corrections,
             unchanged: @counts.unchanged,
+            skipped: @counts.skipped,
             errors: @counts.errors
           )}
         </p>
@@ -196,6 +237,35 @@ defmodule AyumiWeb.ImportLive.Index do
           <p :if={@counts.errors > @max_listed_errors} class="text-sm text-base-content/70">
             {gettext("他 %{count} 件", count: @counts.errors - @max_listed_errors)}
           </p>
+        </div>
+
+        <div :if={@preview.warnings != []}>
+          <p class="text-warning">
+            {gettext("次の行は取り込めますが、内容を確認してください。")}
+          </p>
+          <table id="import-warnings" class="table table-sm mt-2">
+            <tbody>
+              <tr :for={warning <- Enum.take(@preview.warnings, @max_listed_errors)}>
+                <td>{warning.row}</td>
+                <td>{warning.column}</td>
+                <td>{warning.message}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div :if={@preview.skipped != []}>
+          <p class="text-sm text-base-content/70">
+            {gettext("次の行は登録済みのため取り込まれません（変更もされません）。")}
+          </p>
+          <table id="import-skipped" class="table table-sm mt-2">
+            <tbody>
+              <tr :for={skipped <- Enum.take(@preview.skipped, @max_listed_errors)}>
+                <td>{skipped.row}</td>
+                <td>{skipped.reason}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <p :if={@counts.errors == 0 and @preview.to_insert == []}>

@@ -92,4 +92,77 @@ defmodule Ayumi.CSV.ServiceUsersTest do
     assert Enum.at(row, 5) == "在籍"
     assert row |> List.delete_at(5) |> Enum.drop(2) |> Enum.uniq() == [""]
   end
+
+  describe "required_headers/0" do
+    test "is every column except the certificate summary, which is export-only" do
+      assert ServiceUsers.required_headers() == @headers -- ["障害者手帳"]
+    end
+  end
+
+  describe "parse/1" do
+    defp cells(overrides) do
+      @headers |> Map.new(&{&1, ""}) |> Map.merge(overrides)
+    end
+
+    test "reads every flat field" do
+      cells =
+        cells(%{
+          "利用者ID" => "3",
+          "氏名" => "山田 太郎",
+          "ふりがな" => "やまだ たろう",
+          "生年月日" => "1990/4/1",
+          "性別" => "男性",
+          "在籍状態" => "体験利用",
+          "利用開始日" => "2025-04-01",
+          "郵便番号" => "060-0001",
+          "受給者証番号" => "0123456789",
+          "障害支援区分" => "区分3",
+          "受給者証有効期限" => "2027-03-31",
+          "服薬・特記" => "朝夕\r\n服薬あり",
+          "障害者手帳" => "無視される"
+        })
+
+      assert {:ok, attrs} = ServiceUsers.parse(cells)
+      assert attrs.id == 3
+      assert attrs.name == "山田 太郎"
+      assert attrs.birthdate == ~D[1990-04-01]
+      assert attrs.gender == :male
+      assert attrs.enrollment_status == :trial
+      assert attrs.recipient_cert_number == "0123456789"
+      assert attrs.disability_support_category == :category_3
+      assert attrs.recipient_cert_expiry == ~D[2027-03-31]
+      assert attrs.medication_notes == "朝夕\n服薬あり"
+      assert attrs.address == nil
+      refute Map.has_key?(attrs, :disability_certificates)
+    end
+
+    test "reads back what dump/1 wrote" do
+      service_user = %ServiceUser{
+        id: 3,
+        name: "山田 太郎",
+        gender: :female,
+        enrollment_status: :suspended,
+        birthdate: ~D[1990-04-01],
+        disability_certificates: []
+      }
+
+      [row] = ServiceUsers.dump([service_user])
+      assert {:ok, attrs} = @headers |> Enum.zip(row) |> Map.new() |> ServiceUsers.parse()
+
+      assert {attrs.id, attrs.name, attrs.gender, attrs.enrollment_status, attrs.birthdate} ==
+               {3, "山田 太郎", :female, :suspended, ~D[1990-04-01]}
+    end
+
+    test "requires the name and reports unreadable cells by column" do
+      assert {:error, errors} =
+               ServiceUsers.parse(cells(%{"氏名" => "", "生年月日" => "平成2年", "性別" => "男"}))
+
+      assert Enum.map(errors, & &1.column) == ["氏名", "生年月日", "性別"]
+    end
+  end
+
+  test "header_for/1 maps a schema field back to its column header" do
+    assert ServiceUsers.header_for(:name) == "氏名"
+    assert ServiceUsers.header_for(:recipient_cert_expiry) == "受給者証有効期限"
+  end
 end

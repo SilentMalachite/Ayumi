@@ -246,8 +246,9 @@ Optional (done):
   master is a snapshot with no period (`Exports.Dataset.periodic?/1`): the `Request`
   changeset requires unit and anchor date only for periodic datasets, and the form
   hides those inputs.
-- CSV import (in progress — increments 4a–4b of the same plan: attendance only;
-  the service user master import and the support record import are not built).
+- CSV import (increments 4a–5 of the same plan: attendance and the service user
+  master; the support record import, increment 6, is not built — it needs a schema
+  decision about a support date first).
   The manager-only screen is `/admin/import` (`AyumiWeb.ImportLive.Index`,
   `allow_upload` for one `.csv`): upload → preview → confirm → commit, with a
   re-confirmation when the commit reports a stale plan. `Ayumi.Imports.preview_attendance/2`
@@ -265,6 +266,14 @@ Optional (done):
   `Ayumi.CSV.Cell.parse_*` functions accept what Excel rewrites (`2026/9/1`, `9:00`,
   full-width characters, no BOM, LF) and reject Shift_JIS with advice to save as
   "CSV UTF-8". Validation stays in the changeset; `Imports` only maps its errors
-  onto columns.
+  onto columns. `Ayumi.Imports` is the public API plus the shared steps (authorize,
+  file checks, the commit transaction); planning lives in
+  `Ayumi.Imports.AttendancePlan` and `Ayumi.Imports.ServiceUsersPlan`. The service
+  user master import is create-only: a row is `skipped` when its 利用者ID exists,
+  its 受給者証番号 matches ignoring leading zeros (Excel drops them), or its name and
+  birthdate both match (`Ayumi.Imports.Matching`); an unknown 利用者ID is an error;
+  blank cells are left out of the attrs so schema defaults apply; certificates are
+  not imported; non-blocking `warnings` flag a cert number that is not 10 digits and
+  a same-name person who cannot be checked by birthdate.
 
 All steps are complete and green. Each was `mix review`-clean before merging.
